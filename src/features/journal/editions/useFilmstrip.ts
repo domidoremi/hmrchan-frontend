@@ -1,10 +1,12 @@
-import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
+import { inject, nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { createResizeObserver, createVisibilityObserver } from '@/utils/modernAPIs'
 import { createWheelRegion } from './wheelRegion'
 import { createFilmViewport } from './filmViewport'
+import { chapterKey } from './chapterContext'
 import type { JournalPost } from '../models'
 
 export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
+  const chapter = inject(chapterKey, null)
   const track = ref<HTMLElement>(),
     index = ref(0),
     progress = ref(0),
@@ -30,6 +32,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     if (!width) return
     const left = element.scrollLeft
     const max = element.scrollWidth - width
+    if (chapter) chapter.travel.value = Math.max(0, max)
     canScroll.value = max > 2
     progress.value = max > 0 ? Math.min(1, Math.max(0, left / max)) : 0
     let closest = Infinity
@@ -59,6 +62,15 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     }
     if (!frame) frame = requestAnimationFrame(measure)
   }
+  function scroll() {
+    const element = track.value
+    if (element && chapter?.enabled.value && visible) {
+      const maximum = Math.max(0, element.scrollWidth - element.clientWidth)
+      if (maximum && Math.abs(element.scrollLeft - chapter.progress.value * maximum) > 2)
+        chapter.seek(element.scrollLeft / maximum)
+    }
+    schedule()
+  }
   function resizeFilm() {
     viewport?.refresh()
     schedule()
@@ -70,10 +82,10 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
       card = items[i]
     if (!element || !card) return
     if (focus) card.querySelector<HTMLButtonElement>('.film-photo')?.focus({ preventScroll: true })
-    element.scrollTo({
-      left: card.offsetLeft - (element.clientWidth - card.offsetWidth) / 2,
-      behavior: behavior(),
-    })
+    const left = card.offsetLeft - (element.clientWidth - card.offsetWidth) / 2
+    if (chapter?.enabled.value)
+      chapter.seek(left / Math.max(1, element.scrollWidth - element.clientWidth), !focus)
+    else element.scrollTo({ left, behavior: behavior() })
     schedule()
   }
   function step(direction: number) {
@@ -82,6 +94,10 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   function scrub(event: Event) {
     const element = track.value
     if (element) {
+      if (chapter?.enabled.value) {
+        chapter.seek(Number((event.target as HTMLInputElement).value) / 1000)
+        return
+      }
       element.scrollTo({
         left:
           (Number((event.target as HTMLInputElement).value) / 1000) *
@@ -140,6 +156,8 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     }
     event.preventDefault()
     element.scrollLeft = pointer.left - delta
+    if (chapter?.enabled.value)
+      chapter.seek(element.scrollLeft / Math.max(1, element.scrollWidth - element.clientWidth))
     schedule()
   }
   function pointerend(event: PointerEvent) {
@@ -185,7 +203,8 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
         element,
         position: () => element.scrollLeft,
         maximum: () => element.scrollWidth - element.clientWidth,
-        enabled: (event) => !dragging.value && viewport!.canBrowse(event),
+        enabled: (event) =>
+          !chapter?.enabled.value && !dragging.value && viewport!.canBrowse(event),
         move: (left) => {
           if (viewport!.align()) return
           element.classList.add('is-wheel-scrolling')
@@ -218,6 +237,16 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
   function setTrack(element: unknown) {
     track.value = element instanceof HTMLElement ? element : undefined
   }
+  if (chapter)
+    watch([chapter.progress, chapter.enabled], ([value, active]) => {
+      const element = track.value
+      if (!element || !active) return
+      element.scrollTo({
+        left: value * Math.max(0, element.scrollWidth - element.clientWidth),
+        behavior: 'instant',
+      })
+      schedule()
+    })
   return {
     setTrack,
     index,
@@ -225,6 +254,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     canScroll,
     dragging,
     schedule,
+    scroll,
     step,
     scrub,
     keydown,

@@ -1,0 +1,369 @@
+/* Document scroll is the only vertical timeline; every chapter owns one viewport. */
+.site-body .journal-shell .immersive-home:is(.editorial-home, .next-home) {
+  --chapter-inset: max(1.5rem, calc((100% - 82rem) / 2));
+  inline-size: 100%;
+  margin: 0;
+}
+.site-body .journal-shell .immersive-home section.immersive-chapter {
+  --chapter-height: calc(100svh - 4.5rem);
+  --chapter-enter: 1;
+  --chapter-leave: 0;
+  --chapter-shift: 0rem;
+  --chapter-turn: 2deg;
+  position: relative;
+  margin: 0;
+  scroll-margin-block-start: var(--chapter-top, 4.5rem);
+  isolation: isolate;
+}
+.site-body .journal-shell .chapter-stage {
+  position: relative;
+  min-inline-size: 0;
+}
+.site-body .journal-shell .chapter-surface {
+  position: relative;
+  min-block-size: var(--chapter-height);
+  background: var(--canvas);
+  isolation: isolate;
+}
+.site-body .journal-shell .chapter-content {
+  position: relative;
+  min-block-size: var(--chapter-height);
+  padding: clamp(1rem, 3svh, 2.5rem) var(--chapter-inset);
+  display: flow-root;
+}
+.site-body .journal-shell .immersive-chapter[data-scene-enhanced='true'] {
+  block-size: calc(var(--chapter-height) + var(--chapter-run, 0rem));
+}
+.site-body .journal-shell [data-scene-enhanced='true'] > .chapter-stage {
+  position: sticky;
+  inset-block-start: var(--chapter-top);
+  block-size: var(--chapter-height);
+  overflow: clip;
+  perspective: 100rem;
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .chapter-surface {
+  block-size: 100%;
+  transform-origin: 50% 15%;
+  transform: translateY(calc((1 - var(--chapter-enter)) * 4rem))
+    rotateX(calc((1 - var(--chapter-enter)) * var(--chapter-turn)))
+    scale(calc(0.94 + var(--chapter-enter) * 0.06 - var(--chapter-leave) * 0.04));
+  opacity: calc(0.65 + var(--chapter-enter) * 0.35 - var(--chapter-leave) * 0.25);
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .chapter-content {
+  transform: translateY(var(--chapter-shift));
+}
+.site-body
+  .journal-shell
+  [data-scene-enhanced='true']
+  :is(.section-heading, .conversation-heading, .panel-heading) {
+  translate: 0 calc((1 - var(--chapter-enter)) * 2rem - var(--chapter-leave) * 1rem);
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .month-poster {
+  translate: calc((var(--chapter-enter) - 1) * 3rem) 0;
+  rotate: calc((1 - var(--chapter-enter) + var(--chapter-leave)) * -3deg);
+}
+.site-body .journal-shell .chapter-atmosphere {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+  z-index: -1;
+}
+.site-body .journal-shell .chapter-atmosphere i {
+  position: absolute;
+  inset: -15% -10% 20% 30%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--accent) 9%, transparent),
+    transparent 68%
+  );
+  transform: rotate(-20deg);
+}
+.site-body .journal-shell .chapter-atmosphere i + i {
+  inset: 30% 30% -25% -20%;
+  opacity: 0.6;
+}
+.site-body[data-motion='full'] .journal-shell [data-scene-enhanced='true'] .chapter-atmosphere i {
+  animation: chapter-drift 16s ease-in-out infinite alternate;
+  animation-play-state: var(--chapter-play, running);
+}
+.site-body[data-motion='full']
+  .journal-shell
+  [data-scene-enhanced='true']
+  .chapter-atmosphere
+  i
+  + i {
+  animation-delay: -9s;
+  animation-direction: alternate-reverse;
+}
+.site-body .journal-shell [data-scene-state='outside'] {
+  --chapter-play: paused;
+}
+.site-body .journal-shell .immersive-home .editorial-contents {
+  margin-block: 0;
+}
+.site-body .journal-shell .immersive-home .journal-masthead {
+  padding-block-start: 0;
+}
+.site-body .journal-shell .immersive-home .journal-masthead > strong {
+  font-size: clamp(3rem, min(9vw, 13svh), 8rem);
+}
+.site-body .journal-shell .immersive-home .spatial-cover {
+  min-block-size: 0;
+  padding-block: 1rem;
+}
+.site-body .journal-shell .immersive-home .cover-scene {
+  min-block-size: clamp(20rem, calc(var(--chapter-height) - 13rem), 36rem);
+}
+.site-body .journal-shell .immersive-home .cover-kicker {
+  margin-block-end: 0.75rem;
+}
+.site-body .journal-shell .immersive-home .cover-copy {
+  display: grid;
+  grid-template-rows: auto minmax(calc(15rem * var(--journal-reading-scale)), 1fr) auto;
+}
+.site-body .journal-shell .immersive-home .cover-story {
+  grid-row: 2;
+  grid-template-rows:
+    auto minmax(4.5rem, auto) minmax(calc(3.8 * var(--cover-summary-size) + 1.7rem), 1fr)
+    auto;
+}
+.site-body .journal-shell .immersive-home .cover-controls {
+  grid-row: 3;
+  margin-block-start: 0.75rem;
+}
+.site-body .journal-shell .immersive-home .editorial-reading-layout {
+  margin: 0;
+}
+.site-body .journal-shell .immersive-home [data-scene-enhanced='true'] .post-card {
+  content-visibility: visible;
+}
+.site-body .journal-shell .immersive-chapter[data-chapter='film'] .chapter-content {
+  padding: 0;
+}
+.site-body .journal-shell .immersive-chapter .editorial-film {
+  margin: 0;
+  block-size: var(--chapter-height);
+  min-block-size: 24rem;
+  padding-inline: var(--chapter-inset);
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .film-track {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+.site-body .journal-shell .immersive-chapter .editorial-calendar {
+  padding-block: 0;
+}
+.site-body .journal-shell .immersive-chapter .editorial-calendar-body {
+  min-block-size: calc(var(--chapter-height) - 9rem);
+  align-items: stretch;
+}
+.site-body .journal-shell .immersive-chapter .month-poster {
+  min-block-size: 18rem;
+}
+.site-body .journal-shell .immersive-chapter .editorial-calendar-body > div {
+  display: grid;
+  align-content: center;
+}
+.site-body .journal-shell .immersive-chapter .editorial-conversation {
+  min-block-size: calc(var(--chapter-height) - 4rem);
+  padding-block: 1rem;
+  align-items: center;
+}
+.site-body .journal-shell .immersive-chapter .conversation-heading {
+  position: relative;
+  top: auto;
+}
+.site-body .journal-shell .immersive-chapter .conversation-heading > span {
+  color: var(--accent);
+  font-size: clamp(3rem, 8vw, 8rem);
+  font-family: var(--theme-title-font);
+  line-height: 1;
+}
+/* Next keeps its floating workspace, with a wider spatial stage between collections. */
+.site-body .journal-shell .next-home.immersive-home {
+  --chapter-inset: max(1.5rem, calc((100% - 82rem) / 2));
+}
+.site-body .journal-shell .next-home.immersive-home .archive-bottom-grid {
+  display: block;
+  margin: 0;
+}
+.site-body .journal-shell .next-home section.immersive-chapter {
+  --chapter-turn: -4deg;
+}
+.site-body .journal-shell .next-home .chapter-atmosphere i {
+  border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--accent) 12%, transparent),
+    transparent 70%
+  );
+}
+.site-body .journal-shell .immersive-chapter .next-stage {
+  margin: 0;
+  min-block-size: calc(var(--chapter-height) - 4rem);
+}
+.site-body .journal-shell .immersive-chapter .next-stage-scene {
+  min-block-size: max(25rem, calc(var(--chapter-height) - 6rem));
+}
+.site-body .journal-shell .immersive-chapter .next-stage-entry h2 {
+  font-size: calc(clamp(1.8rem, 3.4vw, 3.75rem) * var(--journal-reading-scale));
+  max-inline-size: 15ch;
+}
+.site-body .journal-shell .immersive-chapter .archive-panel {
+  padding: clamp(1.25rem, 4vw, 4rem);
+  min-block-size: calc(var(--chapter-height) - 4rem);
+  display: grid;
+  align-content: center;
+}
+.site-body .journal-shell .immersive-chapter .archive-panel .panel-heading h2 {
+  font-size: clamp(1.6rem, 3.5vw, 3.5rem);
+  letter-spacing: -0.04em;
+}
+.site-body .journal-shell .immersive-chapter .archive-agenda article,
+.site-body .journal-shell .immersive-chapter .archive-discussion-row {
+  padding-block: clamp(1rem, 3svh, 2rem);
+}
+.site-body .journal-shell .immersive-chapter .archive-agenda b,
+.site-body .journal-shell .immersive-chapter .archive-discussion-row button {
+  font-size: calc(clamp(1rem, 1.5vw, 1.4rem) * var(--journal-reading-scale));
+}
+.site-body .journal-shell [data-scene-enhanced='true'] .archive-inspector {
+  position: relative;
+  top: auto;
+}
+.site-body .journal-shell .chapter-stage > .archive-selection-dock {
+  position: absolute;
+  inset-block-end: 1rem;
+}
+/* Scene geometry complements each theme without changing its contrast tokens. */
+html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-chapter {
+  --chapter-turn: 0deg;
+}
+html[data-preset='minimal-editorial'] .site-body .journal-shell .chapter-atmosphere i {
+  border-radius: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    color-mix(in srgb, var(--accent) 7%, transparent) 50%,
+    transparent 65%
+  );
+}
+html[data-preset='fluent-soft'] .site-body .journal-shell .chapter-surface {
+  border-start-start-radius: calc(var(--theme-radius) * (1 - var(--chapter-enter)));
+  border-start-end-radius: calc(var(--theme-radius) * (1 - var(--chapter-enter)));
+}
+html[data-preset='organic-natural'] .site-body .journal-shell .chapter-atmosphere i {
+  border-radius: 38% 62% 70% 30% / 60% 35% 65% 40%;
+  border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+}
+html[data-preset='gradient-narrative'] .site-body .journal-shell .chapter-atmosphere i {
+  background: conic-gradient(
+    from 45deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 12%, transparent),
+    transparent,
+    var(--accent-soft),
+    transparent
+  );
+}
+@keyframes chapter-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) rotate(-15deg) scale(0.96);
+  }
+  to {
+    transform: translate3d(4%, 4%, 0) rotate(12deg) scale(1.08);
+  }
+}
+@media (max-width: 800px) {
+  .site-body .journal-shell .immersive-home,
+  .site-body .journal-shell .next-home.immersive-home {
+    --chapter-inset: 1rem;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage {
+    gap: 1rem;
+  }
+}
+@media (max-width: 560px) {
+  .site-body .journal-shell .immersive-chapter .chapter-content {
+    padding-block: 1rem;
+  }
+  .site-body .journal-shell .immersive-chapter[data-chapter='film'] .chapter-content {
+    padding: 0;
+  }
+  .site-body .journal-shell .immersive-home .journal-masthead > strong {
+    font-size: clamp(2.8rem, 12vw, 4rem);
+  }
+  .site-body .journal-shell .immersive-home .cover-scene {
+    min-block-size: clamp(12rem, 30svh, 18rem);
+  }
+  .site-body .journal-shell .immersive-home .cover-deck {
+    inset: 0.5rem 22% 0.75rem;
+  }
+  .site-body .journal-shell .immersive-home .spatial-cover {
+    gap: 0.5rem;
+    padding-block: 0.75rem 0;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-copy {
+    padding-block: 0;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-entry h2 {
+    font-size: calc(1.75rem * var(--journal-reading-scale));
+    max-inline-size: none;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-scene {
+    min-block-size: clamp(22rem, 50svh, 30rem);
+  }
+  .site-body .journal-shell .immersive-chapter .archive-panel {
+    padding: 1rem;
+  }
+}
+@media (max-width: 560px) and (max-height: 700px) {
+  .site-body .journal-shell .immersive-home .cover-scene {
+    min-block-size: clamp(6rem, calc(var(--chapter-height) - 26rem), 9rem);
+  }
+  .site-body .journal-shell .immersive-home .cover-story {
+    --cover-title-size: calc(1.45rem * var(--journal-reading-scale));
+    grid-template-rows:
+      auto minmax(3.25rem, auto) minmax(calc(3.8 * var(--cover-summary-size) + 0.6rem), 1fr)
+      auto;
+  }
+  .site-body .journal-shell .immersive-home .cover-copy {
+    grid-template-rows: auto minmax(calc(12.5rem * var(--journal-reading-scale)), 1fr) auto;
+  }
+  .site-body .journal-shell .immersive-home .cover-story p {
+    margin-block: 0.3rem;
+  }
+  .site-body .journal-shell .immersive-home .cover-source {
+    margin-block-end: 0.25rem;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-copy > .eyebrow {
+    display: none;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.75rem;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-entry h2 {
+    font-size: calc(1.45rem * var(--journal-reading-scale));
+    margin: 0;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-entry p {
+    grid-column: 1;
+    margin-block: 0.5rem 0;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-entry .button {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .site-body .journal-shell .immersive-chapter .next-stage-scene {
+    min-block-size: max(15rem, calc(var(--chapter-height) - 10rem));
+    margin-block-start: 0;
+  }
+}

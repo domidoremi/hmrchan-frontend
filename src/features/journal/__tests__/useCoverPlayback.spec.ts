@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { useCoverPlayback } from '../editions/useCoverPlayback'
 import type { JournalPost } from '../models'
+import { chapterKey, type ChapterContext } from '../editions/chapterContext'
 
 const visibility = vi.hoisted(() => ({
   callbacks: [] as IntersectionObserverCallback[],
@@ -35,7 +36,7 @@ const posts: JournalPost[] = ['first', 'second', 'third'].map((id) => ({
   tags: [],
 }))
 
-async function render() {
+async function render(chapter?: ChapterContext) {
   wrapper = mount(
     defineComponent({
       setup() {
@@ -43,7 +44,10 @@ async function render() {
         return () => h('section', { ref: playback.setRoot })
       },
     }),
-    { attachTo: document.body }
+    {
+      attachTo: document.body,
+      global: { provide: chapter ? { [chapterKey as symbol]: chapter } : {} },
+    }
   )
   visibility.callbacks[0]!(
     [{ isIntersecting: true } as IntersectionObserverEntry],
@@ -76,6 +80,35 @@ afterEach(() => {
 })
 
 describe('recommendation playback', () => {
+  it('uses chapter progress in both directions and maps manual choices to the same timeline', async () => {
+    const progress = ref(0)
+    const chapter: ChapterContext = {
+      enabled: ref(true),
+      height: ref(700),
+      progress,
+      travel: ref(0),
+      seek: vi.fn(),
+    }
+    await render(chapter)
+    expect(playback.playing.value).toBe(false)
+    expect(chapter.travel.value).toBe(840)
+    progress.value = 1
+    await nextTick()
+    expect(playback.selectedId.value).toBe('third')
+    expect(chapter.seek).not.toHaveBeenCalled()
+    progress.value = 0.5
+    await nextTick()
+    expect(playback.selectedId.value).toBe('second')
+    playback.step(-1)
+    expect(chapter.seek).toHaveBeenCalledWith(0)
+    playback.selectSheet('third')
+    expect(chapter.seek).toHaveBeenLastCalledWith(1)
+    playback.paused.value = true
+    progress.value = 0
+    await nextTick()
+    expect(playback.selectedId.value).toBe('third')
+    expect(vi.getTimerCount()).toBe(0)
+  })
   it('binds wheel browsing when recommendations arrive after mount and releases the final card', async () => {
     const delayed = ref<JournalPost[]>([])
     wrapper = mount(
