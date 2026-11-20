@@ -45,8 +45,10 @@
         class="film-frame"
         :class="{ 'is-current': i === index }"
       >
-        <button :data-open="post.id" class="film-photo">
-          <span>{{ String(i + 1).padStart(2, '0') }} / {{ post.author }}</span>
+        <button :data-open="post.id" class="film-photo" :aria-label="post.title">
+          <span class="film-photo-label"
+            >{{ String(i + 1).padStart(2, '0') }} / {{ post.author }}</span
+          >
           <JournalImage
             :src="post.image!"
             :original-src="post.originalImage"
@@ -54,8 +56,12 @@
             loading="lazy"
             width="400"
             height="520"
+            fit="contain"
           />
-          <span>{{ post.title }} <JournalIcon name="arrow-up-right" /></span>
+          <span class="film-photo-caption"
+            ><span>{{ post.title }}</span
+            ><JournalIcon name="arrow-up-right"
+          /></span>
         </button>
       </div>
     </div>

@@ -4,7 +4,7 @@ type RegionOptions = {
   maximum: () => number
   move: (value: number) => void
   stepped?: boolean
-  enabled?: () => boolean
+  enabled?: (event: WheelEvent) => boolean
 }
 
 // Only the central content area consumes a wheel gesture; its edges remain page exits.
@@ -23,7 +23,7 @@ export function createWheelRegion(options: RegionOptions) {
       event.altKey ||
       event.shiftKey ||
       document.hidden ||
-      options.enabled?.() === false
+      options.enabled?.(event) === false
     )
       return
     // Native horizontal gestures, zoom and form controls keep their normal behavior.
