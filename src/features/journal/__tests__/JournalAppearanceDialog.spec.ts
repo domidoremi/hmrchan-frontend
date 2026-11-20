@@ -64,6 +64,21 @@ describe('JournalAppearanceDialog', () => {
     expect(wrapper!.emitted('close')).toHaveLength(1)
     expect(wrapper!.get('dialog').element.open).toBe(false)
   })
+  it('requests removal immediately when the native close event is delivered later', async () => {
+    vi.mocked(HTMLDialogElement.prototype.close).mockImplementation(function () {
+      this.open = false
+    })
+    await wrapper!.get('footer button:last-child').trigger('click')
+    expect(wrapper!.emitted('close')).toHaveLength(1)
+    expect(wrapper!.get('dialog').element.open).toBe(false)
+    await wrapper!.get('dialog').trigger('close')
+    expect(wrapper!.emitted('close')).toHaveLength(1)
+  })
+  it('closes through the same owner request when Escape cancels the native dialog', async () => {
+    await wrapper!.get('dialog').trigger('cancel')
+    expect(wrapper!.emitted('close')).toHaveLength(1)
+    expect(wrapper!.get('dialog').element.open).toBe(false)
+  })
 
   it('distinguishes backdrop clicks from empty space inside the panel', async () => {
     const dialog = wrapper!.get('dialog')

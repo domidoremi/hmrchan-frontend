@@ -2,12 +2,15 @@ import { installUI } from './shared.js'
 import { createMotionPreference, motionTiming } from './motion.js'
 import { installViewportMotion } from './viewport-motion.js'
 import { createLayoutMotion } from './layout-motion.js'
+import { installReaderMotion } from './reader-motion.js'
+import { installSelectionMotion } from './selection-motion.js'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 
 export function createJournalRuntime(navigate, options = {}) {
   const { translate } = options
   const lifetime = new AbortController()
   const animations = new Set()
+  const channels = new WeakMap()
   const observed = new WeakSet()
   const frames = new Set()
   const listen = (target, name, callback, options = {}) =>
@@ -38,7 +41,8 @@ export function createJournalRuntime(navigate, options = {}) {
     if (zoom)
       zoom.setAttribute('aria-label', zoomLabel(zoom.getAttribute('aria-pressed') === 'true'))
   }
-  let motion = 'full'
+  let motion = 'full',
+    reader
   const layoutMotion = createLayoutMotion({
     animate,
     frame,
@@ -52,23 +56,74 @@ export function createJournalRuntime(navigate, options = {}) {
     changed(value) {
       motion = value
       if (value === 'reduced') {
-        animations.forEach((animation) => animation.finish())
+        animations.forEach((animation) => animation.cancel())
         layoutMotion.cancel()
+        reader?.cancel()
       }
     },
   })
   const viewport = installViewportMotion({ listen, frame, fullMotion: () => motion === 'full' })
   function animate(element, keyframes, options = {}) {
-    if (!element || motion !== 'full' || lifetime.signal.aborted) return
+    if (
+      !element ||
+      motion !== 'full' ||
+      document.hidden ||
+      lifetime.signal.aborted ||
+      typeof element.animate !== 'function'
+    )
+      return
+    const channel = options.id || 'reveal'
+    let running = channels.get(element)
+    if (!running) {
+      running = new Map()
+      channels.set(element, running)
+    }
+    running.get(channel)?.cancel()
     const animation = element.animate(keyframes, {
       duration: motionTiming.reveal,
       easing: motionTiming.ease,
       ...options,
     })
+    running.set(channel, animation)
     animations.add(animation)
-    animation.finished.catch(() => {}).finally(() => animations.delete(animation))
+    animation.finished
+      .catch(() => {})
+      .finally(() => {
+        animations.delete(animation)
+        if (running.get(channel) === animation) running.delete(channel)
+      })
     return animation
   }
+  reader = installReaderMotion({
+    animate,
+    listen,
+    fullMotion: () => motion === 'full' && !document.hidden,
+  })
+  runtime.Atelier = reader
+  const selection = installSelectionMotion({
+    animate,
+    frame,
+    listen,
+    fullMotion: () => motion === 'full',
+  })
+  listen(document, 'visibilitychange', () => {
+    for (const animation of animations) {
+      if (document.hidden) animation.pause()
+      else if (motion === 'full' && animation.playState === 'paused') animation.play()
+    }
+  })
+  listen(window, 'pagehide', () => {
+    for (const animation of animations) animation.cancel()
+    layoutMotion.cancel()
+    reader.cancel()
+    viewport.suspend()
+    selection.suspend()
+    pendingMount = false
+    pendingRoots.clear()
+    frames.forEach(cancelAnimationFrame)
+    frames.clear()
+  })
+  listen(window, 'pageshow', () => mount())
   const observer = createVisibilityObserver(
     (entries) => {
       entries.forEach((entry, index) => {
@@ -79,7 +134,7 @@ export function createJournalRuntime(navigate, options = {}) {
           [
             {
               opacity: 0.15,
-              transform: 'perspective(1200px) translateY(54px) rotateX(5deg)',
+              transform: 'perspective(1200px) translateY(2.8rem) rotateX(4deg)',
             },
             {
               opacity: 1,
@@ -97,6 +152,7 @@ export function createJournalRuntime(navigate, options = {}) {
     runtime.UI.hydrate(root)
     observeReveals(root)
     viewport.refresh()
+    selection.refresh()
   }
   const revealSelector =
     '[data-reveal], .journal-legacy :is(.page-hero-shell, .sub-header, .author-card, .discover-section, .post-shell, .profile-group, .settings-section, .security-command, .security-workspace, .discussion-card, .about-link-group)'
@@ -127,6 +183,7 @@ export function createJournalRuntime(navigate, options = {}) {
       for (const root of pendingRoots) if (root.isConnected) observeReveals(root)
       pendingRoots.clear()
       viewport.refresh()
+      selection.refresh()
     })
   })
   const pageRoot = document.querySelector('#main-content')
@@ -154,6 +211,12 @@ export function createJournalRuntime(navigate, options = {}) {
   listen(document, 'keydown', (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault()
+      const search = document.querySelector('.next-searchbar input')
+      if (search && !document.querySelector('dialog[open]')) {
+        search.focus({ preventScroll: true })
+        search.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' })
+        return
+      }
       document.dispatchEvent(new Event('journalsearch'))
     }
   })
@@ -166,7 +229,7 @@ export function createJournalRuntime(navigate, options = {}) {
           { transform: 'scale(1.24) rotate(-8deg)', offset: 0.35 },
           { transform: 'scale(1)' },
         ],
-        { duration: motionTiming.feedback }
+        { id: 'feedback', duration: motionTiming.feedback }
       )
     },
   }
@@ -177,14 +240,16 @@ export function createJournalRuntime(navigate, options = {}) {
         [
           {
             opacity: 0.15,
-            transform: 'perspective(1300px) translateY(30px) rotateX(-5deg) scale(.97)',
+            transform: 'perspective(1300px) translateY(1.5rem) rotateX(-4deg) scale(.97)',
           },
           { opacity: 1, transform: 'perspective(1300px) translateY(0) rotateX(0deg) scale(1)' },
         ],
-        { duration: motionTiming.dialog }
+        { id: 'dialog', duration: motionTiming.dialog }
       )
     },
     layout: layoutMotion.layout,
+    preview: reader.preview,
+    stopPreview: reader.stopPreview,
   }
   runtime.mount = mount
   runtime.getMotion = () => motion
@@ -207,6 +272,8 @@ export function createJournalRuntime(navigate, options = {}) {
     observer.disconnect()
     contentObserver.disconnect()
     viewport.dispose()
+    selection.dispose()
+    reader.dispose()
     pendingRoots.clear()
     frames.forEach(cancelAnimationFrame)
     animations.forEach((animation) => animation.cancel())

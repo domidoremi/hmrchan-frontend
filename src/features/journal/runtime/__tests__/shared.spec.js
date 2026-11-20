@@ -101,6 +101,48 @@ describe('dialog refresh and navigation', () => {
     expect(document.activeElement.dataset.realGalleryStep).toBe('1')
     expect(runtime.SpatialMotion.dialog).toHaveBeenCalledTimes(1)
   })
+
+  it('unlocks and restores focus without waiting for a native close notification', () => {
+    document.querySelector('#outside').focus()
+    runtime.UI.openDialog(content('Details'), 'detail-dialog', { key: 'post:one' })
+    dialog.close = () => {
+      dialog.open = false
+    }
+    runtime.UI.closeDialog()
+    expect(document.body.classList.contains('app-dialog-open')).toBe(false)
+    expect(document.activeElement.id).toBe('outside')
+    const other = document.createElement('button')
+    document.body.append(other)
+    other.focus()
+    dialog.dispatchEvent(new Event('close'))
+    expect(document.activeElement).toBe(other)
+  })
+
+  it('keeps the scroll lock until animated closing finishes and ignores a late close after reopening', () => {
+    let complete
+    runtime.Atelier.closeDialog.mockImplementation((element, _immediate, onClosed) => {
+      complete = () => {
+        element.open = false
+        onClosed()
+      }
+      return true
+    })
+    document.querySelector('#outside').focus()
+    runtime.UI.openDialog(content('First'), '', { key: 'post:one' })
+    runtime.UI.closeDialog()
+    expect(dialog.open).toBe(true)
+    expect(document.body.classList.contains('app-dialog-open')).toBe(true)
+    complete()
+    expect(dialog.open).toBe(false)
+    expect(document.body.classList.contains('app-dialog-open')).toBe(false)
+    expect(document.activeElement.id).toBe('outside')
+    runtime.UI.openDialog(content('Second'), '', { key: 'post:two' })
+    const focused = document.activeElement
+    dialog.dispatchEvent(new Event('close'))
+    expect(dialog.open).toBe(true)
+    expect(document.body.classList.contains('app-dialog-open')).toBe(true)
+    expect(document.activeElement).toBe(focused)
+  })
 })
 
 describe('dialog keyboard boundaries', () => {

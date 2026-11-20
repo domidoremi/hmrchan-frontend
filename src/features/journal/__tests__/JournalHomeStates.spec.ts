@@ -8,6 +8,7 @@ import type { JournalResourceStates } from '../resourceState'
 import type { JournalPost } from '../models'
 
 vi.mock('@/utils/modernAPIs', () => ({
+  createResizeObserver: () => null,
   createVisibilityObserver: () => ({ observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }),
 }))
 const props = (states: JournalResourceStates) => ({
@@ -46,12 +47,10 @@ describe.each([
     expect(wrapper.text()).not.toMatch(/暂无|0 条动态/)
     expect(wrapper.text()).toContain('正在加载日程')
     expect(wrapper.text()).toContain('正在加载讨论')
+    expect(wrapper.find('.journal-browse-state[data-state="empty"]').exists()).toBe(false)
     expect(
-      wrapper
-        .findAll('.archive-summary strong')
-        .map((node) => node.text())
-        .every((text) => text === '—')
-    ).toBe(true)
+      wrapper.findAll('.next-collection-heading .meta-count').map((node) => node.text())
+    ).toEqual(component === ArchiveHome ? ['—'] : [])
     wrapper.unmount()
   })
   it('shows independent errors, loading, and genuine empty results', async () => {
@@ -59,7 +58,12 @@ describe.each([
       props: props({ posts: 'ready', events: 'loading', discussions: 'error' }),
       global,
     })
-    expect(wrapper.text()).toContain('暂无动态')
+    expect(
+      wrapper.findAll('.journal-browse-state').map((node) => node.attributes('data-state'))
+    ).toEqual(component === ArchiveHome ? ['empty'] : [])
+    expect(wrapper.text()).toContain(
+      component === ArchiveHome ? global.plugins[0]!.global.t('common.noResults') : '暂无动态'
+    )
     expect(wrapper.text()).toContain('正在加载日程')
     expect(wrapper.text()).toContain('讨论暂时无法加载')
     expect(wrapper.text()).not.toContain('暂无讨论')

@@ -87,7 +87,6 @@
           </div>
           <span class="settings-label">{{ $t('settings.appearancePreset') }}</span>
         </div>
-        <p class="settings-group-lead">{{ $t('settings.appearanceLead') }}</p>
         <AppearancePresetPicker />
       </div>
 

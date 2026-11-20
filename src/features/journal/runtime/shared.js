@@ -217,6 +217,7 @@ export function installUI(runtime, environment) {
     if (!wasOpen) el.showModal()
     if (toastElement?.classList.contains('visible')) el.append(toastElement)
     if (refreshing) {
+      runtime.Atelier?.refreshDialog?.(el)
       const target =
         focused?.isConnected && el.contains(focused)
           ? focused
@@ -271,10 +272,21 @@ export function installUI(runtime, environment) {
     if (!el.open) return
     document.dispatchEvent(new Event('dialogwillchange'))
     runtime.Experience?.clearBook?.()
+    if (toastElement) document.body.append(toastElement)
+    if (runtime.Atelier?.closeDialog(el, immediate === true, finishDialogClose)) return
+    el.close()
+    finishDialogClose()
+  }
+  function finishDialogClose() {
+    const el = document.querySelector('#app-dialog')
+    if (disposed || el.open) return
     document.body.classList.remove('app-dialog-open')
     if (toastElement) document.body.append(toastElement)
-    if (runtime.Atelier?.closeDialog(el, immediate === true)) return
-    el.close()
+    dialogTrail = []
+    dialogView = null
+    const focus = outsideFocus
+    outsideFocus = null
+    if (focus?.isConnected) focus.focus({ preventScroll: true })
   }
   function read(key, fallback) {
     try {
@@ -300,15 +312,7 @@ export function installUI(runtime, environment) {
   })
   const dialog = document.querySelector('#app-dialog')
   listen(dialog, 'keydown', (event) => trapDialogTab(dialog, event))
-  listen(document.querySelector('#app-dialog'), 'close', () => {
-    const el = document.querySelector('#app-dialog')
-    if (el.open) return
-    document.body.classList.remove('app-dialog-open')
-    if (toastElement) document.body.append(toastElement)
-    dialogTrail = []
-    dialogView = null
-    if (outsideFocus?.isConnected) outsideFocus.focus({ preventScroll: true })
-  })
+  listen(document.querySelector('#app-dialog'), 'close', finishDialogClose)
   listen(document.querySelector('#app-dialog'), 'click', (event) => {
     const box = event.currentTarget.getBoundingClientRect()
     if (

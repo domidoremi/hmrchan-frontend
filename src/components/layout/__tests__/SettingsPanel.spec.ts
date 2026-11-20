@@ -23,7 +23,6 @@ vi.mock('pinia', async () => {
 
 const panelMocks = vi.hoisted(() => ({
   setLocale: vi.fn(),
-  applyAppearancePreset: vi.fn(),
   resetPreferences: vi.fn(),
   replacePreferences: vi.fn(),
   resetVideoSettings: vi.fn(),
@@ -89,13 +88,9 @@ vi.mock('@/config/appearance', () => ({
   getAppearancePresetSpecs: () => [
     {
       preset: 'minimal-editorial',
-      gallerySummary: 'Editorial quiet.',
-      surfaceStyle: 'Paper panels.',
     },
     {
-      preset: 'material-calm',
-      gallerySummary: 'Structured tonal surfaces.',
-      surfaceStyle: 'Tonal containers.',
+      preset: 'fluent-soft',
     },
   ],
 }))
@@ -112,10 +107,6 @@ vi.mock('@/composables/useVideoSettings', () => ({
   useVideoSettings: () => ({
     resetSettings: panelMocks.resetVideoSettings,
   }),
-}))
-
-vi.mock('@/services/appearanceLoader', () => ({
-  applyAppearancePreset: panelMocks.applyAppearancePreset,
 }))
 
 import SettingsPanel from '../SettingsPanel.vue'
@@ -191,8 +182,6 @@ describe('SettingsPanel', () => {
   beforeEach(() => {
     panelMocks.setLocale.mockReset()
     panelMocks.setLocale.mockResolvedValue(undefined)
-    panelMocks.applyAppearancePreset.mockReset()
-    panelMocks.applyAppearancePreset.mockResolvedValue(true)
     panelMocks.resetPreferences.mockReset()
     panelMocks.resetPreferences.mockResolvedValue(undefined)
     panelMocks.replacePreferences.mockReset()
@@ -340,23 +329,16 @@ describe('SettingsPanel', () => {
     expect(panelMocks.toastSuccess).toHaveBeenCalledWith('settings.videoSettingsReset')
   })
 
-  it('applies appearance preset and reports runtime failure', async () => {
+  it('applies an appearance preset directly', async () => {
     const wrapper = createWrapper({
       embedded: true,
       allowedCategories: ['appearance'],
     })
 
-    await findButtonByText(wrapper, 'settings.presets.material-calm').trigger('click')
+    await findButtonByText(wrapper, 'settings.presets.fluent-soft').trigger('click')
     await flushPromises()
 
-    expect(panelMocks.applyAppearancePreset).toHaveBeenCalledWith('material-calm', 'dark')
-    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('material-calm')
-
-    panelMocks.applyAppearancePreset.mockResolvedValueOnce(false)
-    await findButtonByText(wrapper, 'settings.presets.material-calm').trigger('click')
-    await flushPromises()
-
-    expect(panelMocks.toastError).toHaveBeenCalledWith('settings.appearanceRuntimeFailed')
+    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('fluent-soft')
   })
 
   it('removes deprecated style and visual runtime controls', () => {
@@ -365,7 +347,7 @@ describe('SettingsPanel', () => {
       allowedCategories: ['appearance', 'experience'],
     })
 
-    expect(wrapper.text()).toContain('settings.appearanceLead')
+    expect(wrapper.text()).not.toContain('settings.appearanceLead')
     expect(wrapper.text()).not.toContain('settings.openStyleGallery')
     expect(wrapper.text()).not.toContain('settings.density')
     expect(wrapper.text()).not.toContain('settings.contrast')

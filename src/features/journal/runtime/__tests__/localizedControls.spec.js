@@ -65,6 +65,29 @@ afterEach(() => {
 })
 
 describe('runtime language callbacks', () => {
+  it('focuses the available Next search field when its keyboard shortcut is used', () => {
+    document.querySelector('#main-content').innerHTML =
+      '<form class="next-searchbar"><input type="search"></form>'
+    const input = document.querySelector('.next-searchbar input')
+    input.scrollIntoView = vi.fn()
+    const search = vi.fn()
+    document.addEventListener('journalsearch', search)
+    document.querySelector('#outside').focus()
+    const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, cancelable: true })
+    document.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(input)
+    expect(input.scrollIntoView).toHaveBeenCalledOnce()
+    expect(search).not.toHaveBeenCalled()
+    document.removeEventListener('journalsearch', search)
+  })
+  it('keeps global search available when no inline Next field is present', () => {
+    const search = vi.fn()
+    document.addEventListener('journalsearch', search)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'K', metaKey: true }))
+    expect(search).toHaveBeenCalledOnce()
+    document.removeEventListener('journalsearch', search)
+  })
   it('refreshes a return label without replacing fields, changing focus, or reopening the dialog', () => {
     const search = {
       key: 'search',

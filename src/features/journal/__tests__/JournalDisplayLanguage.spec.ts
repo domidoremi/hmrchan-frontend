@@ -10,6 +10,14 @@ vi.mock('@/i18n', () => ({ setLocale: mocks.setLocale }))
 vi.mock('@/stores', async () => {
   const { defineStore } = await import('pinia')
   return {
+    useSettingsStore: defineStore('journal-language-settings', {
+      state: () => ({ appearancePreset: 'minimal-editorial' }),
+      actions: {
+        setAppearancePreset(value: string) {
+          this.appearancePreset = value
+        },
+      },
+    }),
     useThemeStore: defineStore('journal-language-theme', {
       state: () => ({ theme: 'dark' }),
       actions: {

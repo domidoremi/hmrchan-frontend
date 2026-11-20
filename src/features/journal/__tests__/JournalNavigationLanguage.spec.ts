@@ -90,7 +90,7 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
         global: { plugins: [router, i18n, pinia], stubs: { JournalIcon: true } },
       })
       wrappers.push(wrapper)
-      const selector = edition === 'archive' ? '.archive-sidebar nav' : '.desktop-navigation'
+      const selector = '.desktop-navigation'
       const links = wrapper.findAll(`${selector} a`)
       expect(links.map((link) => link.attributes('href'))).toEqual([
         '/',
@@ -114,7 +114,8 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
       expect(mocks.refresh).toHaveBeenCalledOnce()
       const translate = mocks.createRuntime.mock.calls[0]![1].translate as (key: string) => string
       expect(translate('common.search')).toBe(i18n.global.t('common.search'))
-      expect(wrapper.find('.sidebar-bottom').exists()).toBe(edition === 'archive')
+      expect(wrapper.find('.archive-sidebar').exists()).toBe(false)
+      expect(wrapper.find('.motion-switch').exists()).toBe(false)
       expect(wrapper.text()).toContain(
         edition === 'archive' ? '作者原姓名' : i18n.global.t('journal.nav.my')
       )
@@ -128,7 +129,7 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
     }
   )
 
-  it('keeps display settings accessible and motion controls out of navigation when the language changes', async () => {
+  it('keeps an open menu and the settings entry while language changes', async () => {
     mocks.edition = edition
     const router = await routerAt('/')
     const i18n = createJournalTestI18n('en')
@@ -138,15 +139,15 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
     })
     wrappers.push(wrapper)
     await wrapper.get('.mobile-menu-button').trigger('click')
-    const menu = wrapper.get('.mobile-directory').element
     expect(wrapper.find('.motion-switch').exists()).toBe(false)
-    const settings = wrapper.get('.appearance-trigger')
-    expect(settings.attributes('aria-label')).toBe(i18n.global.t('journal.appearance.title'))
+    const menu = wrapper.get('.mobile-directory').element
     i18n.global.locale.value = 'ja'
     await nextTick()
     expect(wrapper.get('.mobile-directory').element).toBe(menu)
     expect(wrapper.get('.mobile-menu-button').attributes('aria-expanded')).toBe('true')
-    expect(settings.attributes('aria-label')).toBe(i18n.global.t('journal.appearance.title'))
+    expect(wrapper.get('.appearance-trigger').attributes('aria-label')).toBe(
+      i18n.global.t('journal.appearance.title')
+    )
     expect(mocks.setMotion).not.toHaveBeenCalled()
     expect(router.currentRoute.value.path).toBe('/')
   })

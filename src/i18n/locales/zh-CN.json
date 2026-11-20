@@ -400,14 +400,10 @@
     "preferencesReplaced": "云端偏好设置已覆盖",
     "appearanceRuntimeFailed": "无法加载该预设，当前预设保持不变。",
     "presets": {
-      "minimal-editorial": "花信简章",
-      "fluent-soft": "轻柔相册",
-      "material-calm": "舞台手册",
-      "organic-natural": "森系来信",
-      "biophilic-serene": "晴日庭院",
-      "clay-playful": "甜点小屋",
-      "sketch-doodle": "应援手帐",
-      "gradient-narrative": "夜色巡演"
+      "minimal-editorial": "纸页",
+      "fluent-soft": "玻璃",
+      "organic-natural": "自然",
+      "gradient-narrative": "光谱"
     },
     "preferencesLoadFailed": "偏好同步失败",
     "preferencesSaveFailed": "偏好保存失败",
@@ -1666,20 +1662,25 @@
       "saved": "已收藏"
     },
     "appearance": {
-      "archiveEdition": "资料库",
+      "archiveEdition": "Next",
       "colorMode": "明暗",
       "currentSite": "当前站点",
-      "journalEdition": "杂志",
+      "journalEdition": "主站",
       "languageChanging": "正在切换语言…",
       "languageHint": "选择界面语言。投稿内容保持原文。",
       "languageUnavailable": "所选语言暂时无法加载，当前使用{language}。",
       "motion": "动效",
-      "motionFull": "动效全开",
-      "motionReduced": "动效简化",
+      "motionFull": "完整动效",
+      "motionReduced": "减少动态",
       "sites": "站点",
       "thisDevice": "此设备",
       "title": "显示设置",
-      "visit": "前往"
+      "visit": "前往",
+      "textSize": "文字大小",
+      "textStandard": "标准",
+      "textLarge": "大字号",
+      "reset": "恢复显示默认",
+      "done": "完成"
     },
     "browse": {
       "adjustSearch": "调整搜索",
@@ -1854,6 +1855,15 @@
       "region": "影像横卷",
       "progress": "影像浏览进度",
       "position": "第 {index} 张，共 {total} 张"
+    },
+    "next": {
+      "featured": "推荐内容",
+      "intro": "动态、图片、演出。\n在这里，接着看。",
+      "browse": "浏览内容",
+      "view": "浏览方式",
+      "gallery": "图片浏览",
+      "index": "资料索引",
+      "indexDensity": "资料索引密度"
     }
   }
 }

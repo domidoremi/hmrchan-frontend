@@ -2,6 +2,8 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive, ref, shallowRef, type AsyncComponentLoader, type Ref } from 'vue'
 import JournalPage from '../JournalPage.vue'
+import ArchiveHome from '../editions/ArchiveHome.vue'
+import EditorialHome from '../editions/EditorialHome.vue'
 import { journalKey } from '../context'
 import { journalDialogsKey } from '../useJournalDialogs'
 import { journalEventsKey } from '../useJournalEvents'
@@ -43,7 +45,8 @@ vi.mock('@/config/designEdition', () => ({
     return mocks.edition
   },
 }))
-vi.mock('vue-router', () => ({
+vi.mock('vue-router', async () => ({
+  ...(await vi.importActual<typeof import('vue-router')>('vue-router')),
   useRoute: () => mocks.route,
   useRouter: () => mocks.router,
 }))
@@ -53,6 +56,7 @@ vi.mock('@/stores', () => ({
 }))
 vi.mock('@/services/authSurface', () => ({ ensureAuthStoreLoaded: vi.fn() }))
 vi.mock('@/utils/modernAPIs', () => ({
+  createResizeObserver: () => null,
   createVisibilityObserver: () => ({
     observe: vi.fn(),
     unobserve: vi.fn(),
@@ -73,12 +77,6 @@ vi.mock('../useJournalDiscussion', () => ({
 }))
 vi.mock('../useJournalOperationScope', () => ({
   useJournalOperationScope: () => ({ capture: () => () => true }),
-}))
-vi.mock('../editions/EditorialHome.vue', () => ({
-  default: { name: 'UnrelatedEditorialHome', render: () => null },
-}))
-vi.mock('../editions/ArchiveHome.vue', () => ({
-  default: { name: 'UnrelatedArchiveHome', render: () => null },
 }))
 vi.mock('../asyncView', async () => {
   const { defineAsyncComponent } = await import('vue')
@@ -155,6 +153,7 @@ function finishRequest(data: ControlledData, state: 'ready' | 'error') {
 async function renderPage(edition: Edition, path: string, data: ControlledData) {
   mocks.edition = edition
   mocks.route.path = path
+  if (edition === 'archive' && path !== '/') mocks.route.query['view'] = 'list'
   mocks.data = data
   const i18n = createJournalTestI18n('en')
   const wrapper = mount(JournalPage, {
@@ -166,13 +165,27 @@ async function renderPage(edition: Edition, path: string, data: ControlledData) 
         [journalDialogsKey as symbol]: { remember: vi.fn(), openPost: vi.fn() },
         [journalEventsKey as symbol]: { remember: vi.fn() },
       },
-      stubs: { JournalIcon: true, JournalImage: true },
+      stubs: {
+        JournalIcon: true,
+        JournalImage: true,
+        RouterLink: { template: '<a><slot /></a>' },
+      },
     },
   })
   wrappers.push(wrapper)
   await vi.waitFor(() => {
     expect(
-      wrapper.find(edition === 'archive' ? '.archive-browse' : '.editorial-browse').exists()
+      wrapper
+        .find(
+          path === '/'
+            ? edition === 'archive'
+              ? '.archive-home'
+              : '.editorial-home'
+            : edition === 'archive'
+              ? '.archive-browse'
+              : '.editorial-browse'
+        )
+        .exists()
     ).toBe(true)
   })
   await flushPromises()
@@ -186,11 +199,11 @@ function expectCount(
   count: number | null
 ) {
   const element = wrapper.get(
-    edition === 'archive' ? '.archive-page-title .meta-count' : '.editorial-page-heading h1 em'
+    edition === 'archive' ? '.next-collection-heading .meta-count' : '.editorial-page-heading h1 em'
   )
   const expected =
     edition === 'archive'
-      ? i18n.global.t('journal.browse.count', { count: count ?? '—' })
+      ? String(count ?? '—')
       : count === null
         ? '—'
         : String(count).padStart(2, '0')
@@ -237,6 +250,66 @@ afterEach(() => {
 })
 
 describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (edition) => {
+  it('sorts home records by popularity while retaining the recommendation collection', async () => {
+    mocks.router.replace.mockImplementation((location: { query: Record<string, string> }) => {
+      mocks.route.query = location.query
+      return Promise.resolve()
+    })
+    const data = controlledData()
+    data.posts.value = [
+      { ...post('first'), likes: 20 },
+      { ...post('second'), likes: 300 },
+      { ...post('third'), likes: 80 },
+    ]
+    finishRequest(data, 'ready')
+    const { wrapper } = await renderPage(edition, '/', data)
+    const grid = edition === 'archive' ? '.archive-result-list' : '.home-reading-grid'
+    const sort =
+      edition === 'archive' ? '.next-filter-selects select' : '.editorial-source-bar select'
+    const original = wrapper.findAll(`${grid} > [data-post]`).map((item) => item.element)
+    mocks.router.replace.mockClear()
+    await wrapper.get(sort).setValue('popular')
+    await flushPromises()
+    expect(mocks.router.replace).toHaveBeenCalledTimes(1)
+    expect(mocks.router.replace).toHaveBeenCalledWith({
+      path: '/',
+      query: { sort: 'popular' },
+    })
+    expect(mocks.route.query['sort']).toBe('popular')
+    expect(
+      wrapper.findAll(`${grid} > [data-post]`).map((item) => item.attributes('data-post'))
+    ).toEqual(['second', 'third', 'first'])
+    expect(wrapper.findAll(`${grid} > [data-post]`).map((item) => item.element)).toEqual([
+      original[1],
+      original[2],
+      original[0],
+    ])
+    expect(
+      wrapper.getComponent(edition === 'archive' ? ArchiveHome : EditorialHome).props('allPosts')
+    ).toEqual(data.posts.value)
+  })
+  it.runIf(edition === 'archive')(
+    'keeps an explicit gallery URL and returns to the default index',
+    async () => {
+      mocks.router.replace.mockImplementation((location: { query: Record<string, string> }) => {
+        mocks.route.query = location.query
+        return Promise.resolve()
+      })
+      const data = controlledData()
+      finishRequest(data, 'ready')
+      const { wrapper } = await renderPage(edition, '/', data)
+      const modes = wrapper.findAll('.next-view-toggle button')
+      expect(wrapper.find('.next-index-browser').exists()).toBe(true)
+      await modes[0]!.trigger('click')
+      await flushPromises()
+      expect(mocks.route.query['view']).toBe('grid')
+      expect(wrapper.find('.next-gallery').exists()).toBe(true)
+      await modes[1]!.trigger('click')
+      await flushPromises()
+      expect(mocks.route.query['view']).toBeUndefined()
+      expect(wrapper.find('.next-index-browser').exists()).toBe(true)
+    }
+  )
   it.each(routes)('passes %s idle/loading/error before confirming empty', async (path, page) => {
     const data = controlledData()
     const { wrapper, i18n } = await renderPage(edition, path, data)
@@ -400,6 +473,7 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
         return request.promise
       })
       const { wrapper, i18n } = await renderPage(edition, path, data)
+      const originalQuery = { ...mocks.route.query }
       expectCount(wrapper, edition, i18n, 0)
       expect(wrapper.get('.journal-browse-state').attributes('data-state')).toBe('error')
       expect(wrapper.text()).not.toContain(i18n.global.t('journal.states.noFavorites'))
@@ -414,7 +488,7 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
       request.complete()
       await flushPromises()
       expect(wrapper.get('.browse-state-copy h2').text()).toBe(i18n.global.t('common.noResults'))
-      expect(mocks.route.query).toEqual({ platform: 'x' })
+      expect(mocks.route.query).toEqual(originalQuery)
     }
   )
 })

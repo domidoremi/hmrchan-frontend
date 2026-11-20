@@ -19,7 +19,7 @@ describe('Settings Store', () => {
   it('applies backend preferences without overwriting local-only settings', () => {
     const store = useSettingsStore()
 
-    store.setAppearancePreset('material-calm')
+    store.setAppearancePreset('fluent-soft')
     store.setAppUpdateStrategy('aggressive-idle-refresh')
 
     store.applyPreferences({
@@ -37,7 +37,7 @@ describe('Settings Store', () => {
     expect(store.settings.cookieConsent).toBe(true)
     expect(store.settings.analyticsEnabled).toBe(true)
     expect(store.settings.performanceCookiesEnabled).toBe(true)
-    expect(store.settings.appearancePreset).toBe('material-calm')
+    expect(store.settings.appearancePreset).toBe('fluent-soft')
     expect(store.settings.appUpdateStrategy).toBe('aggressive-idle-refresh')
   })
 
@@ -177,15 +177,15 @@ describe('Settings Store', () => {
   it('keeps appearance preset as the only runtime appearance state', () => {
     const store = useSettingsStore()
 
-    store.setAppearancePreset('material-calm')
-    expect(store.settings.appearancePreset).toBe('material-calm')
+    store.setAppearancePreset('fluent-soft')
+    expect(store.settings.appearancePreset).toBe('fluent-soft')
 
     store.setAppearancePreset('gradient-narrative')
     expect(store.settings.appearancePreset).toBe('gradient-narrative')
     expect('uiStyle' in store.settings).toBe(false)
   })
 
-  it('migrates legacy material uiStyle snapshots to material-calm on hydration', async () => {
+  it('migrates legacy material uiStyle snapshots to fluent-soft on hydration', async () => {
     const store = useSettingsStore()
     const legacySnapshot = store.settings as typeof store.settings & {
       uiStyle?: 'ios' | 'material'
@@ -196,7 +196,7 @@ describe('Settings Store', () => {
     legacySnapshot.appearancePreset = undefined
     await nextTick()
 
-    expect(store.settings.appearancePreset).toBe('material-calm')
+    expect(store.settings.appearancePreset).toBe('fluent-soft')
     expect('uiStyle' in store.settings).toBe(false)
   })
 

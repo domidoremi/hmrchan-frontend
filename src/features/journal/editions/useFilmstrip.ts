@@ -1,5 +1,6 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { createResizeObserver, createVisibilityObserver } from '@/utils/modernAPIs'
+import { createWheelRegion } from './wheelRegion'
 import type { JournalPost } from '../models'
 
 export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
@@ -13,6 +14,8 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     visibility: IntersectionObserver | null = null,
     visible = false,
     suppressUntil = 0
+  let wheelHandler: ((event: WheelEvent) => void) | undefined
+  let wheelEnd: ReturnType<typeof setTimeout> | undefined
   let pointer: { id: number; x: number; y: number; left: number } | undefined
   const cards = () => [...(track.value?.querySelectorAll<HTMLElement>('.film-frame') || [])]
   const behavior = (): ScrollBehavior =>
@@ -26,7 +29,6 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     const left = element.scrollLeft
     const max = element.scrollWidth - width
     canScroll.value = max > 2
-    if (!visible) return
     progress.value = max > 0 ? Math.min(1, Math.max(0, left / max)) : 0
     let closest = Infinity
     const positions = cards().map((card) => ({
@@ -34,8 +36,13 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
       offset: (card.offsetLeft + card.offsetWidth / 2 - left - width / 2) / width,
     }))
     positions.forEach(({ card, offset }, i) => {
-      card.style.setProperty('--film-offset', String(Math.max(-1.5, Math.min(1.5, offset))))
-      card.style.setProperty('--film-distance', String(Math.min(1, Math.abs(offset))))
+      if (visible && document.body.dataset['motion'] === 'full') {
+        card.style.setProperty('--film-offset', String(Math.max(-1.5, Math.min(1.5, offset))))
+        card.style.setProperty('--film-distance', String(Math.min(1, Math.abs(offset))))
+      } else {
+        card.style.removeProperty('--film-offset')
+        card.style.removeProperty('--film-distance')
+      }
       if (Math.abs(offset) < closest) {
         closest = Math.abs(offset)
         index.value = i
@@ -43,6 +50,11 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     })
   }
   function schedule() {
+    if (document.body.dataset['motion'] !== 'full') {
+      cancelAnimationFrame(frame)
+      measure()
+      return
+    }
     if (!frame) frame = requestAnimationFrame(measure)
   }
   function go(next: number, focus = false) {
@@ -51,30 +63,27 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     const i = Math.max(0, Math.min(items.length - 1, next)),
       card = items[i]
     if (!element || !card) return
-    if (focus) card.focus({ preventScroll: true })
+    if (focus) card.querySelector<HTMLButtonElement>('.film-photo')?.focus({ preventScroll: true })
     element.scrollTo({
       left: card.offsetLeft - (element.clientWidth - card.offsetWidth) / 2,
       behavior: behavior(),
     })
+    schedule()
   }
   function step(direction: number) {
     go(index.value + direction)
   }
-  function pan(pixels: number) {
-    const element = track.value
-    if (!element || dragging.value) return
-    element.scrollLeft += pixels
-    measure()
-  }
   function scrub(event: Event) {
     const element = track.value
-    if (element)
+    if (element) {
       element.scrollTo({
         left:
           (Number((event.target as HTMLInputElement).value) / 1000) *
           (element.scrollWidth - element.clientWidth),
         behavior: 'instant',
       })
+      schedule()
+    }
   }
   function keydown(event: KeyboardEvent) {
     if (
@@ -162,21 +171,43 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
       { rootMargin: '300px 0px' }
     )
     if (track.value) {
+      const element = track.value
+      wheelHandler = createWheelRegion({
+        element,
+        position: () => element.scrollLeft,
+        maximum: () => element.scrollWidth - element.clientWidth,
+        enabled: () => !dragging.value,
+        move: (left) => {
+          element.classList.add('is-wheel-scrolling')
+          element.scrollTo({ left, behavior: 'instant' })
+          schedule()
+          clearTimeout(wheelEnd)
+          wheelEnd = setTimeout(() => {
+            element.classList.remove('is-wheel-scrolling')
+            measure()
+          }, 160)
+        },
+      })
+      element.addEventListener('wheel', wheelHandler, { passive: false })
       resize?.observe(track.value)
       visibility.observe(track.value)
     }
+    document.addEventListener('journalmotionchange', schedule)
+    schedule()
   })
   onBeforeUnmount(() => {
     cancelAnimationFrame(frame)
+    clearTimeout(wheelEnd)
+    if (wheelHandler) track.value?.removeEventListener('wheel', wheelHandler)
     resize?.disconnect()
     visibility?.disconnect()
+    document.removeEventListener('journalmotionchange', schedule)
   })
   function setTrack(element: unknown) {
     track.value = element instanceof HTMLElement ? element : undefined
   }
   return {
     setTrack,
-    pan,
     index,
     progress,
     canScroll,

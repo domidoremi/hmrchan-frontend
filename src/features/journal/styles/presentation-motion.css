@@ -141,9 +141,12 @@
 }
 .site-body[data-motion='reduced'] .journal-shell *,
 .site-body[data-motion='reduced'] .journal-shell *::before,
-.site-body[data-motion='reduced'] .journal-shell *::after {
+.site-body[data-motion='reduced'] .journal-shell *::after,
+.site-body[data-motion='reduced'] #app-dialog,
+.site-body[data-motion='reduced'] #app-dialog *,
+.site-body[data-motion='reduced'] #app-dialog::backdrop {
   animation: none !important;
-  transition-duration: 0s !important;
+  transition: none !important;
   scroll-behavior: auto !important;
 }
 .site-body[data-motion='reduced'] [data-tilt] {
@@ -191,16 +194,18 @@
     transform: translateY(0);
   }
 }
-.site-body[data-motion='full'] .journal-shell .film-frame {
-  transform: perspective(1200px)
-    translateY(calc(var(--scroll-depth, 0) * -20px + var(--film-distance, 0) * 24px))
+.site-body[data-motion='full'] .journal-shell .film-photo {
+  transform: perspective(75rem)
+    translateY(calc(var(--scroll-depth, 0) * -1.25rem + var(--film-distance, 0) * 1.5rem))
     rotateY(calc(var(--film-offset, 0) * -16deg)) rotate(-2deg)
     scale(calc(1 - var(--film-distance, 0) * 0.06));
   transition: transform 0.18s linear;
 }
-.site-body[data-motion='full'] .journal-shell .film-frame:nth-child(even) {
-  transform: perspective(1200px)
-    translateY(calc(10px + var(--scroll-depth, 0) * 14px + var(--film-distance, 0) * 24px))
+.site-body[data-motion='full'] .journal-shell .film-frame:nth-child(even) .film-photo {
+  transform: perspective(75rem)
+    translateY(
+      calc(0.625rem + var(--scroll-depth, 0) * 0.875rem + var(--film-distance, 0) * 1.5rem)
+    )
     rotateY(calc(var(--film-offset, 0) * -16deg)) rotate(2deg)
     scale(calc(1 - var(--film-distance, 0) * 0.06));
 }
@@ -217,4 +222,127 @@
 }
 .site-body[data-motion='full'] .journal-shell .preview-spatial {
   animation-fill-mode: backwards;
+}
+.site-body[data-motion='full'] .journal-shell .motion-letter {
+  animation: journal-letter-arrive 650ms var(--journal-ease) backwards;
+  animation-delay: calc(var(--letter-index, 0) * 25ms);
+}
+.site-body[data-motion='full'] .journal-shell .journal-masthead > strong {
+  animation: journal-masthead-arrive 1100ms cubic-bezier(0.16, 0.8, 0.23, 1) backwards;
+}
+.site-body[data-motion='full'] .journal-shell .next-stage:not(.has-entered) .motion-letter {
+  animation: none;
+}
+.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-planes {
+  animation: next-scene-arrive 1450ms cubic-bezier(0.16, 0.8, 0.23, 1) backwards;
+}
+.site-body[data-motion='full'] .journal-shell .next-stage-photo {
+  transition:
+    transform 1100ms cubic-bezier(0.16, 0.8, 0.23, 1),
+    opacity 800ms,
+    box-shadow 600ms;
+}
+.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-copy > .eyebrow,
+.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-entry {
+  animation: next-copy-arrive 900ms var(--journal-ease) 180ms backwards;
+}
+.site-body[data-motion='full'] .journal-shell .next-desk-mark .motion-letter {
+  animation-duration: 1100ms;
+  animation-delay: calc(120ms + var(--letter-index) * 80ms);
+}
+.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-orbit {
+  animation: next-orbit-arrive 1600ms var(--journal-ease) backwards;
+}
+.site-body .next-satellite-enter-active,
+.site-body .next-satellite-leave-active {
+  transition:
+    opacity 350ms,
+    translate 650ms var(--journal-ease),
+    scale 650ms var(--journal-ease);
+}
+.site-body .next-satellite-enter-from {
+  opacity: 0;
+  translate: -1.5rem 1.25rem;
+  scale: 0.9;
+}
+.site-body .next-satellite-leave-to {
+  opacity: 0;
+  translate: 1.5rem -1rem;
+  scale: 0.94;
+}
+.site-body .next-satellite-leave-active,
+.site-body .cover-copy-leave-active {
+  pointer-events: none;
+}
+.site-body[data-motion='full'] .journal-shell .next-gallery-caption {
+  transition: translate 500ms var(--journal-ease);
+}
+.site-body[data-motion='full'] .journal-shell .next-gallery-media:hover .next-gallery-caption {
+  translate: 0 -0.3rem;
+}
+.site-body[data-motion='reduced']
+  .journal-shell
+  :is(.cover-deck, .next-stage-planes, .next-stage-satellite) {
+  translate: 0 0;
+}
+.site-body[data-motion='reduced'] .journal-shell .button:hover {
+  transform: none;
+}
+.site-body[data-motion='reduced'] .journal-shell .next-stage-satellite:hover {
+  transform: translateZ(2rem) rotate(-9deg);
+}
+.site-body[data-motion='reduced'] .journal-shell .next-gallery-media:hover .journal-image img {
+  transform: none;
+}
+@keyframes journal-letter-arrive {
+  from {
+    opacity: 0;
+    translate: 0 0.65em;
+    rotate: 5deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes journal-masthead-arrive {
+  from {
+    clip-path: inset(0 100% 0 0);
+    translate: 0 1rem;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    translate: 0 0;
+  }
+}
+@keyframes next-scene-arrive {
+  from {
+    opacity: 0;
+    transform: perspective(100rem) translateY(3rem) rotateY(-20deg) rotateX(8deg) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(100rem) translateY(0) rotateY(0) rotateX(0) scale(1);
+  }
+}
+@keyframes next-copy-arrive {
+  from {
+    opacity: 0;
+    translate: 0 1.5rem;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes next-orbit-arrive {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
 }

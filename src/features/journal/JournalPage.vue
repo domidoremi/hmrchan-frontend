@@ -19,10 +19,13 @@
       :platform="platform"
       :sort="sort"
       :month="month"
+      v-bind="designEdition === 'archive' ? { query, layout, hasMore, retry: retryBrowse } : {}"
+      v-on="designEdition === 'archive' ? { change, reset: resetFilters } : {}"
       @save="save"
       @open="dialogs.openPost($event)"
       @platform="change('platform', $event)"
       @sort="change('sort', $event)"
+      @more="load(true)"
       @retry="load()"
     />
     <JournalBrowse
@@ -178,9 +181,12 @@ const param = (key: string, fallback = '') =>
 const query = computed(() => param('q')),
   platform = computed(() => param('platform', 'all')),
   sort = computed(() => param('sort', 'latest'))
+const defaultLayout = computed(() =>
+  designEdition === 'archive' && page.value === 'home' ? 'list' : 'grid'
+)
 const contentType = computed(() => param('type', '全部')),
   layout = computed(() =>
-    ['grid', 'list', 'wall'].includes(param('view')) ? param('view') : 'grid'
+    ['grid', 'list', 'wall'].includes(param('view')) ? param('view') : defaultLayout.value
   )
 const visiblePosts = computed(() => {
   const values = posts.value.filter(
@@ -251,7 +257,13 @@ watch(
 )
 function change(key: string, value: string) {
   const next: LocationQueryRaw = { ...route.query }
-  if (!value || ['all', 'latest', 'grid', '全部', 'week'].includes(value)) delete next[key]
+  if (
+    !value ||
+    (key === 'view'
+      ? value === defaultLayout.value
+      : ['all', 'latest', '全部', 'week'].includes(value))
+  )
+    delete next[key]
   else next[key] = value
   if (key === 'month') delete next['day']
   void router.replace({ path: route.path, query: next })
@@ -350,7 +362,7 @@ function handleClick(event: MouseEvent) {
       : null
   if (!target) return
   const data = target.dataset
-  if (data['open'] && isUuidV7String(data['open'])) {
+  if (data['open'] && (fixture.value || isUuidV7String(data['open']))) {
     const post = posts.value.find((item) => item.id === data['open'])
     if (post) void dialogs.openPost(post)
   }

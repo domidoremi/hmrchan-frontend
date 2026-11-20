@@ -85,7 +85,7 @@ function retireVisualRuntimeSettings(target: SettingsHydrationSnapshot): void {
 }
 
 function resolvePresetFromLegacyUiStyle(style: LegacyUiStyleSnapshot): AppearancePreset {
-  return style === 'material' ? 'material-calm' : DEFAULT_APPEARANCE_PRESET
+  return style === 'material' ? 'fluent-soft' : DEFAULT_APPEARANCE_PRESET
 }
 
 function normalizeAppearanceSettings(target: SettingsHydrationSnapshot): void {

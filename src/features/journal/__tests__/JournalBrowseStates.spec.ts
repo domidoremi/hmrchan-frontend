@@ -99,7 +99,7 @@ describe.each([
   it.each(['loading', 'error'] as const)(
     'keeps a known zero-match count during pagination %s',
     (state) => {
-      const { wrapper, i18n } = mountBrowse(component, {
+      const { wrapper } = mountBrowse(component, {
         state,
         posts: [],
         allPosts: [post('first')],
@@ -108,9 +108,7 @@ describe.each([
         edition === 'archive' ? '.meta-count' : '.editorial-page-heading h1 em'
       )
       expect(count.text()).not.toContain('—')
-      expect(count.text()).toBe(
-        edition === 'archive' ? i18n.global.t('journal.browse.count', { count: 0 }) : '00'
-      )
+      expect(count.text()).toBe(edition === 'archive' ? '0' : '00')
       expect(wrapper.get('.journal-browse-state').attributes('data-state')).toBe(state)
       expect(wrapper.find('.journal-browse-state[data-state="empty"]').exists()).toBe(false)
     }

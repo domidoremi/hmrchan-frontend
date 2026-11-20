@@ -1,218 +1,52 @@
 <template>
-  <div :ref="setRoot" @keydown="keydown" class="archive-page archive-home">
-    <div class="archive-page-title" data-reveal>
-      <div>
-        <h1>{{ t('journal.nav.overview') }}<span class="title-dot">.</span></h1>
-      </div>
-      <span class="archive-date">{{ date }}</span><RouterLink
-        class="button button-outline"
-        to="/explore"
-        >{{ t('journal.nav.records') }} <JournalIcon name="arrow-up-right"
-      /></RouterLink>
-    </div>
-    <div class="archive-summary" data-reveal>
-      <div>
-        <JournalIcon name="file" /><span
-          >{{ t('journal.home.currentPosts')
-          }}<strong
-            :aria-label="states.posts !== 'ready' ? t('journal.browse.countUnknown') : undefined"
-            >{{ states.posts === 'ready' ? posts.length : '—' }}</strong
-          ></span
-        >
-      </div>
-      <div>
-        <JournalIcon name="compass" /><span
-          >{{ t('journal.filters.source')
-          }}<strong
-            :aria-label="
-              states.posts !== 'ready' ? t('journal.home.sourcesCountUnknown') : undefined
-            "
-            >{{ states.posts === 'ready' ? sources.length : '—' }}</strong
-          ></span
-        >
-      </div>
-      <div>
-        <JournalIcon name="calendar" /><span
-          >{{ t('journal.home.monthEvents', { month: monthName })
-          }}<strong
-            :aria-label="
-              states.events !== 'ready' ? t('journal.home.eventsCountUnknown') : undefined
-            "
-            >{{ states.events === 'ready' ? events.length : '—' }}</strong
-          ></span
-        >
-      </div>
-      <div>
-        <JournalIcon name="messages" /><span
-          >{{ t('community.recentDiscussions')
-          }}<strong
-            :aria-label="
-              states.discussions !== 'ready' ? t('journal.home.discussionsCountUnknown') : undefined
-            "
-            >{{ states.discussions === 'ready' ? discussions.length : '—' }}</strong
-          ></span
-        >
-      </div>
-    </div>
-    <section class="archive-command" data-reveal>
-      <div>
-        <span class="command-marker">⌕</span>
-        <h2>{{ t('journal.browse.index') }}</h2>
-        <span
-          class="meta-count"
-          :aria-label="states.posts !== 'ready' ? t('journal.browse.countUnknown') : undefined"
-          >{{ states.posts === 'ready' ? posts.length : '—' }}</span
-        >
-      </div>
-      <button data-action="search">
-        <JournalIcon name="search" /><span>{{ t('journal.search.inputLabel') }}</span
-        ><kbd>⌘ K</kbd></button
-      ><RouterLink to="/explore" class="text-button"
-        >{{ t('common.all') }} <JournalIcon name="arrow"
-      /></RouterLink>
-    </section>
-    <ArchiveNavigationHint
-      class="sr-only"
-      :index="index"
-      :total="posts.length"
+  <div class="archive-page archive-home next-home">
+    <header class="next-desk-header">
+      <h1 class="next-desk-mark" aria-label="MomiChan Next">
+        <MotionTitle text="next" /><span aria-hidden="true">↗</span>
+      </h1>
+      <form class="next-searchbar" role="search" @submit.prevent="commitSearch">
+        <JournalIcon name="search" />
+        <input
+          ref="searchInput"
+          v-model="search"
+          type="search"
+          :placeholder="t('journal.search.inputLabel')"
+          :aria-label="t('journal.search.inputLabel')"
+          @input="scheduleSearch"
+        />
+        <button type="submit" class="icon-button" :aria-label="t('common.search')">
+          <JournalIcon name="arrow" />
+        </button>
+        <kbd aria-hidden="true">Ctrl K</kbd>
+      </form>
+    </header>
+    <NextCollection
+      id="next-collection"
+      :posts="posts"
+      :all-posts="allPosts"
+      :saved-posts="savedPosts"
+      :platform="platform"
+      :sort="sort"
+      :query="query"
+      :layout="layout"
+      :has-more="hasMore"
       :state="states.posts"
-      :preview-id="previewId"
-      :title="selected?.title"
+      v-bind="retry ? { retry } : {}"
+      @change="change"
+      @reset="resetFilters"
+      @retry="$emit('retry')"
+      @more="$emit('more')"
+      @adjust="searchInput?.focus()"
+      @explore="router.push('/explore')"
+      @open="$emit('open', $event)"
+      @save="(post, event) => $emit('save', post, event)"
     />
-    <ScrollRegion
-      kind="index"
-      :count="posts.length"
-      :position="index / Math.max(1, posts.length - 1)"
-      @step="followStep"
-    >
-      <div class="archive-observatory">
-        <section class="archive-stream" data-reveal>
-          <div class="stream-tabs">
-            <button :class="{ active: platform === 'all' }" @click="$emit('platform', 'all')">
-              {{ t('journal.home.allSources') }}</button><button
-              v-for="source in sources"
-              :key="source.key"
-              :class="{ active: platform === source.key }"
-              @click="$emit('platform', source.key)"
-            >
-              {{ journalSourceLabel(source.key, source.label, t) }}
-            </button>
-          </div>
-          <div
-            ref="stream"
-            class="stream-content"
-            data-scroll-content
-            :aria-busy="states.posts === 'loading'"
-          >
-            <div
-              v-if="states.posts === 'loading' && !posts.length"
-              class="archive-loading-list"
-              aria-hidden="true"
-            >
-              <div v-for="row in 4" :key="row">
-                <i /><span><i /><i /></span>
-              </div>
-            </div>
-            <div v-for="group in groups" :key="group.key" class="timeline-group">
-              <div class="timeline-label">
-                <span>{{ group.label }}</span><i />
-              </div>
-              <button
-                v-for="post in group.items"
-                :key="post.id"
-                class="stream-row"
-                :class="{ selected: selectedId === post.id }"
-                :aria-pressed="selectedId === post.id"
-                :data-select-post="post.id"
-                :aria-controls="previewId"
-                :aria-describedby="`${previewId}-hint`"
-                @click="select(post.id)"
-                :tabindex="selectedId === post.id ? 0 : -1"
-              >
-                <span class="stream-dot" /><JournalImage
-                  v-if="post.image"
-                  :src="post.image"
-                  :original-src="post.originalImage"
-                  alt=""
-                  width="48"
-                  height="60"
-                  loading="lazy"
-                /><JournalIcon v-else name="file" /><span class="stream-row-copy"
-                  ><b>{{ post.title }}</b
-                  ><small
-                    >{{ post.author }}<i>·</i
-                    >{{
-                      journalSourceLabel(
-                        post.platform,
-                        platforms[post.platform] || post.platform,
-                        t
-                      )
-                    }}</small
-                  ></span
-                ><JournalIcon name="arrow-up-right" />
-              </button>
-            </div>
-            <JournalResourceState
-              :state="states.posts"
-              label="动态"
-              label-key="journal.nav.posts"
-              :empty="!posts.length"
-              empty-message="暂无动态"
-              empty-message-key="journal.states.noPosts"
-              @retry="$emit('retry')"
-            />
-          </div>
-          <RouterLink to="/explore" class="stream-more"
-            >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow"
-          /></RouterLink>
-        </section>
-        <aside
-          :id="previewId"
-          :ref="setPreview"
-          :aria-label="t('journal.selection.current')"
-          class="observatory-preview"
-          data-reveal
-        >
-          <div class="preview-label">
-            <span
-              >{{
-                states.posts === 'ready'
-                  ? String(posts.length ? index + 1 : 0).padStart(2, '0')
-                  : '—'
-              }}
-              / {{ states.posts === 'ready' ? String(posts.length).padStart(2, '0') : '—' }}</span
-            >
-          </div>
-          <ArchivePreview
-            :post="selected"
-            :state="states.posts"
-            :saved="Boolean(selected && savedPosts.has(selected.id))"
-            spatial
-            scroll-scene
-            data-scroll-content
-            @save="(item, event) => $emit('save', item, event)"
-          />
-          <div class="preview-steppers">
-            <button
-              class="icon-button"
-              :aria-label="t('journal.selection.previous')"
-              :disabled="posts.length < 2"
-              @click="step(-1)"
-            >
-              <JournalIcon name="arrow-left" /></button
-            ><span>{{ selected?.author }}</span
-            ><button
-              class="icon-button"
-              :aria-label="t('journal.selection.next')"
-              :disabled="posts.length < 2"
-              @click="step(1)"
-            >
-              <JournalIcon name="arrow" />
-            </button>
-          </div>
-        </aside>
-      </div>
-    </ScrollRegion>
+    <div class="next-collection-footer">
+      <RouterLink class="next-all-posts text-button" to="/explore">
+        {{ t('journal.home.allPosts') }}<JournalIcon name="arrow-up-right" />
+      </RouterLink>
+    </div>
+    <NextStage v-if="!query.trim() && allPosts.length" :posts="allPosts" />
     <div class="archive-bottom-grid">
       <section class="archive-panel" data-reveal>
         <div class="panel-heading">
@@ -292,96 +126,100 @@
         />
       </section>
     </div>
-    <ArchiveSelectionDock
-      :post="selected"
-      :index="index"
-      :total="posts.length"
-      :visible="!previewVisible"
-      @step="step"
-      @preview="showPreview"
-    />
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { RouterLink, useRouter } from 'vue-router'
 import { journalEventTimeLabel } from '../localizedEventTime'
-import { journalCategoryLabel, journalSourceLabel } from '../controlLabels'
-import { RouterLink } from 'vue-router'
+import { journalCategoryLabel } from '../controlLabels'
+import { useBrowseFilterFocus } from '../useBrowseFilterFocus'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
+import NextStage from './NextStage.vue'
+import MotionTitle from './MotionTitle.vue'
+import NextCollection from './NextCollection.vue'
 import type { JournalResourceStates } from '../resourceState'
+import type { JournalPost, JournalEvent, JournalDiscussion } from '../models'
 import '../styles/home-loading.css'
-import JournalImage from '../JournalImage.vue'
-import ArchivePreview from './ArchivePreview.vue'
-import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
-import ScrollRegion from './ScrollRegion.vue'
-import { useArchiveNavigation } from './useArchiveNavigation'
-import ArchiveNavigationHint from './ArchiveNavigationHint.vue'
-import { sourceGroups, timelineGroups } from '../presentation'
-import { platforms, type JournalPost, type JournalEvent, type JournalDiscussion } from '../models'
-const props = defineProps<{
-  states: JournalResourceStates
-  posts: JournalPost[]
-  allPosts: JournalPost[]
-  events: JournalEvent[]
-  discussions: JournalDiscussion[]
-  savedPosts: Set<string>
-  reminders: Set<string>
-  platform: string
-  sort: string
-  month: string
-}>()
-const { locale, t } = useI18n({ useScope: 'global' })
+
+const props = withDefaults(
+  defineProps<{
+    states: JournalResourceStates
+    posts: JournalPost[]
+    allPosts: JournalPost[]
+    events: JournalEvent[]
+    discussions: JournalDiscussion[]
+    savedPosts: Set<string>
+    reminders: Set<string>
+    platform: string
+    sort: string
+    month: string
+    query?: string
+    layout?: string
+    hasMore?: boolean
+    retry?: () => Promise<void>
+  }>(),
+  { query: '', layout: 'list', hasMore: false }
+)
 const emit = defineEmits<{
   retry: []
   open: [post: JournalPost]
   save: [post: JournalPost, event: MouseEvent]
   platform: [value: string]
   sort: [value: string]
+  change: [key: string, value: string]
+  reset: []
+  more: []
 }>()
-const groups = computed(() => timelineGroups(props.posts, locale.value, t('journal.nav.posts')))
-const orderedPosts = computed(() => groups.value.flatMap((group) => group.items))
-const {
-  selected,
-  selectedId,
-  previewId,
-  index,
-  step,
-  setRoot,
-  setPreview,
-  previewVisible,
-  select,
-  keydown,
-  showPreview,
-} = useArchiveNavigation(orderedPosts, (post) => emit('open', post))
-const sources = computed(() => sourceGroups(props.allPosts))
-const stream = ref<HTMLElement>()
-function followStep(direction: number) {
-  const list = stream.value
-  if (!list) return
-  const rows = list.querySelectorAll<HTMLElement>('[data-select-post]')
-  const row = rows[Math.min(rows.length - 1, Math.max(0, index.value + direction))]
-  const id = row?.dataset['selectPost']
-  if (!row || !id || selectedId.value === id) return
-  select(id)
-  const offset = row.getBoundingClientRect().top - list.getBoundingClientRect().top
-  list.scrollTo({
-    top: list.scrollTop + offset - (list.clientHeight - row.offsetHeight) / 2,
-    behavior: 'instant',
-  })
-}
-const today = new Date()
-const date = computed(() =>
-  new Intl.DateTimeFormat(locale.value, {
-    timeZone: 'Asia/Taipei',
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  })
-    .format(today)
-    .toUpperCase()
+const { locale, t } = useI18n({ useScope: 'global' })
+const router = useRouter()
+const search = ref(props.query),
+  searchInput = ref<HTMLInputElement>()
+const rememberFilterFocus = useBrowseFilterFocus(
+  () => [props.query, props.platform, props.sort],
+  searchInput
 )
+let timer: ReturnType<typeof setTimeout> | undefined
+function commitSearch() {
+  clearTimeout(timer)
+  if (search.value.trim() !== props.query) emit('change', 'q', search.value.trim())
+}
+function scheduleSearch() {
+  clearTimeout(timer)
+  timer = setTimeout(commitSearch, 300)
+}
+function change(key: string, value: string, event?: MouseEvent) {
+  if (event) rememberFilterFocus(event)
+  if (key === 'platform') emit('platform', value)
+  else if (key === 'sort') emit('sort', value)
+  else emit('change', key, value)
+}
+function resetFilters(event?: MouseEvent) {
+  if (event) rememberFilterFocus(event)
+  emit('reset')
+}
+watch(
+  () => props.query,
+  async (value, previous, onCleanup) => {
+    let current = true
+    onCleanup(() => {
+      current = false
+    })
+    clearTimeout(timer)
+    search.value = value
+    if (Boolean(value.trim()) === Boolean(previous.trim())) return
+    await nextTick()
+    if (current && document.activeElement === searchInput.value)
+      searchInput.value?.scrollIntoView({
+        block: 'center',
+        inline: 'nearest',
+        behavior: 'instant',
+      })
+  }
+)
+onBeforeUnmount(() => clearTimeout(timer))
 const monthName = computed(() =>
   new Intl.DateTimeFormat(locale.value, { month: 'long', timeZone: 'Asia/Taipei' }).format(
     new Date(props.month + '-01T04:00:00Z')

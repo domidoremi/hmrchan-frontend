@@ -400,14 +400,10 @@
     "preferencesReplaced": "Cloud preferences replaced",
     "appearanceRuntimeFailed": "Couldn't load that preset. The current preset remains active.",
     "presets": {
-      "minimal-editorial": "Blossom Letter",
-      "fluent-soft": "Soft Album",
-      "material-calm": "Stage Notebook",
-      "organic-natural": "Forest Letter",
-      "biophilic-serene": "Sunny Garden",
-      "clay-playful": "Sweet Cottage",
-      "sketch-doodle": "Support Scrapbook",
-      "gradient-narrative": "Night Tour"
+      "minimal-editorial": "Paper",
+      "fluent-soft": "Glass",
+      "organic-natural": "Nature",
+      "gradient-narrative": "Spectrum"
     },
     "preferencesLoadFailed": "Preference sync failed",
     "preferencesSaveFailed": "Preference save failed",
@@ -1666,10 +1662,10 @@
       "saved": "Saved"
     },
     "appearance": {
-      "archiveEdition": "Archive",
+      "archiveEdition": "Next",
       "colorMode": "Color mode",
       "currentSite": "Current site",
-      "journalEdition": "Journal",
+      "journalEdition": "Main site",
       "languageChanging": "Changing language…",
       "languageHint": "Choose the interface language. Posts stay in their original language.",
       "languageUnavailable": "That language couldn't be loaded. {language} is active.",
@@ -1679,7 +1675,12 @@
       "sites": "Sites",
       "thisDevice": "This device",
       "title": "Display settings",
-      "visit": "Visit"
+      "visit": "Visit",
+      "textSize": "Text size",
+      "textStandard": "Standard",
+      "textLarge": "Large",
+      "reset": "Reset display",
+      "done": "Done"
     },
     "browse": {
       "adjustSearch": "Adjust search",
@@ -1854,6 +1855,15 @@
       "region": "Photograph strip",
       "progress": "Photograph progress",
       "position": "Photograph {index} of {total}"
+    },
+    "next": {
+      "featured": "Featured posts",
+      "intro": "Posts, photos, and performances.\nKeep up with them here.",
+      "browse": "Browse posts",
+      "view": "Browse view",
+      "gallery": "Gallery",
+      "index": "Index",
+      "indexDensity": "Index density"
     }
   }
 }

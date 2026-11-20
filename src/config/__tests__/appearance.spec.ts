@@ -4,49 +4,30 @@ import {
   getAppearancePresetSpec,
   getAppearancePresetSpecs,
   normalizeAppearancePreset,
-  presetUsesEnhancer,
   resolveSceneRole,
 } from '../appearance'
 
 describe('appearance config', () => {
   it('normalizes invalid preset values', () => {
-    expect(normalizeAppearancePreset('material-calm')).toBe('material-calm')
+    expect(normalizeAppearancePreset('fluent-soft')).toBe('fluent-soft')
     expect(normalizeAppearancePreset('unknown-preset')).toBe(DEFAULT_APPEARANCE_PRESET)
   })
 
-  it('marks enhancer-backed presets', () => {
-    expect(presetUsesEnhancer('clay-playful')).toBe(true)
-    expect(presetUsesEnhancer('minimal-editorial')).toBe(false)
-  })
-
-  it('exposes preset design specs for the runtime presets only', () => {
+  it('migrates every retired preset without exposing extra theme options', () => {
+    expect(normalizeAppearancePreset('material-calm')).toBe('fluent-soft')
+    expect(normalizeAppearancePreset('clay-playful')).toBe('fluent-soft')
+    expect(normalizeAppearancePreset('biophilic-serene')).toBe('organic-natural')
+    expect(normalizeAppearancePreset('sketch-doodle')).toBe('minimal-editorial')
+    expect(normalizeAppearancePreset('__proto__')).toBe(DEFAULT_APPEARANCE_PRESET)
+    expect(normalizeAppearancePreset('constructor')).toBe(DEFAULT_APPEARANCE_PRESET)
     const specs = getAppearancePresetSpecs()
-
-    expect(specs).toHaveLength(8)
     expect(specs.map((spec) => spec.preset)).toEqual([
       'minimal-editorial',
       'fluent-soft',
-      'material-calm',
       'organic-natural',
-      'biophilic-serene',
-      'clay-playful',
-      'sketch-doodle',
       'gradient-narrative',
     ])
-
-    expect(getAppearancePresetSpec('gradient-narrative')).toMatchObject({
-      sourceDoc: 'docs/en/appearance-presets.md',
-      family: 'rounded',
-      enhancer: 'gradient',
-      galleryTitle: 'Night Tour',
-    })
-
-    expect(getAppearancePresetSpec('fluent-soft').influences).toEqual([
-      'docs/en/appearance-presets.md',
-    ])
-    expect(getAppearancePresetSpec('organic-natural').influences).toEqual([
-      'docs/en/appearance-presets.md',
-    ])
+    expect(getAppearancePresetSpec('gradient-narrative').galleryTitle).toBe('Spectrum')
   })
 
   it('resolves scene roles from routes', () => {

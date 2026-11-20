@@ -1,65 +1,34 @@
 <template>
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <a class="skip-link" href="#main-content" tabindex="0">{{ t('common.skipToContent') }}</a>
-    <aside v-if="isNext && !isAuthRoute" class="archive-sidebar">
-      <RouterLink class="archive-logo" to="/" tabindex="0"
-        ><span class="brand-mark">m.</span><span>MomiChan<small>ARCHIVE</small></span
-        ><span class="sr-only"> {{ t('nav.home') }}</span></RouterLink
-      >
-      <button class="sidebar-search" data-action="search" aria-keyshortcuts="Control+K Meta+K">
-        <JournalIcon name="search" /><span>{{ t('common.search') }}</span
-        ><kbd>⌘ K</kbd>
-      </button>
-      <nav :aria-label="t('common.primaryNavigation')">
-        <RouterLink
-          tabindex="0"
-          v-for="item in navigation"
-          :key="item.path"
-          :to="item.path"
-          :class="{ active: pageName === item.key }"
-          :aria-current="pageName === item.key ? 'page' : undefined"
-        >
-          <JournalIcon :name="item.icon" /><span>{{ t(item.archiveKey) }}</span
-          ><span class="nav-index">{{ item.index }}</span>
-        </RouterLink>
-      </nav>
-      <div class="sidebar-bottom">
-        <RouterLink to="/profile" tabindex="0"
-          ><JournalIcon name="users" />{{
-            auth.isAuthenticated
-              ? auth.user?.username || t('journal.nav.myAccount')
-              : t('journal.nav.loginOrRegister')
-          }}<JournalIcon name="arrow-up-right"
-        /></RouterLink>
-        <a href="https://momichan.com" tabindex="0"
-          >{{ t('journal.nav.goToJournal') }} <JournalIcon name="arrow"
-        /></a>
-      </div>
-    </aside>
     <div class="edition-workspace">
       <header class="edition-header">
-        <template v-if="!isNext">
-          <RouterLink class="editorial-logo" to="/" tabindex="0"
-            >MomiChan<span>JOURNAL</span></RouterLink
+        <RouterLink
+          class="edition-logo"
+          to="/"
+          tabindex="0"
+          :aria-label="`MomiChan${isNext ? ' Next' : ''}`"
+        >
+          <span v-if="isNext" class="next-brand-mark" aria-hidden="true">n↗</span>
+          <img v-else :src="'/journal/mascot.webp'" alt="" width="40" height="40" />
+          <span class="edition-brand-name">MomiChan<small v-if="isNext">NEXT</small></span>
+        </RouterLink>
+        <nav
+          v-if="!isAuthRoute"
+          class="desktop-navigation"
+          data-indicator
+          :aria-label="t('common.primaryNavigation')"
+        >
+          <RouterLink
+            tabindex="0"
+            v-for="item in navigation"
+            :key="item.path"
+            :to="item.path"
+            :class="{ active: pageName === item.key }"
+            :aria-current="pageName === item.key ? 'page' : undefined"
+            >{{ t(isNext ? item.archiveKey : item.mainKey) }}</RouterLink
           >
-          <nav class="desktop-navigation" :aria-label="t('common.primaryNavigation')">
-            <RouterLink
-              tabindex="0"
-              v-for="item in navigation"
-              :key="item.path"
-              :to="item.path"
-              :class="{ active: pageName === item.key }"
-              :aria-current="pageName === item.key ? 'page' : undefined"
-              >{{ t(item.mainKey) }}<sup>{{ item.index }}</sup></RouterLink
-            >
-          </nav>
-        </template>
-        <template v-else>
-          <RouterLink class="mobile-archive-logo" to="/" tabindex="0">m.</RouterLink>
-          <div class="workspace-location">
-            <span>MOMICHAN</span><i>/</i><b>{{ locationLabel }}</b>
-          </div>
-        </template>
+        </nav>
         <div class="header-actions">
           <button
             class="icon-button appearance-trigger"
@@ -84,7 +53,9 @@
             to="/profile"
             :aria-label="t(auth.isAuthenticated ? 'journal.nav.my' : 'nav.login')"
             ><JournalIcon name="users" /><span>{{
-              t(auth.isAuthenticated ? 'journal.nav.my' : 'nav.login')
+              isNext && auth.isAuthenticated
+                ? auth.user?.username || t('journal.nav.my')
+                : t(auth.isAuthenticated ? 'journal.nav.my' : 'nav.login')
             }}</span></RouterLink
           >
           <button
@@ -122,6 +93,11 @@
             /></RouterLink>
           </nav>
           <div class="directory-footer">
+            <RouterLink to="/profile" @click="menuOpen = false"
+              ><JournalIcon name="users" />{{
+                t(auth.isAuthenticated ? 'journal.nav.myAccount' : 'journal.nav.loginOrRegister')
+              }}</RouterLink
+            >
             <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
               >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }} ↗</a
             >
@@ -143,7 +119,7 @@
         </div>
         <div class="footer-bottom">
           <span>MOMICHAN · {{ new Date().getFullYear() }}</span
-          ><span>{{ isNext ? 'ARCHIVE' : 'JOURNAL' }}</span
+          ><span>{{ isNext ? 'NEXT' : 'JOURNAL' }}</span
           ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
             >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }}
             <JournalIcon name="arrow-up-right" /></a
@@ -153,6 +129,23 @@
         </div>
       </footer>
     </div>
+    <nav
+      v-if="!isAuthRoute"
+      class="mobile-navigation"
+      data-indicator
+      :aria-label="t('journal.nav.mobileNavigation')"
+    >
+      <RouterLink
+        v-for="item in navigation"
+        :key="item.path"
+        :to="item.path"
+        :class="{ active: pageName === item.key }"
+        :aria-current="pageName === item.key ? 'page' : undefined"
+        ><JournalIcon :name="item.icon" /><span>{{
+          t(isNext ? item.archiveKey : item.mainKey)
+        }}</span></RouterLink
+      >
+    </nav>
     <JournalAppearanceDialog v-if="appearanceOpen" @close="appearanceOpen = false" />
     <dialog id="app-dialog" aria-labelledby="dialog-title">
       <div class="dialog-head">
@@ -196,6 +189,7 @@ import { journalKey } from './context'
 import { useJournalDialogs } from './useJournalDialogs'
 import { useJournalEvents } from './useJournalEvents'
 import { useJournalDirectory } from './useJournalDirectory'
+import { installDisplayPreferences } from './displayPreferences'
 import JournalIcon from './JournalIcon.vue'
 import AccountNavigation from './AccountNavigation.vue'
 const JournalAppearanceDialog = defineAsyncComponent(() => import('./JournalAppearanceDialog.vue'))
@@ -211,11 +205,6 @@ const { locale, t } = useI18n({ useScope: 'global' })
 const isAccountPage = computed(
   () => route.path.startsWith('/profile') && route.path !== '/profile/favorites'
 )
-const locationLabel = computed(() => {
-  if (labels[pageName.value]) return t(labels[pageName.value]!)
-  const title = typeof route.meta.title === 'function' ? route.meta.title(route) : route.meta.title
-  return title ? t(String(title)) : 'MomiChan'
-})
 const authRoutes = new Set([
   'login',
   'register',
@@ -229,6 +218,7 @@ const authRoutes = new Set([
 const isAuthRoute = computed(() => authRoutes.has(String(route.name)))
 const runtime = shallowRef<JournalRuntime | null>(null)
 const appearanceOpen = ref(false)
+const displayLifetime = new AbortController()
 const { menuOpen, menuButton, directory } = useJournalDirectory()
 provide(journalKey, runtime)
 useJournalDialogs(runtime)
@@ -281,13 +271,6 @@ const pageName = computed(() =>
     : navigation.find((item) => item.path === route.path)?.key || 'other'
 )
 const isJournalPage = computed(() => pageName.value !== 'other')
-const labels: Record<string, string> = {
-  home: 'journal.nav.overview',
-  explore: 'journal.nav.records',
-  schedule: 'journal.nav.calendar',
-  community: 'journal.nav.discussions',
-  favorites: 'journal.nav.collection',
-}
 function openAppearance() {
   menuOpen.value = false
   appearanceOpen.value = true
@@ -300,6 +283,7 @@ onBeforeMount(() => {
   document.body.classList.add('site-body')
   document.body.classList.toggle('next-body', isNext)
   document.body.dataset['variant'] = isNext ? 'next' : 'main'
+  installDisplayPreferences(displayLifetime.signal)
   syncChrome()
 })
 onMounted(() => {
@@ -325,22 +309,18 @@ watch(
 onBeforeUnmount(() => {
   runtime.value?.dispose()
   feedback.dispose()
+  displayLifetime.abort()
   document.body.classList.remove('site-body', 'next-body', 'reading-large', 'journal-auth')
   delete document.body.dataset['variant']
   delete document.body.dataset['page']
   delete document.body.dataset['motion']
+  delete document.body.dataset['motionPreference']
+  delete document.body.dataset['textSize']
+  delete document.body.dataset['archiveDensity']
 })
 </script>
 
 <style scoped>
-.archive-sidebar nav a > span,
-.workspace-location b {
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-}
-.archive-sidebar nav .nav-index {
-  flex: none;
-}
 .desktop-navigation a {
   min-inline-size: 0;
   white-space: normal;
