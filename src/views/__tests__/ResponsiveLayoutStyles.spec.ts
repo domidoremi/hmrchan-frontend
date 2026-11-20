@@ -207,8 +207,11 @@ describe('responsive layout contracts', () => {
       'utf8'
     )
     expect(appShellSource).toContain('<JournalShell>')
-    expect(journalShellSource).toContain('v-if="isNext && !isAuthRoute"')
-    expect(journalShellSource).toContain('v-if="!isAuthRoute"')
+    for (const element of ['desktop-navigation', 'mobile-navigation', 'edition-footer']) {
+      expect(journalShellSource).toMatch(
+        new RegExp(`<[^>]+v-if="!isAuthRoute"[^>]+class="${element}"`)
+      )
+    }
     expect(journalShellSource).toContain("'passkey-recovery'")
     expect(journalShellSource).toContain("'passkey-recovery-detail'")
   })

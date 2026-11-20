@@ -1,6 +1,6 @@
 <template>
   <div class="editorial-home editorial-page immersive-home">
-    <HomeAtmosphere />
+    <HomeAtmosphere :posts="allPosts" />
     <EditorialContents :sections="contents" />
     <ImmersiveChapter id="issue-cover" kind="cover">
       <div class="journal-masthead" data-masthead>

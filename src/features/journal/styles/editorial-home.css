@@ -4,7 +4,7 @@
   inline-size: 100%;
   margin-inline: 0;
 }
-.site-body .journal-shell .editorial-page > :not(.editorial-film) {
+.site-body .journal-shell .editorial-page > :not(.editorial-film, .home-atmosphere) {
   margin-inline: var(--journal-inset);
 }
 .site-body .journal-shell .journal-masthead {
