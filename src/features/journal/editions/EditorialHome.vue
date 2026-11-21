@@ -190,10 +190,12 @@ import HomeAtmosphere from './HomeAtmosphere.vue'
 import MotionTitle from './MotionTitle.vue'
 import ImmersiveChapter from './ImmersiveChapter.vue'
 import HomeContentsMenu from './HomeContentsMenu.vue'
+import { useReadingMasonry } from './useReadingMasonry'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
 import type { JournalResourceStates } from '../resourceState'
 import '../styles/home-loading.css'
+import '../styles/home-reading-masonry.css'
 import EditorialFilm from './EditorialFilm.vue'
 import EditorialReadingAside from './EditorialReadingAside.vue'
 import JournalPostCard from '../JournalPostCard.vue'
@@ -228,6 +230,7 @@ const sources = computed(() => sourceGroups(props.allPosts)),
   pictures = computed(() => props.allPosts.filter((post) => post.image).slice(0, 10))
 const runtime = inject(journalKey, shallowRef(null))
 const readingGrid = ref<HTMLElement>()
+const { layout: layoutReadingGrid } = useReadingMasonry(readingGrid)
 watch(
   () => props.posts,
   async (_posts, _previous, onCleanup) => {
@@ -236,11 +239,15 @@ watch(
       current = false
     })
     const grid = readingGrid.value
-    if (!grid || !runtime.value) return
-    await runtime.value.SpatialMotion.layout(grid, async () => {
+    if (!grid) return
+    const update = async () => {
       await nextTick()
-      if (current) runtime.value?.mount(grid)
-    })
+      if (!current) return
+      layoutReadingGrid()
+      runtime.value?.mount(grid)
+    }
+    if (runtime.value) await runtime.value.SpatialMotion.layout(grid, update)
+    else await update()
   },
   { flush: 'pre' }
 )

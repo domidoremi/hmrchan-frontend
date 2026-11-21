@@ -1,0 +1,22 @@
+.site-body .journal-shell .immersive-home .home-reading-grid {
+  position: relative;
+}
+
+.site-body .journal-shell .immersive-home .home-reading-grid[data-masonry='true'] {
+  block-size: var(--masonry-height);
+}
+
+html[data-preset]
+  .site-body
+  .journal-shell
+  .immersive-home
+  .home-reading-grid[data-masonry='true']
+  > .post-card:nth-child(n) {
+  position: absolute;
+  box-sizing: border-box;
+  inset-block-start: var(--masonry-top);
+  inset-inline-start: var(--masonry-start);
+  inline-size: var(--masonry-width);
+  margin: 0;
+  content-visibility: visible;
+}
