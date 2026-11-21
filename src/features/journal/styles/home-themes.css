@@ -2,13 +2,7 @@
 html[data-preset='minimal-editorial'] .journal-shell .immersive-home {
   --composition-curve: 0.6rem;
   --composition-distance: 2rem;
-  --composition-duration: 18s;
-  --composition-orbit: 0;
-  --composition-light: 9%;
   --composition-paper: 96%;
-}
-html[data-preset='minimal-editorial'] .journal-shell .home-rule {
-  border-inline: 1px solid var(--composition-rule);
 }
 html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-home .spatial-cover {
   border: 0;
@@ -36,9 +30,6 @@ html[data-preset='minimal-editorial']
 html[data-preset='fluent-soft'] .journal-shell .immersive-home {
   --composition-curve: 2.5rem;
   --composition-distance: 4rem;
-  --composition-duration: 10s;
-  --composition-orbit: 0.12;
-  --composition-light: 18%;
   --composition-paper: 88%;
   --composition-gap: clamp(1.25rem, 2vw, 2rem);
 }
@@ -70,14 +61,8 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .immersive-home .edito
 html[data-preset='organic-natural'] .journal-shell .immersive-home {
   --composition-curve: 2.5rem 0.75rem 2.5rem 0.75rem;
   --composition-distance: 3rem;
-  --composition-duration: 20s;
-  --composition-light: 16%;
-  --composition-orbit: 0.15;
   --composition-paper: 94%;
   --composition-gap: clamp(1.5rem, 4vw, 4rem);
-}
-html[data-preset='organic-natural'] .journal-shell .home-orbit i {
-  border-radius: 32% 68% 64% 36% / 50% 44% 56% 50%;
 }
 html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .cover-controls {
   border: 0;
@@ -101,17 +86,7 @@ html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .s
 html[data-preset='gradient-narrative'] .journal-shell .immersive-home {
   --composition-curve: 1.75rem;
   --composition-distance: 5rem;
-  --composition-duration: 12s;
-  --composition-light: 24%;
-  --composition-orbit: 0.34;
   --composition-paper: 92%;
-}
-html[data-preset='gradient-narrative'] .journal-shell .home-light i + i {
-  background: radial-gradient(
-    ellipse,
-    color-mix(in srgb, #4fa7b9 16%, transparent),
-    transparent 66%
-  );
 }
 html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home .cover-copy {
   border-inline-start: 2px solid var(--accent);

@@ -54,7 +54,7 @@ body.site-body #main-content.journal-legacy {
 body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
   font-size: clamp(36px, 5.2vw, 72px);
   line-height: 1.12;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 .site-body
@@ -524,7 +524,7 @@ body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
   font:
     400 clamp(100px, 20vw, 240px)/0.9 Georgia,
     serif;
-  letter-spacing: -0.08em;
+  letter-spacing: 0;
 }
 .site-body .journal-legacy .error-title {
   margin-top: 32px;
@@ -543,7 +543,7 @@ body.site-body.next-body .journal-legacy :is(.page-hero-shell__title, .sub-heade
   font-family: inherit;
   font-size: clamp(28px, 3vw, 40px);
   font-weight: 600;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 .site-body.next-body .journal-legacy :is(.page-hero-shell, .sub-header__content) {
   margin-bottom: 24px;

@@ -29,6 +29,7 @@ const global = {
     RouterLink: { template: '<a><slot /></a>' },
     JournalIcon: true,
     JournalImage: true,
+    HomeAtmosphere: true,
     SpatialCover: true,
     EditorialFilm: true,
     ArchiveSelectionDock: true,

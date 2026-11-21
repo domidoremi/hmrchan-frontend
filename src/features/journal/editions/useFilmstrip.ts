@@ -62,15 +62,6 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     }
     if (!frame) frame = requestAnimationFrame(measure)
   }
-  function scroll() {
-    const element = track.value
-    if (element && chapter?.enabled.value && visible) {
-      const maximum = Math.max(0, element.scrollWidth - element.clientWidth)
-      if (maximum && Math.abs(element.scrollLeft - chapter.progress.value * maximum) > 2)
-        chapter.seek(element.scrollLeft / maximum)
-    }
-    schedule()
-  }
   function resizeFilm() {
     viewport?.refresh()
     schedule()
@@ -254,7 +245,6 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     canScroll,
     dragging,
     schedule,
-    scroll,
     step,
     scrub,
     keydown,

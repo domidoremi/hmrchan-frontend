@@ -99,7 +99,7 @@
   background: radial-gradient(ellipse, rgb(var(--letterbook-accent-rgb) / 0.12), transparent 65%);
 }
 #app :where(.page-hero-shell__title, .hero-title) {
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
   font-weight: 400;
 }
 #app .page-hero-shell__title {
@@ -134,7 +134,7 @@
 #app .app-side-nav__brand::after {
   font-size: 1.6rem;
   font-weight: 500;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 #app .brand-pet-logo {
   border-radius: 2px;
@@ -177,7 +177,7 @@
   font-size: clamp(3.7rem, 7.7vw, 8rem);
   padding: 0 0 0.26em;
   line-height: 1.06;
-  letter-spacing: -0.07em;
+  letter-spacing: 0;
 }
 #app .home-fold .hero-subtitle {
   font-size: 0.95rem;

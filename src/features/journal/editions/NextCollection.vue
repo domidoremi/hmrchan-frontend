@@ -4,7 +4,7 @@
     class="next-collection"
     :class="{ 'is-index': view === 'list', compact }"
     tabindex="-1"
-    @keydown="keydown"
+    @keydown="browseByKey"
   >
     <header class="next-collection-heading">
       <div>
@@ -135,7 +135,7 @@
           :data-open="post.id"
           :data-select-post="post.id"
           :aria-label="post.title"
-          @focus="select(post.id)"
+          @focus="choosePost(post.id)"
         >
           <JournalImage
             v-if="post.image"
@@ -187,17 +187,18 @@
         />
         <div class="archive-result-list" :aria-busy="readState === 'loading'">
           <button
-            v-for="post in posts"
+            v-for="(post, postIndex) in posts"
             :key="post.id"
             class="archive-result-row"
             :class="{ selected: selectedId === post.id }"
             :data-post="post.id"
+            :data-index="postIndex"
             :data-select-post="post.id"
             :aria-pressed="selectedId === post.id"
             :aria-controls="previewId"
             :aria-describedby="`${previewId}-hint`"
             :tabindex="selectedId === post.id ? 0 : -1"
-            @click="select(post.id)"
+            @click="choosePost(post.id)"
           >
             <JournalImage
               v-if="post.image"
@@ -248,6 +249,7 @@
           spatial
           :post="selected"
           :state="readState"
+          :following-scroll="Boolean(selectedId && selectedId === scrollSelection)"
           :saved="Boolean(selected && savedPosts.has(selected.id))"
           @preview-enter="previewEnter"
           @save="(post, event) => $emit('save', post, event)"
@@ -421,17 +423,29 @@ const {
   computed(() => props.posts),
   (post) => emit('open', post)
 )
+const scrollSelection = ref<string>()
+function choosePost(id: string) {
+  scrollSelection.value = undefined
+  select(id)
+}
+function browseByKey(event: KeyboardEvent) {
+  if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) scrollSelection.value = undefined
+  void keydown(event)
+}
 useCollectionScroll(
   collection,
   index,
   () => props.posts.length,
-  (next) => {
+  (next, followingScroll) => {
     const post = props.posts[next]
-    if (post) select(post.id)
+    if (!post) return
+    scrollSelection.value = followingScroll ? post.id : undefined
+    select(post.id)
   }
 )
 function previewEnter(face: Element) {
   if (view.value !== 'list' || face.getAttribute('data-post') !== selectedId.value) return
+  if (selectedId.value && scrollSelection.value === selectedId.value) return
   const thumbnail = collection.value?.querySelector<HTMLImageElement>(
     '.archive-result-row.selected img'
   )

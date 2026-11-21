@@ -1,0 +1,257 @@
+.site-body .journal-shell .home-atmosphere {
+  --scene-wash: color-mix(in srgb, var(--accent) 12%, var(--canvas));
+  --scene-line: color-mix(in srgb, var(--ink) 23%, transparent);
+  --scene-light: color-mix(in srgb, var(--paper) 46%, transparent);
+  --scene-far-x: -4%;
+  --scene-far-y: -8%;
+  --scene-near-x: 5%;
+  --scene-near-y: -12%;
+  --scene-near-zoom: 1.06;
+  --scene-progress: 0;
+  view-timeline: --home-journey block;
+}
+
+.home-atmosphere-field {
+  contain: paint;
+}
+
+.atmosphere-far,
+.atmosphere-near,
+.atmosphere-light {
+  position: absolute;
+  pointer-events: none;
+}
+
+.atmosphere-far {
+  inset: -14%;
+  background: var(--scene-bed);
+}
+
+.atmosphere-near {
+  inset: -18% -12%;
+}
+
+.theme-scene-art {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.atmosphere-light {
+  inset: 3% 3% auto auto;
+  inline-size: min(46%, 34rem);
+  aspect-ratio: 1.4;
+  opacity: 0.64;
+  background: radial-gradient(ellipse, var(--scene-light), transparent 66%);
+}
+
+.home-atmosphere[data-scene='minimal-editorial'] {
+  --scene-bed:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(10% - 1px),
+      color-mix(in srgb, var(--scene-line) 38%, transparent) calc(10% - 1px) 10%
+    ),
+    linear-gradient(104deg, var(--scene-wash), var(--canvas) 40% 68%, var(--scene-wash));
+}
+
+.home-atmosphere[data-scene='fluent-soft'] {
+  --scene-glass-cyan: #65cdda;
+  --scene-glass-violet: #9d9ae5;
+  --scene-glass-rose: #f1b1c9;
+  --scene-glass-shine: #fff;
+  --scene-bed:
+    radial-gradient(
+      ellipse at 18% 24%,
+      color-mix(in srgb, var(--scene-glass-cyan) 40%, transparent),
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 85% 55%,
+      color-mix(in srgb, var(--scene-glass-violet) 32%, transparent),
+      transparent 55%
+    );
+  --scene-far-x: 9%;
+  --scene-far-y: -6%;
+  --scene-near-x: -9%;
+  --scene-near-y: -9%;
+  --scene-near-zoom: 1.12;
+}
+
+.home-atmosphere[data-scene='organic-natural'] {
+  --scene-leaf: color-mix(in srgb, var(--accent) 28%, var(--canvas));
+  --scene-bed:
+    radial-gradient(
+      ellipse at 80% 10%,
+      color-mix(in srgb, #a7843b 17%, transparent),
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 12% 66%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 52%
+    );
+  --scene-far-x: 5%;
+  --scene-far-y: 9%;
+  --scene-near-x: -6%;
+  --scene-near-y: -11%;
+  --scene-near-zoom: 1;
+  --scene-light: color-mix(in srgb, #d7b774 33%, transparent);
+}
+
+.home-atmosphere[data-scene='gradient-narrative'] {
+  --scene-spectrum-blue: #28b8d8;
+  --scene-spectrum-pink: #bd74ef;
+  --scene-line: color-mix(in srgb, var(--accent) 27%, transparent);
+  --scene-bed:
+    radial-gradient(
+      ellipse at 30% 49%,
+      color-mix(in srgb, var(--scene-spectrum-blue) 19%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse at 76% 48%,
+      color-mix(in srgb, var(--scene-spectrum-pink) 24%, transparent),
+      transparent 53%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 2.5rem,
+      var(--scene-line) 2.5rem calc(2.5rem + 1px)
+    );
+  --scene-light: color-mix(in srgb, var(--scene-spectrum-blue) 30%, transparent);
+  --scene-far-x: -6%;
+  --scene-far-y: 9%;
+  --scene-near-x: 6%;
+  --scene-near-y: -13%;
+  --scene-near-zoom: 1.15;
+}
+
+[data-color-mode='dark'] .home-atmosphere[data-scene='fluent-soft'] {
+  --scene-glass-cyan: #3389b5;
+  --scene-glass-violet: #5459a7;
+  --scene-glass-rose: #a768a0;
+  --scene-glass-shine: #b2e1f2;
+}
+
+.next-home .atmosphere-near {
+  scale: -1 1;
+}
+
+.site-body[data-motion='full'] [data-scene='minimal-editorial'] .atmosphere-light {
+  animation: atmosphere-proof 19s ease-in-out infinite alternate;
+}
+
+.site-body[data-motion='full'] [data-scene='organic-natural'] .atmosphere-light {
+  animation: atmosphere-garden 22s ease-in-out infinite alternate;
+}
+
+.site-body[data-motion='full'] [data-scene='fluent-soft'] .atmosphere-light {
+  inset: 35% 0 auto auto;
+  animation: atmosphere-current 11s ease-in-out infinite alternate;
+}
+
+.site-body[data-motion='full'] [data-scene='gradient-narrative'] .atmosphere-light {
+  inset: 50% auto auto 9%;
+  animation: atmosphere-scan 14s ease-in-out infinite alternate;
+}
+
+.site-body
+  :is(.home-atmosphere[data-scene-away], .journal-shell:has(dialog[open]))
+  .atmosphere-light {
+  animation-play-state: paused;
+}
+
+@supports (animation-timeline: view()) and (animation-range: contain) {
+  .site-body[data-motion='full'] .atmosphere-far {
+    animation: atmosphere-far-travel linear both;
+    animation-timeline: --home-journey;
+    animation-range: contain;
+  }
+  .site-body[data-motion='full'] .atmosphere-near {
+    animation: atmosphere-near-travel linear both;
+    animation-timeline: --home-journey;
+    animation-range: contain;
+  }
+}
+
+.site-body[data-motion='full'] [data-scene-fallback] .atmosphere-far {
+  transform: translate3d(
+    calc(var(--scene-far-x) * var(--scene-progress)),
+    calc(var(--scene-far-y) * var(--scene-progress)),
+    0
+  );
+}
+
+.site-body[data-motion='full'] [data-scene-fallback] .atmosphere-near {
+  transform: translate3d(
+      calc(var(--scene-near-x) * var(--scene-progress)),
+      calc(var(--scene-near-y) * var(--scene-progress)),
+      0
+    )
+    scale(calc(1 + (var(--scene-near-zoom) - 1) * var(--scene-progress)));
+}
+
+@keyframes atmosphere-far-travel {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(var(--scene-far-x), var(--scene-far-y), 0);
+  }
+}
+
+@keyframes atmosphere-near-travel {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(var(--scene-near-x), var(--scene-near-y), 0)
+      scale(var(--scene-near-zoom));
+  }
+}
+
+@keyframes atmosphere-proof {
+  from {
+    transform: translate3d(14%, 5%, 0) scaleX(0.82);
+    opacity: 0.33;
+  }
+  to {
+    transform: translate3d(-28%, 8%, 0) scaleX(1.12);
+    opacity: 0.72;
+  }
+}
+
+@keyframes atmosphere-garden {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.36;
+  }
+  to {
+    transform: translate3d(-44%, 34%, 0) scale(1.27);
+    opacity: 0.83;
+  }
+}
+
+@keyframes atmosphere-current {
+  from {
+    transform: translate3d(12%, -27%, 0) scaleX(1.1);
+    opacity: 0.46;
+  }
+  to {
+    transform: translate3d(-64%, 19%, 0) scaleX(1.25);
+    opacity: 0.86;
+  }
+}
+
+@keyframes atmosphere-scan {
+  from {
+    transform: translate3d(-20%, 12%, 0) scaleY(0.22);
+    opacity: 0.38;
+  }
+  to {
+    transform: translate3d(135%, -12%, 0) scaleY(0.36);
+    opacity: 0.83;
+  }
+}

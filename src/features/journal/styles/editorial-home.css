@@ -16,7 +16,7 @@
   justify-content: space-between;
   align-items: center;
   font: 500 clamp(3rem, 10.8vw, 10rem) / 1.04 var(--journal-display);
-  letter-spacing: -0.065em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .journal-masthead > strong > span {
   font:
@@ -63,7 +63,7 @@
 .site-body .journal-shell .cover-story h1 {
   font-family: var(--journal-display);
   font-weight: 550;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
   min-inline-size: 0;
 }
 .site-body .journal-shell .cover-story h1 button {
@@ -157,14 +157,13 @@ html[data-color-mode='dark'] .site-body .journal-shell .cover-story .round-actio
   translate: 0 calc(var(--scroll-depth, 0) * -1.25rem);
 }
 .site-body .journal-shell .cover-sheet {
-  --sheet-slot: clamp(-2, var(--slot), 2);
   padding: 0.45rem;
   border: 1px solid color-mix(in srgb, var(--paper) 85%, var(--line));
   border-radius: 1.1rem;
   background: var(--paper);
   overflow: hidden;
   transform: translate3d(
-      calc(var(--sheet-slot) * min(3rem, 9%)),
+      calc(clamp(-2, var(--slot), 2) * min(3rem, 9%)),
       calc(var(--depth) * 1.2rem),
       calc(var(--depth) * -5rem)
     )
@@ -240,7 +239,7 @@ html[data-color-mode='dark'] .site-body .journal-shell .cover-story .round-actio
   font-family: var(--journal-display);
   font-size: clamp(1.6rem, 2.8vw, 2.6rem);
   font-weight: 550;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .section-heading > a {
   font-size: 0.75rem;
@@ -606,7 +605,7 @@ html[data-color-mode='dark'] .site-body .journal-shell .cover-story .round-actio
   font-family: inherit;
   font-size: clamp(8rem, 14vw, 13rem);
   font-weight: 700;
-  letter-spacing: -0.09em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .month-poster > i {
   border-color: var(--accent);
@@ -687,7 +686,7 @@ html[data-color-mode='dark'] .site-body .journal-shell .cover-story .round-actio
   }
   .site-body .journal-shell .cover-sheet {
     transform: translate3d(
-        calc(var(--sheet-slot) * min(2rem, 8%)),
+        calc(clamp(-2, var(--slot), 2) * min(2rem, 8%)),
         calc(var(--depth) * 1rem),
         calc(var(--depth) * -5rem)
       )

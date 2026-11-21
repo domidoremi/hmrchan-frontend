@@ -43,7 +43,7 @@
 [lang='en'] h1,
 [lang='en'] h2,
 [lang='en'] h3 {
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 [data-locale] h1,

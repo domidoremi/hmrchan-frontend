@@ -1,20 +1,28 @@
 <template>
-  <div class="archive-preview" :class="{ 'preview-spatial': spatial }" data-tilt>
+  <div class="archive-preview" :class="{ 'preview-spatial': spatial }">
     <div class="preview-edge" aria-hidden="true" />
     <div class="preview-edge second" aria-hidden="true" />
     <Transition
       name="archive-preview"
       mode="out-in"
+      :css="!followingScroll"
       @enter="(element) => $emit('previewEnter', element)"
-      ><article v-if="post" :key="post.id" class="preview-face post-card" :data-post="post.id">
+      ><article
+        v-if="post"
+        :key="followingScroll ? 'scroll' : post.id"
+        class="preview-face post-card"
+        :data-post="post.id"
+      >
         <div class="preview-caption">
           <span>{{
             journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
           }}</span>
         </div>
         <button
+          ref="media"
           class="preview-media"
           :class="{ 'is-text': !post.image }"
+          :data-tilt="post.image ? '' : undefined"
           :data-open="post.id"
           :aria-label="post.image ? post.title : undefined"
         >
@@ -94,6 +102,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import JournalIcon from '../JournalIcon.vue'
@@ -103,11 +112,25 @@ import { journalPostTimeLabel } from '../localizedPostTime'
 import { platforms, type JournalPost } from '../models'
 import type { JournalResourceState } from '../resourceState'
 const { locale, t } = useI18n({ useScope: 'global' })
-defineProps<{
+const props = defineProps<{
   post?: JournalPost | undefined
   saved: boolean
   spatial?: boolean
+  followingScroll?: boolean
   state?: JournalResourceState
 }>()
 defineEmits<{ save: [post: JournalPost, event: MouseEvent]; previewEnter: [element: Element] }>()
+
+const media = useTemplateRef<HTMLButtonElement>('media')
+let fade: Animation | undefined
+watch(
+  () => props.post?.id,
+  () => {
+    fade?.cancel()
+    if (props.followingScroll && document.body.dataset['motion'] === 'full')
+      fade = media.value?.animate?.([{ opacity: 0.65 }, { opacity: 1 }], 180)
+  },
+  { flush: 'post' }
+)
+onBeforeUnmount(() => fade?.cancel())
 </script>

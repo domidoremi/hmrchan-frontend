@@ -525,8 +525,6 @@ export default defineConfig(async ({ mode }: { mode: string }) => {
               { test: /@lucide\/vue/, name: 'icons' },
 
               { test: /gsap/, name: 'gsap' },
-
-              { test: /three/, name: 'three' },
               { test: /lottie-web/, name: 'lottie' },
               { test: /@rive-app/, name: 'rive' },
               { test: /@fingerprintjs/, name: 'fingerprint' },

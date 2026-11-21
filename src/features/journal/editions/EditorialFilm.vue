@@ -1,5 +1,5 @@
 <template>
-  <section class="editorial-film" data-reveal data-depth-scene>
+  <section class="editorial-film" data-reveal>
     <div class="film-heading">
       <span aria-hidden="true">02</span>
       <h2>{{ t('journal.film.title') }}</h2>
@@ -25,11 +25,12 @@
     <div
       :ref="setTrack"
       class="film-track"
+      data-depth-scene
       :class="{ 'is-dragging': dragging }"
       role="region"
       :aria-label="t('journal.film.region')"
       tabindex="0"
-      @scroll.passive="scroll"
+      @scroll.passive="schedule"
       @keydown="keydown"
       @pointerdown="pointerdown"
       @pointermove="pointermove"
@@ -100,7 +101,7 @@ const {
   progress,
   canScroll,
   dragging,
-  scroll,
+  schedule,
   step,
   scrub,
   keydown,

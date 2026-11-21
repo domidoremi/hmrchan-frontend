@@ -2,6 +2,7 @@ import { onBeforeUnmount, onMounted, provide, ref, watch, type Ref } from 'vue'
 import { createResizeObserver } from '@/utils/modernAPIs'
 import { chapterKey } from './chapterContext'
 import { chapterPosition } from './chapterScene'
+import { cancelHomeFrame, queueHomeFrame } from './homeFrame'
 import { scrollHomeTo } from './useHomeScroll'
 
 export function useChapterScene(
@@ -15,18 +16,20 @@ export function useChapterScene(
     travel = ref(0)
   let top = 0,
     overflow = 0,
-    frame = 0
+    measureFrame = 0
   let resize: ResizeObserver | null = null
   let mutation: MutationObserver | undefined
+  let motionTargets: HTMLElement[] = []
+  let masthead: HTMLElement | null = null
   const lifetime = new AbortController()
-  const styles = new Map<string, string>()
   const duration = () => Math.max(0, travel.value)
-  function property(name: string, value: string) {
-    if (styles.get(name) === value) return
-    styles.set(name, value)
-    root.value?.style.setProperty(name, value)
+  function property(element: HTMLElement | null | undefined, name: string, value: string) {
+    if (element && element.style.getPropertyValue(name) !== value)
+      element.style.setProperty(name, value)
   }
   function measure() {
+    if (measureFrame) cancelAnimationFrame(measureFrame)
+    measureFrame = 0
     const element = root.value
     if (!element || !stage.value || !content.value) return
     const shell = element.closest('.journal-shell')
@@ -42,29 +45,36 @@ export function useChapterScene(
       )
     const bottom = mobile?.height ? Math.max(0, innerHeight - mobile.top) : 0
     height.value = Math.max(1, innerHeight - top - bottom)
-    property('--chapter-top', `${top}px`)
-    property('--chapter-height', `${height.value}px`)
-    property('--chapter-bottom', `${bottom}px`)
+    property(element, '--chapter-top', `${top}px`)
+    property(element, '--chapter-height', `${height.value}px`)
+    property(element, '--chapter-bottom', `${bottom}px`)
     enabled.value = height.value >= 360 && document.body.dataset['motion'] === 'full'
     element.dataset['sceneEnhanced'] = String(enabled.value)
     element.dataset['scenePinned'] = String(enabled.value && duration() > 0)
     overflow = Math.max(0, content.value.offsetHeight - height.value)
     const inspector = content.value.querySelector<HTMLElement>('.archive-inspector')
     if (inspector) inspector.dataset['canPin'] = String(inspector.offsetHeight < height.value - 32)
-    property('--chapter-run', `${enabled.value && duration() > 0 ? duration() + overflow : 0}px`)
-    update()
+    property(
+      element,
+      '--chapter-run',
+      `${enabled.value && duration() > 0 ? duration() + overflow : 0}px`
+    )
+    masthead = content.value.querySelector('.journal-masthead')
+    motionTargets = Array.from(
+      content.value.querySelectorAll(
+        '.section-heading, .conversation-heading, .panel-heading, .next-desk-header, .month-poster'
+      )
+    )
+    readPosition()?.()
   }
-  function update() {
-    frame = 0
+  function scheduleMeasure() {
+    if (!measureFrame && !document.hidden) measureFrame = requestAnimationFrame(measure)
+  }
+  function readPosition() {
     const element = root.value
     if (!element || document.hidden) return
     const rect = element.getBoundingClientRect()
     const position = chapterPosition(top - rect.top, overflow, duration(), height.value)
-    property('--chapter-enter', String(enabled.value ? position.enter : 1))
-    property('--chapter-leave', String(enabled.value ? position.leave : 0))
-    property('--chapter-progress', String(enabled.value ? position.progress : 0))
-    property('--chapter-flow', String(enabled.value ? position.flow : 0.5))
-    property('--chapter-shift', `${enabled.value && duration() > 0 ? -position.shift : 0}px`)
     const state =
       rect.top >= innerHeight || rect.bottom <= top
         ? 'outside'
@@ -73,11 +83,24 @@ export function useChapterScene(
           : position.leave > 0
             ? 'leaving'
             : 'reading'
-    if (element.dataset['sceneState'] !== state) element.dataset['sceneState'] = state
-    progress.value = position.progress
+    return () => {
+      const moving = enabled.value
+      for (const target of motionTargets) {
+        property(target, '--chapter-enter', String(moving ? position.enter : 1))
+        property(target, '--chapter-leave', String(moving ? position.leave : 0))
+      }
+      property(masthead, '--chapter-flow', String(moving ? position.flow : 0))
+      property(
+        content.value,
+        '--chapter-shift',
+        `${moving && duration() > 0 ? -position.shift : 0}px`
+      )
+      if (element.dataset['sceneState'] !== state) element.dataset['sceneState'] = state
+      progress.value = position.progress
+    }
   }
   function schedule() {
-    if (!frame && !document.hidden) frame = requestAnimationFrame(update)
+    if (!document.hidden) queueHomeFrame(readPosition)
   }
   function visibility() {
     if (document.hidden && root.value) root.value.dataset['sceneState'] = 'outside'
@@ -122,7 +145,7 @@ export function useChapterScene(
   watch(travel, measure, { flush: 'post' })
   onMounted(() => {
     if (!root.value || !content.value) return
-    resize = createResizeObserver(measure)
+    resize = createResizeObserver(scheduleMeasure)
     if (resize) {
       resize.observe(content.value)
       const shell = root.value.closest('.journal-shell')
@@ -131,7 +154,14 @@ export function useChapterScene(
         .forEach((el) => resize!.observe(el))
     }
     if (typeof MutationObserver !== 'undefined') {
-      mutation = new MutationObserver(measure)
+      mutation = new MutationObserver((changes) => {
+        if (
+          changes.some(({ addedNodes, removedNodes }) =>
+            [...addedNodes, ...removedNodes].some((node) => node.nodeType === Node.ELEMENT_NODE)
+          )
+        )
+          scheduleMeasure()
+      })
       mutation.observe(content.value, { childList: true, subtree: true })
     }
     const options = { passive: true, signal: lifetime.signal }
@@ -140,13 +170,14 @@ export function useChapterScene(
     document.addEventListener('journalmotionchange', measure, options)
     document.addEventListener('visibilitychange', visibility, options)
     root.value.addEventListener('focusin', focus, { signal: lifetime.signal })
-    root.value.addEventListener('load', measure, { capture: true, signal: lifetime.signal })
+    root.value.addEventListener('load', scheduleMeasure, { capture: true, signal: lifetime.signal })
     measure()
   })
   onBeforeUnmount(() => {
     lifetime.abort()
     resize?.disconnect()
     mutation?.disconnect()
-    cancelAnimationFrame(frame)
+    cancelAnimationFrame(measureFrame)
+    cancelHomeFrame(readPosition)
   })
 }

@@ -227,7 +227,7 @@ body.site-body::after {
   font:
     600 26px/1 'Georgia',
     serif;
-  letter-spacing: -1.2px;
+  letter-spacing: 0;
   display: flex;
   align-items: baseline;
   gap: 10px;
@@ -362,7 +362,7 @@ body.site-body::after {
   font:
     500 clamp(80px, 17vw, 250px)/1.1 'Georgia',
     serif;
-  letter-spacing: -0.075em;
+  letter-spacing: 0;
   display: flex;
   justify-content: center;
   padding: 25px 0 45px;

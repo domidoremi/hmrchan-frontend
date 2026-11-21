@@ -83,7 +83,7 @@ html:not([data-bootstrap-pending]) [data-prerender-shell] span[role='status'] {
   font:
     700 29px/1 Georgia,
     serif;
-  letter-spacing: -1.6px;
+  letter-spacing: 0;
   text-decoration: none;
 }
 .boot-recovery__index {
@@ -117,7 +117,7 @@ html:not([data-bootstrap-pending]) [data-prerender-shell] span[role='status'] {
     500 clamp(38px, 5.4vw, 72px)/1.2 Georgia,
     'Songti SC',
     serif;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   margin: 24px 0;
   white-space: pre-line;
   overflow-wrap: anywhere;
@@ -206,7 +206,7 @@ html:not([data-bootstrap-pending]) [data-prerender-shell] span[role='status'] {
 }
 .boot-recovery[data-edition='archive'] .boot-recovery__brand {
   font-size: 43px;
-  letter-spacing: -3px;
+  letter-spacing: 0;
 }
 .boot-recovery[data-edition='archive'] .boot-recovery__intro h1 {
   font-family: system-ui, sans-serif;

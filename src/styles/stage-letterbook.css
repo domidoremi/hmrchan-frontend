@@ -765,7 +765,7 @@ body::before,
   font-size: clamp(2.45rem, 5vw, 4.35rem);
   font-weight: 600;
   line-height: 1.08;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 #app .page-hero-shell__subtitle {
@@ -900,7 +900,7 @@ body::before,
   font-size: clamp(3.25rem, 6.1vw, 5.65rem);
   font-weight: 500;
   line-height: 1.04;
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
   text-wrap: balance;
   -webkit-text-fill-color: currentColor;
 }
@@ -2155,7 +2155,7 @@ body::before,
   font-size: clamp(2.2rem, 4vw, 3.6rem);
   font-weight: 600;
   line-height: 1.08;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 #app .auth-subtitle {
@@ -2732,7 +2732,7 @@ body::before,
     padding-block: 0.14em 0.22em;
     font-size: clamp(2.75rem, 14.5vw, 3.85rem);
     line-height: 1.08;
-    letter-spacing: -0.045em;
+    letter-spacing: 0;
   }
 
   #app .home-fold .hero-subtitle {
