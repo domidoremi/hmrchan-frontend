@@ -142,7 +142,7 @@
   font-size: clamp(1.7rem, 2.5vw, 2.3rem);
   font-weight: var(--font-bold);
   line-height: 1.04;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 

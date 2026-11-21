@@ -4,7 +4,6 @@
     class="next-stage"
     :data-scrubbing="scrubbing"
     :class="{ 'has-entered': hasEntered }"
-    data-depth-scene
     :aria-label="t('journal.next.featured')"
     @pointerenter="hovered = true"
     @pointerleave="hovered = false"
@@ -49,7 +48,7 @@
       <div class="next-orbit next-orbit-wide" aria-hidden="true" />
       <div class="next-orbit next-orbit-tall" aria-hidden="true" />
       <span class="scene-light" aria-hidden="true" />
-      <div class="next-stage-planes">
+      <div class="next-stage-planes" data-depth-scene>
         <button
           v-for="(post, i) in items"
           :key="post.id"

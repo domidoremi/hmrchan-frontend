@@ -1,26 +1,23 @@
 <template>
-  <div ref="host" class="home-atmosphere" aria-hidden="true">
+  <div ref="host" class="home-atmosphere" :data-scene="preset" aria-hidden="true">
     <div class="home-atmosphere-field">
-      <canvas ref="canvas" class="home-space-canvas" />
-      <div class="home-light"><i /><i /></div>
-      <div class="home-orbit"><i /><i /></div>
-      <div class="home-rule" />
+      <div class="atmosphere-far" />
+      <div class="atmosphere-near"><ThemeSceneArtwork :preset="preset" /></div>
+      <div class="atmosphere-light" />
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
-import type { JournalPost } from '../models'
-import { useHomeSpace } from './space/useHomeSpace'
+import { useSettingsStore } from '@/stores/settings'
+import ThemeSceneArtwork from './ThemeSceneArtwork.vue'
+import { useAtmosphereScroll } from './useAtmosphereScroll'
 import { useHomeScroll } from './useHomeScroll'
-import '../styles/home-space.css'
+import '../styles/scene-artwork.css'
 
-const props = defineProps<{ posts: JournalPost[] }>()
-const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const host = useTemplateRef<HTMLElement>('host')
-const images = computed(() =>
-  [...new Set(props.posts.flatMap(({ image }) => image ?? []))].slice(0, 5)
-)
+const settings = useSettingsStore()
+const preset = computed(() => settings.settings.appearancePreset)
 useHomeScroll()
-useHomeSpace(canvas, host, () => images.value)
+useAtmosphereScroll(host)
 </script>

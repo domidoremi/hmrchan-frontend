@@ -1,7 +1,7 @@
 import { createResizeObserver } from '@/utils/modernAPIs'
 
 // Read all layout geometry before writing styles for the current frame.
-export function installViewportMotion({ listen, frame, fullMotion }) {
+export function installViewportMotion({ listen, frame, scrollFrame, fullMotion }) {
   let tilted = null
   let pointerPending = false
   let pointerX = 0
@@ -103,33 +103,40 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
       for (const scene of scenes) scene.style.removeProperty('--scroll-depth')
     } else schedule()
   })
+  function readScroll() {
+    scrollPending = false
+    if (document.hidden) return
+    const y = scrollY
+    position = y
+    const viewportHeight = innerHeight
+    const height = y > 0 ? document.documentElement.scrollHeight - viewportHeight : 0
+    const measurements =
+      fullMotion() && y > 0
+        ? scenes
+            .filter((scene) => scene.isConnected)
+            .map((scene) => ({ scene, box: scene.getBoundingClientRect() }))
+        : []
+    const fraction = String(height > 0 ? Math.min(1, Math.max(0, y / height)) : 0)
+    return () => {
+      if (progress && progress.style.getPropertyValue('--progress') !== fraction)
+        progress.style.setProperty('--progress', fraction)
+      if (top && top.hidden !== y < 700) top.hidden = y < 700
+      for (const { scene, box } of measurements) {
+        if (box.top > viewportHeight || box.bottom < 0) continue
+        const depth = Math.min(
+          1,
+          Math.max(0, (viewportHeight - box.top) / (viewportHeight + box.height))
+        ).toFixed(3)
+        if (scene.style.getPropertyValue('--scroll-depth') !== depth)
+          scene.style.setProperty('--scroll-depth', depth)
+      }
+    }
+  }
   function schedule() {
     if (scrollPending || document.hidden) return
     scrollPending = true
-    frame(() => {
-      scrollPending = false
-      const y = scrollY
-      position = y
-      const height = y > 0 ? document.documentElement.scrollHeight - innerHeight : 0
-      const measurements =
-        fullMotion() && y > 0
-          ? scenes
-              .filter((scene) => scene.isConnected)
-              .map((scene) => ({ scene, box: scene.getBoundingClientRect() }))
-          : []
-      progress?.style.setProperty(
-        '--progress',
-        String(height > 0 ? Math.min(1, Math.max(0, y / height)) : 0)
-      )
-      if (top && top.hidden !== y < 700) top.hidden = y < 700
-      for (const { scene, box } of measurements) {
-        if (box.top > innerHeight || box.bottom < 0) continue
-        scene.style.setProperty(
-          '--scroll-depth',
-          String(Math.min(1, Math.max(0, (innerHeight - box.top) / (innerHeight + box.height))))
-        )
-      }
-    })
+    if (scrollFrame) scrollFrame.queue(readScroll)
+    else frame(() => readScroll()?.())
   }
   const resizeObserver = createResizeObserver(() => {
     // Resize notifications arrive after layout, including restored scroll positions.
@@ -154,10 +161,12 @@ export function installViewportMotion({ listen, frame, fullMotion }) {
       pointerPending = false
       magnetPending = false
       scrollPending = false
+      scrollFrame?.cancel(readScroll)
       resetTilt()
     },
     dispose() {
       resizeObserver?.disconnect()
+      scrollFrame?.cancel(readScroll)
       resetTilt()
       document.body.classList.remove('journal-suspended')
     },

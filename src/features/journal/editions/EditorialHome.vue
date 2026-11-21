@@ -1,6 +1,6 @@
 <template>
   <div class="editorial-home editorial-page immersive-home">
-    <HomeAtmosphere :posts="allPosts" />
+    <HomeAtmosphere />
     <EditorialContents :sections="contents" />
     <ImmersiveChapter id="issue-cover" kind="cover">
       <div class="journal-masthead" data-masthead>
@@ -97,7 +97,7 @@
       <EditorialFilm :posts="pictures" />
     </ImmersiveChapter>
     <ImmersiveChapter id="issue-calendar" kind="calendar" data-reading-section>
-      <section class="editorial-calendar" data-depth-scene data-reveal>
+      <section class="editorial-calendar" data-reveal>
         <div class="section-heading">
           <span class="section-number">03</span>
           <h2>{{ t('schedule.title') }}</h2>

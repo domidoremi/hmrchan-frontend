@@ -241,7 +241,7 @@ onBeforeUnmount(() => {
 .spatial-directory nav a > span {
   font-size: clamp(1.7rem, 4.6vw, 4.5rem);
   line-height: 1.16;
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
   font-weight: 400;
   transition: transform 400ms;
 }

@@ -4,7 +4,6 @@
     :ref="setRoot"
     class="spatial-cover"
     :data-scrubbing="scrubbing"
-    data-depth-scene
     :aria-label="t('home.latest')"
     @pointerenter="hovered = true"
     @pointerleave="hovered = false"
@@ -107,7 +106,7 @@
       @touchcancel.passive="touchCancel"
     >
       <span class="scene-light" aria-hidden="true" />
-      <div class="cover-deck">
+      <div class="cover-deck" data-depth-scene>
         <button
           v-for="(post, i) in items"
           :key="post.id"

@@ -17,7 +17,6 @@
         <nav
           v-if="!isAuthRoute"
           class="desktop-navigation"
-          data-indicator
           :aria-label="t('common.primaryNavigation')"
         >
           <RouterLink
@@ -132,7 +131,6 @@
       v-if="!isAuthRoute"
       class="mobile-navigation"
       :class="{ 'liquid-surface': settingsStore.settings.appearancePreset === 'fluent-soft' }"
-      data-indicator
       :aria-label="t('journal.nav.mobileNavigation')"
     >
       <RouterLink
@@ -196,6 +194,7 @@ import AccountNavigation from './AccountNavigation.vue'
 const JournalAppearanceDialog = defineAsyncComponent(() => import('./JournalAppearanceDialog.vue'))
 import { useI18n } from 'vue-i18n'
 import './styles/index.css'
+import './styles/theme-layouts.css'
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()

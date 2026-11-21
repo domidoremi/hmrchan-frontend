@@ -47,8 +47,7 @@ describe('AboutPage styles', () => {
     expect(themeComposition).toContain('--directory-personal-span: 1 / -1')
   })
 
-  it('keeps liquid glass interactive and respects reduced motion', () => {
-    expect(themeComposition).toContain('filter: url(#journal-glass-refraction)')
+  it('keeps the directory light inside its surface and respects reduced motion', () => {
     expect(themeComposition).toContain('@keyframes directory-tide')
     expect(themeComposition).toContain(".site-body[data-motion='reduced']")
     expect(themeComposition).toMatch(/\.about-directory-group::before \{[^}]*inset: 0;/s)

@@ -81,12 +81,13 @@ async function scrollTo(value: number) {
 describe('immersive document chapters', () => {
   it('reserves navigation, reveals all long content, then advances the sequence and reverses', async () => {
     const chapter = await render()
+    const content = chapter.querySelector<HTMLElement>('.chapter-content')!
     context.travel.value = 600
     await nextTick()
     expect(context.height.value).toBe(778)
     expect(chapter.style.getPropertyValue('--chapter-run')).toBe('1022px')
     await scrollTo(1300)
-    expect(chapter.style.getPropertyValue('--chapter-shift')).toBe('-422px')
+    expect(content.style.getPropertyValue('--chapter-shift')).toBe('-422px')
     expect(context.progress.value).toBe(0)
     await scrollTo(1600)
     expect(context.progress.value).toBe(0.5)
@@ -96,7 +97,7 @@ describe('immersive document chapters', () => {
     expect(chapter.dataset['sceneState']).toBe('leaving')
     await scrollTo(878)
     expect(context.progress.value).toBe(0)
-    expect(chapter.style.getPropertyValue('--chapter-shift')).toBe('0px')
+    expect(content.style.getPropertyValue('--chapter-shift')).toBe('0px')
     const wheel = new WheelEvent('wheel', { deltaY: 120, cancelable: true, bubbles: true })
     chapter.dispatchEvent(wheel)
     expect(wheel.defaultPrevented).toBe(false)
@@ -153,7 +154,7 @@ describe('immersive document chapters', () => {
     expect(chapter.style.getPropertyValue('--chapter-run')).toBe('0px')
     expect(inspector.dataset['canPin']).toBe('true')
     await scrollTo(1300)
-    expect(chapter.style.getPropertyValue('--chapter-shift')).toBe('0px')
+    expect(content.style.getPropertyValue('--chapter-shift')).toBe('0px')
     previewHeight = 900
     window.dispatchEvent(new Event('resize'))
     expect(inspector.dataset['canPin']).toBe('false')
@@ -165,7 +166,7 @@ describe('immersive document chapters', () => {
     const oldRun = chapter.style.getPropertyValue('--chapter-run')
     contentHeight = 1500
     chapter.querySelector('.chapter-content')!.append(document.createElement('p'))
-    await Promise.resolve()
+    await vi.advanceTimersByTimeAsync(20)
     expect(chapter.style.getPropertyValue('--chapter-run')).not.toBe(oldRun)
     window.dispatchEvent(new Event('scroll'))
     wrapper!.unmount()

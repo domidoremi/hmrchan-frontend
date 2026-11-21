@@ -136,7 +136,7 @@ html[data-preset='minimal-editorial']
 html[data-preset='minimal-editorial'] .site-body .journal-shell .editorial-page-heading h1 {
   font-family: Georgia, 'Songti SC', serif;
   font-weight: 400;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 /* Fluid glass: translucent instrument layers with refracted, living light. */
@@ -147,13 +147,14 @@ html[data-preset='fluent-soft'] .site-body .journal-shell {
 
 html[data-preset='fluent-soft'] .site-body .journal-shell .edition-header {
   isolation: isolate;
+  overflow: clip;
 }
 
 html[data-preset='fluent-soft'] .site-body .journal-shell .liquid-glass {
   position: absolute;
-  inset: 0;
+  inset: 0 -7%;
   z-index: 0;
-  inline-size: 100%;
+  inline-size: 114%;
   block-size: 100%;
   overflow: visible;
   pointer-events: none;
@@ -168,23 +169,8 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .liquid-glass__edge {
   stroke-width: 0.7;
 }
 
-html[data-preset='fluent-soft'] .site-body .journal-shell .edition-header::after {
-  content: '';
-  position: absolute;
-  inset: -40% -10%;
-  z-index: 0;
-  border: 1px solid color-mix(in srgb, var(--paper) 70%, transparent);
-  border-radius: 52% 48% 59% 41% / 40% 56% 44% 60%;
-  background: linear-gradient(
-    110deg,
-    transparent 18%,
-    color-mix(in srgb, #75c9d2 17%, transparent) 38%,
-    color-mix(in srgb, #efafc8 16%, transparent) 62%,
-    transparent 81%
-  );
-  filter: blur(1rem) saturate(1.35);
-  pointer-events: none;
-  animation: glass-river 13s ease-in-out infinite alternate;
+.site-body[data-motion='full'] .liquid-glass__flow {
+  animation: glass-river 11s ease-in-out infinite alternate;
 }
 
 html[data-preset='fluent-soft'] .site-body .journal-shell .edition-header > :not(.liquid-glass) {
@@ -205,8 +191,8 @@ html[data-preset='fluent-soft']
     .reading-author-panel
   ) {
   border-color: color-mix(in srgb, var(--paper) 60%, var(--line));
-  background-color: color-mix(in srgb, var(--composition-surface) 78%, transparent);
-  backdrop-filter: blur(1.2rem) saturate(1.45);
+  background-color: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: none;
   box-shadow:
     inset 0 1px color-mix(in srgb, var(--paper) 78%, transparent),
     0 1.4rem 3.5rem -2rem color-mix(in srgb, var(--appearance-accent) 32%, transparent);
@@ -226,16 +212,14 @@ html[data-preset='fluent-soft']
   ) {
   background:
     radial-gradient(
-      ellipse at var(--glass-x, 80%) var(--glass-y, 0%),
+      ellipse at 80% 0%,
       color-mix(in srgb, var(--appearance-accent) 13%, transparent),
       transparent 64%
     ),
     var(--composition-surface);
-  backdrop-filter: blur(0.8rem) saturate(1.22);
+  backdrop-filter: none;
   transition:
-    background-position 800ms var(--composition-motion),
     border-color 650ms var(--composition-motion),
-    box-shadow 650ms var(--composition-motion),
     transform 650ms var(--composition-motion);
 }
 
@@ -244,7 +228,7 @@ html[data-preset='fluent-soft']
   .journal-shell
   :is(.next-view-toggle, .chip, .button, .account-link, .mobile-navigation) {
   border: 1px solid color-mix(in srgb, var(--paper) 48%, var(--line));
-  backdrop-filter: blur(0.8rem) saturate(1.2);
+  backdrop-filter: none;
 }
 
 html[data-preset='fluent-soft']
@@ -263,22 +247,16 @@ html[data-preset='fluent-soft']
 }
 
 html[data-preset='fluent-soft'] .site-body :is(#app-dialog, .journal-appearance-dialog) {
-  background: color-mix(in srgb, var(--paper) 76%, transparent);
-  backdrop-filter: blur(1.5rem) saturate(1.4);
+  background: color-mix(in srgb, var(--paper) 97%, transparent);
+  backdrop-filter: none;
 }
 
 @keyframes glass-river {
   0% {
-    transform: translate3d(-2%, 3%, 0) rotate(-1.5deg) scale(1);
-    border-radius: 52% 48% 59% 41% / 40% 56% 44% 60%;
-  }
-  50% {
-    transform: translate3d(1.8%, -4%, 0) rotate(1.2deg) scale(1.03);
-    border-radius: 45% 55% 41% 59% / 53% 39% 61% 47%;
+    transform: translate3d(-2%, 3%, 0) scaleY(0.86);
   }
   100% {
-    transform: translate3d(4%, 2%, 0) rotate(-0.5deg) scale(1.01);
-    border-radius: 58% 42% 54% 46% / 43% 62% 38% 57%;
+    transform: translate3d(4%, -4%, 0) scaleY(1.12);
   }
 }
 
@@ -520,7 +498,7 @@ html[data-preset='minimal-editorial'] .site-body .journal-shell .about-masthead 
   font-family: Georgia, 'Songti SC', serif;
   font-size: clamp(3.5rem, 7vi, 6.75rem);
   font-weight: 400;
-  letter-spacing: -0.085em;
+  letter-spacing: 0;
 }
 
 html[data-preset='minimal-editorial'] .site-body .journal-shell .about-directory-group {
@@ -549,7 +527,7 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .about-page {
 html[data-preset='fluent-soft'] .site-body .journal-shell .about-masthead h1 {
   font-size: clamp(3rem, 8vi, 7rem);
   font-weight: 650;
-  letter-spacing: -0.08em;
+  letter-spacing: 0;
 }
 
 html[data-preset='fluent-soft'] .site-body .journal-shell .about-index a {
@@ -557,7 +535,7 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .about-index a {
   border-color: color-mix(in srgb, var(--paper) 62%, var(--line));
   border-radius: 999px;
   background: color-mix(in srgb, var(--paper) 58%, transparent);
-  backdrop-filter: blur(0.85rem) saturate(1.25);
+  backdrop-filter: none;
 }
 
 html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group {
@@ -569,7 +547,7 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group
   box-shadow:
     inset 0 1px color-mix(in srgb, var(--paper) 78%, transparent),
     0 1.5rem 4rem -2.5rem color-mix(in srgb, var(--accent) 35%, transparent);
-  backdrop-filter: blur(1.25rem) saturate(1.3);
+  overflow: clip;
 }
 
 html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group::before {
@@ -580,7 +558,7 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group
   border-radius: inherit;
   background:
     radial-gradient(
-      ellipse at var(--glass-x, 76%) var(--glass-y, 8%),
+      ellipse at 76% 8%,
       color-mix(in srgb, var(--accent) 24%, transparent),
       transparent 58%
     ),
@@ -590,7 +568,6 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group
       transparent 46%,
       color-mix(in srgb, #efafc8 13%, transparent)
     );
-  filter: blur(1rem) saturate(1.3);
   opacity: 0.75;
   pointer-events: none;
   animation: directory-tide 17s ease-in-out infinite alternate;
@@ -610,7 +587,6 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-links
   border: 1px solid color-mix(in srgb, var(--paper) 45%, var(--line));
   border-radius: 999px;
   background: color-mix(in srgb, var(--paper) 62%, transparent);
-  backdrop-filter: blur(0.65rem) saturate(1.15);
 }
 
 html[data-preset='fluent-soft']
@@ -637,7 +613,7 @@ html[data-preset='organic-natural'] .site-body .journal-shell .about-page {
 html[data-preset='organic-natural'] .site-body .journal-shell .about-masthead h1 {
   font-size: clamp(2.8rem, 7vi, 6.5rem);
   font-weight: 400;
-  letter-spacing: -0.08em;
+  letter-spacing: 0;
 }
 
 html[data-preset='organic-natural'] .site-body .journal-shell .about-directory-group {
@@ -682,7 +658,7 @@ html[data-preset='gradient-narrative'] .site-body .journal-shell .about-page {
 html[data-preset='gradient-narrative'] .site-body .journal-shell .about-masthead h1 {
   font-size: clamp(3rem, 8vi, 7rem);
   font-weight: 750;
-  letter-spacing: -0.09em;
+  letter-spacing: 0;
 }
 
 html[data-preset='gradient-narrative'] .site-body .journal-shell .about-index {
@@ -738,7 +714,7 @@ html[data-preset='fluent-soft']
   border-radius: inherit;
   background:
     radial-gradient(
-      ellipse at var(--glass-x, 76%) var(--glass-y, 8%),
+      ellipse at 76% 8%,
       color-mix(in srgb, var(--accent) 16%, transparent),
       transparent 64%
     ),
@@ -748,7 +724,6 @@ html[data-preset='fluent-soft']
       transparent 42%,
       color-mix(in srgb, #efafc8 9%, transparent)
     );
-  filter: url(#journal-glass-refraction) saturate(1.2);
   opacity: 0.72;
   pointer-events: none;
 }
@@ -831,7 +806,7 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .edition-header.liquid
     flex: 1 1 auto;
     min-inline-size: 0;
     font-size: clamp(7rem, 32vw, 9.5rem);
-    letter-spacing: -0.1em;
+    letter-spacing: 0;
   }
   .site-body .journal-shell .month-turn-face > span {
     flex: none;

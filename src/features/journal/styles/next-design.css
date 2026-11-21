@@ -88,7 +88,7 @@
   font-style: italic;
   font-synthesis: style;
   line-height: 1.15;
-  letter-spacing: -0.09em;
+  letter-spacing: 0;
   margin-block: 0.5rem 0.6rem;
   white-space: nowrap;
   display: flex;
@@ -115,7 +115,7 @@
   font-size: calc(clamp(1.15rem, 1.8vw, 1.6rem) * var(--journal-reading-scale));
   line-height: 1.7;
   white-space: pre-line;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .next-stage-intro .button {
   flex: none;
@@ -414,7 +414,7 @@
     system-ui,
     sans-serif;
   font-synthesis: style;
-  letter-spacing: -0.085em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .next-desk-mark > span:last-child {
   color: var(--accent);
@@ -457,7 +457,7 @@
   gap: 0.65rem;
   font-size: 1.6rem;
   font-weight: 700;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   margin-block-start: 0.4rem;
 }
 .site-body .journal-shell .next-collection-heading .meta-count {
@@ -786,7 +786,7 @@
 .site-body .journal-shell .next-browse .archive-page-title h1 {
   font-size: clamp(2.5rem, 4.5vw, 4rem);
   font-weight: 700;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   margin-block-start: 0.7rem;
 }
 .site-body .journal-shell.edition-archive .edition-footer {

@@ -16,6 +16,7 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { createResizeObserver } from '@/utils/modernAPIs'
+import { cancelHomeFrame, queueHomeFrame } from './homeFrame'
 import { scrollHomeTo } from './useHomeScroll'
 const { t } = useI18n({ useScope: 'global' })
 const props = defineProps<{
@@ -25,9 +26,9 @@ const active = ref(props.sections[0]?.id ?? '')
 const directory = ref<HTMLElement>()
 let sectionElements: HTMLElement[] = []
 let resize: ResizeObserver | null = null
-let frame = 0
-function measure() {
-  frame = 0
+let header: HTMLElement | null | undefined
+let progress = -1
+function readPosition() {
   const nav = directory.value
   if (!nav || !sectionElements.length) return
   const marker = Math.max(nav.getBoundingClientRect().bottom + 1, window.innerHeight * 0.3)
@@ -40,19 +41,37 @@ function measure() {
   if (atEnd) index = bounds.length - 1
   const current = bounds[index]!
   const end = bounds[index + 1]?.top ?? current.bottom
-  active.value = sectionElements[index]!.id
   const fraction = atEnd ? 1 : (marker - current.top) / Math.max(1, end - current.top)
-  nav.style.setProperty('--chapter-progress', String(Math.min(1, Math.max(0, fraction))))
+  const id = sectionElements[index]!.id
+  const next = Math.min(1, Math.max(0, fraction))
+  return () => {
+    active.value = id
+    if (next === progress) return
+    progress = next
+    nav.style.setProperty('--chapter-progress', String(next))
+  }
 }
 function schedule() {
-  if (!frame && !document.hidden) frame = requestAnimationFrame(measure)
+  if (!document.hidden) queueHomeFrame(readPosition)
+}
+function measure() {
+  const nav = directory.value
+  if (nav && header) {
+    const top = Number.parseFloat(getComputedStyle(header).top) || 0
+    const edge = `${top + header.offsetHeight}px`
+    if (nav.style.getPropertyValue('--home-header-edge') !== edge)
+      nav.style.setProperty('--home-header-edge', edge)
+  }
+  schedule()
 }
 function refresh() {
   resize?.disconnect()
   sectionElements = props.sections.flatMap(({ id }) => document.getElementById(id) ?? [])
+  header = directory.value?.closest('.journal-shell')?.querySelector('.edition-header')
+  if (header) resize?.observe(header)
   if (directory.value) resize?.observe(directory.value)
   for (const section of sectionElements) resize?.observe(section)
-  schedule()
+  measure()
 }
 function go(id: string) {
   const element = document.getElementById(id)
@@ -70,17 +89,17 @@ function go(id: string) {
 }
 watch(() => props.sections, refresh, { flush: 'post' })
 onMounted(() => {
-  resize = createResizeObserver(schedule)
+  resize = createResizeObserver(measure)
   window.addEventListener('scroll', schedule, { passive: true })
-  window.addEventListener('resize', schedule)
+  window.addEventListener('resize', measure)
   document.addEventListener('visibilitychange', schedule)
   refresh()
 })
 onBeforeUnmount(() => {
-  cancelAnimationFrame(frame)
+  cancelHomeFrame(readPosition)
   resize?.disconnect()
   window.removeEventListener('scroll', schedule)
-  window.removeEventListener('resize', schedule)
+  window.removeEventListener('resize', measure)
   document.removeEventListener('visibilitychange', schedule)
 })
 </script>

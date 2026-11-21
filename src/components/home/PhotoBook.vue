@@ -207,7 +207,7 @@ onBeforeUnmount(stopTurn)
   margin: 0.6rem 0 0;
   font-size: clamp(2.2rem, 5vw, 4.5rem);
   font-weight: 400;
-  letter-spacing: -0.06em;
+  letter-spacing: 0;
 }
 .photo-book__stage {
   perspective: 1800px;
@@ -386,7 +386,7 @@ onBeforeUnmount(stopTurn)
 .photo-book__cover strong {
   font-size: clamp(2rem, 4vw, 4rem);
   font-weight: 400;
-  letter-spacing: -0.06em;
+  letter-spacing: 0;
 }
 .photo-book__cover > span:last-child {
   display: flex;

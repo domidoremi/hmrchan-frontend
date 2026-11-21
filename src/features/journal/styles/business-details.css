@@ -738,7 +738,7 @@
     serif;
   color: var(--ink);
   overflow-wrap: anywhere;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 .site-body .journal-legacy .schedule-detail-actions {
   grid-column: 1;

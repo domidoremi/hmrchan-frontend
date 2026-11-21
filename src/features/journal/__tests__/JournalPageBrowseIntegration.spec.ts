@@ -168,6 +168,7 @@ async function renderPage(edition: Edition, path: string, data: ControlledData) 
       stubs: {
         JournalIcon: true,
         JournalImage: true,
+        HomeAtmosphere: true,
         RouterLink: { template: '<a><slot /></a>' },
       },
     },

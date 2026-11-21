@@ -8,7 +8,12 @@ import { chapterKey, type ChapterContext } from '../editions/chapterContext'
 
 vi.mock('@/utils/modernAPIs', () => ({
   createResizeObserver: () => ({ observe: vi.fn(), disconnect: vi.fn() }),
-  createVisibilityObserver: () => ({ observe: vi.fn(), disconnect: vi.fn() }),
+  createVisibilityObserver: (
+    onChange: (entries: Pick<IntersectionObserverEntry, 'isIntersecting'>[]) => void
+  ) => ({
+    observe: () => onChange([{ isIntersecting: true }]),
+    disconnect: vi.fn(),
+  }),
 }))
 
 const posts: JournalPost[] = ['first', 'second', 'third'].map((id) => ({
@@ -201,6 +206,9 @@ describe('EditorialFilm without visibility or animation-frame notifications', ()
     progress.value = 0
     await nextTick()
     expect(track.element.scrollLeft).toBe(0)
+    track.element.scrollLeft = 80
+    await track.trigger('scroll')
+    expect(chapter.seek).not.toHaveBeenCalled()
     const wheel = new WheelEvent('wheel', { deltaY: 120, cancelable: true, bubbles: true })
     track.element.dispatchEvent(wheel)
     expect(wheel.defaultPrevented).toBe(false)

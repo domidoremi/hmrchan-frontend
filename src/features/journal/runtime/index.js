@@ -5,6 +5,7 @@ import { createLayoutMotion } from './layout-motion.js'
 import { installReaderMotion } from './reader-motion.js'
 import { installSelectionMotion } from './selection-motion.js'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
+import { cancelHomeFrame, queueHomeFrame } from '../editions/homeFrame'
 
 export function createJournalRuntime(navigate, options = {}) {
   const { translate } = options
@@ -62,7 +63,12 @@ export function createJournalRuntime(navigate, options = {}) {
       }
     },
   })
-  const viewport = installViewportMotion({ listen, frame, fullMotion: () => motion === 'full' })
+  const viewport = installViewportMotion({
+    listen,
+    frame,
+    scrollFrame: { queue: queueHomeFrame, cancel: cancelHomeFrame },
+    fullMotion: () => motion === 'full',
+  })
   function animate(element, keyframes, options = {}) {
     if (
       !element ||

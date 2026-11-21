@@ -50,6 +50,7 @@ const discussion: JournalDiscussion = {
 const stubs = {
   JournalIcon: true,
   JournalImage: true,
+  HomeAtmosphere: true,
   JournalResourceState: true,
   SpatialCover: true,
   EditorialContents: true,

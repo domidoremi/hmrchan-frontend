@@ -19,7 +19,7 @@
   font:
     500 clamp(75px, 12.7vw, 190px)/1.15 'Georgia',
     serif;
-  letter-spacing: -0.07em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .journal-masthead > strong > span {
   font: 300 0.53em/1.7 sans-serif;
@@ -108,7 +108,7 @@
     'Songti SC',
     SimSun,
     serif;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 .site-body .journal-shell .cover-article h1 button {
@@ -735,7 +735,7 @@
   font:
     400 210px/0.95 'Georgia',
     serif;
-  letter-spacing: -20px;
+  letter-spacing: 0;
   text-align: center;
 }
 .site-body .journal-shell .month-poster > span {
@@ -872,7 +872,7 @@
     400 clamp(46px, 6.7vw, 96px)/1.1 'Georgia',
     'Songti SC',
     serif;
-  letter-spacing: -0.07em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .editorial-page-heading h1 em {
   font: 13px monospace;
@@ -1010,7 +1010,7 @@
   font:
     240px/0.9 'Georgia',
     serif;
-  letter-spacing: -20px;
+  letter-spacing: 0;
   text-align: center;
   z-index: 1;
 }
@@ -1392,7 +1392,7 @@
   }
   .site-body .journal-shell .month-poster > b {
     font-size: 150px;
-    letter-spacing: -15px;
+    letter-spacing: 0;
     padding-top: 20px;
   }
   .site-body .journal-shell .month-poster > span {

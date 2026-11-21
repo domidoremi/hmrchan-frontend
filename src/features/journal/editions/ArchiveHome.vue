@@ -1,6 +1,6 @@
 <template>
   <div class="archive-page archive-home next-home immersive-home">
-    <HomeAtmosphere :posts="allPosts" />
+    <HomeAtmosphere />
     <EditorialContents class="next-contents" :sections="contents" />
     <ImmersiveChapter id="next-index" kind="index">
       <header class="next-desk-header">

@@ -176,7 +176,7 @@ body.site-body.journal-auth #app .auth-subtitle {
   font:
     400 clamp(110px, 15vw, 210px)/0.8 Georgia,
     serif;
-  letter-spacing: -0.1em;
+  letter-spacing: 0;
   margin-left: -0.04em;
 }
 .site-body .auth-art-lines {

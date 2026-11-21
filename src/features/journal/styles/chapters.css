@@ -1,3 +1,34 @@
+@property --chapter-enter {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+@property --chapter-leave {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+@property --chapter-flow {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+@property --chapter-shift {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --slot {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+@property --depth {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
 /* Native content flows continuously; only media sequences reserve scroll travel. */
 .site-body .journal-shell .immersive-home:is(.editorial-home, .next-home) {
   --chapter-inset: max(1.5rem, calc((100% - 82rem) / 2));
@@ -6,11 +37,6 @@
 }
 .site-body .journal-shell .immersive-home section.immersive-chapter {
   --chapter-height: calc(100svh - 4.5rem);
-  --chapter-enter: 1;
-  --chapter-leave: 0;
-  --chapter-flow: 0.5;
-  --chapter-shift: 0rem;
-  --chapter-turn: 2deg;
   position: relative;
   margin: 0;
   scroll-margin-block-start: var(--chapter-top, 4.5rem);
@@ -95,9 +121,6 @@
 .site-body .journal-shell .immersive-home .editorial-reading-layout {
   margin: 0;
 }
-.site-body .journal-shell .immersive-home [data-scene-enhanced='true'] .post-card {
-  content-visibility: visible;
-}
 .site-body .journal-shell .immersive-chapter[data-chapter='film'] .chapter-content {
   padding: 0;
 }
@@ -110,6 +133,8 @@
 .site-body .journal-shell [data-scene-enhanced='true'] .film-track {
   scroll-snap-type: none;
   scroll-behavior: auto;
+  overflow-x: hidden;
+  touch-action: pan-y pinch-zoom;
 }
 .site-body .journal-shell .immersive-chapter .editorial-calendar {
   padding-block: 0;
@@ -148,9 +173,6 @@
   display: block;
   margin: 0;
 }
-.site-body .journal-shell .next-home section.immersive-chapter {
-  --chapter-turn: -4deg;
-}
 .site-body .journal-shell .immersive-chapter .next-stage {
   margin: 0;
   min-block-size: calc(var(--chapter-height) - 4rem);
@@ -170,7 +192,7 @@
 }
 .site-body .journal-shell .immersive-chapter .archive-panel .panel-heading h2 {
   font-size: clamp(1.6rem, 3.5vw, 3.5rem);
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 .site-body .journal-shell .immersive-chapter .archive-agenda article,
 .site-body .journal-shell .immersive-chapter .archive-discussion-row {

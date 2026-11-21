@@ -80,6 +80,7 @@ function mountBrowse(component: Component) {
       stubs: {
         JournalIcon: true,
         JournalImage: true,
+        HomeAtmosphere: true,
         JournalPostCard: true,
         RouterLink: { template: '<a><slot /></a>' },
       },
