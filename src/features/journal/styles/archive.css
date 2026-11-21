@@ -479,20 +479,23 @@ body.site-body.next-body {
   transform-style: preserve-3d;
   transition: transform 0.6s;
 }
+.site-body .journal-shell .archive-inspector .preview-spatial {
+  margin: 0.75rem 1.5rem 1.25rem 0.75rem;
+}
 .site-body .journal-shell .preview-edge {
   display: none;
 }
 .site-body .journal-shell .preview-spatial .preview-edge {
   display: block;
   position: absolute;
-  inset: 8px -16px 8px 15px;
+  inset: 0.5rem 0 0.5rem 0.95rem;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 6px;
   transform: translateZ(-35px) rotateY(-5deg) rotateZ(2deg);
 }
 .site-body .journal-shell .preview-spatial .preview-edge.second {
-  inset: 16px -28px 16px 28px;
+  inset: 1rem 0.75rem 1rem 1.75rem;
   background: var(--paper);
   transform: translateZ(-70px) rotateY(-8deg) rotateZ(4deg);
 }

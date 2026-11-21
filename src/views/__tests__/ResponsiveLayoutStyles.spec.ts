@@ -32,7 +32,7 @@ const postDetailPageSource = readFileSync(
   resolve(process.cwd(), 'src/styles/page-systems/post-detail-page-view.css'),
   'utf8'
 )
-const aboutPageSource = readFileSync(
+const aboutPageStyles = readFileSync(
   resolve(process.cwd(), 'src/styles/page-systems/about-page-view.css'),
   'utf8'
 )
@@ -156,20 +156,21 @@ describe('responsive layout contracts', () => {
     )
   })
 
-  it('lets about link metadata and tech badges wrap instead of truncating on narrow screens', () => {
-    expect(aboutPageSource).toContain('.link-desc {')
-    expect(aboutPageSource).toContain('overflow-wrap: anywhere')
-    expect(aboutPageSource).toContain('.tech-header {')
-    expect(aboutPageSource).toContain('flex-wrap: wrap')
-    expect(aboutPageSource).toContain('.tech-version-badge {')
-    expect(aboutPageSource).toContain('white-space: normal')
+  it('lets About navigation labels wrap instead of truncating on narrow screens', () => {
+    expect(aboutPageStyles).toContain(
+      '.about-page :is(.about-index, .about-directory-links) a > span {'
+    )
+    expect(aboutPageStyles).toContain('overflow-wrap: anywhere')
+    expect(aboutPageStyles).toContain('.about-page .about-directory-links a {')
+    expect(aboutPageStyles).toContain('min-inline-size: 0')
+    expect(aboutPageStyles).toContain('@media (max-width: 700px)')
   })
 
-  it('lets the About section title keep content height after mobile headers stack', () => {
-    expect(aboutPageSource).toContain('@media (max-width: 48rem)')
-    expect(aboutPageSource).toContain('.about-page .about-section-title {')
-    expect(aboutPageSource).toContain('flex: 0 1 auto')
-    expect(aboutPageSource).toContain('inline-size: 100%')
+  it('stacks the About masthead and links while preserving mobile title readability', () => {
+    expect(aboutPageStyles).toContain('.about-page .about-masthead h1 {')
+    expect(aboutPageStyles).toContain('.about-page :is(.about-masthead, .about-directory)')
+    expect(aboutPageStyles).toContain('grid-template-columns: minmax(0, 1fr)')
+    expect(aboutPageStyles).toContain('font-size: clamp(2.2rem, 10vi, 3.25rem)')
   })
 
   it('lets auth inline states and short viewports degrade into a single flowing column', () => {

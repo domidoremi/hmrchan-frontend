@@ -65,7 +65,7 @@ describe('AuthorCard', () => {
     expect(emitted).toEqual(['author-1'])
   })
 
-  it('falls back to the initial when avatar loading fails', async () => {
+  it('falls back to the brand mascot when the author portrait fails', async () => {
     const { host } = mountAuthorCard(createAuthor())
 
     const img = host.querySelector('img')
@@ -75,8 +75,7 @@ describe('AuthorCard', () => {
     img?.dispatchEvent(new Event('error'))
     await nextTick()
 
-    expect(host.querySelector('img')).toBeNull()
-    expect(host.querySelector('.ui-avatar__fallback')?.textContent?.trim()).toBe('T')
+    expect(host.querySelector('img')?.getAttribute('src')).toBe('/journal/mascot.webp')
   })
 
   it('hides description and cta affordance in compact mode', () => {

@@ -88,18 +88,14 @@
 
       <div class="post-meta">
         <div class="post-author-wrapper" v-if="showAuthor && displayAuthorName">
-          <Avatar
+          <PublicAuthorAvatar
             class="post-author-avatar"
-            size="custom"
-            :src="resolveAvatarSrc(post.author_avatar_url)"
+            :size="24"
+            :src="post.author_avatar_url"
+            :author-id="post.author_id"
             :alt="displayAuthorName"
             loading="lazy"
-            decoding="async"
-          >
-            <template #fallback>
-              <AnimatedIcon name="user" :fallback-icon="User" size="sm" />
-            </template>
-          </Avatar>
+          />
           <span class="post-author">{{ displayAuthorName }}</span>
         </div>
 
@@ -127,10 +123,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onRenderTracked, onRenderTriggered, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Calendar, Eye, Film, Globe, Heart, Play, User } from '@lucide/vue'
+import { Calendar, Eye, Film, Globe, Heart, Play } from '@lucide/vue'
 import { IconYoutube, IconX, IconTiktok, IconInstagram } from '@/components/icons'
 import type { PostListItem } from '@/api'
-import { resolveAvatarSrc } from '@/utils/avatarPresentation'
+import PublicAuthorAvatar from './PublicAuthorAvatar.vue'
 import { prefetchPostDetail } from '@/utils/prefetch'
 import { reportClientEvent } from '@/utils/clientReporter'
 import { warmDecodedImage } from '@/utils/performance'
@@ -143,7 +139,6 @@ import {
 } from '@/utils/mediaOptimizer'
 import { thumbnailCache } from '@/utils/thumbnailCache'
 import AnimatedIcon from '@/components/animation/AnimatedIcon.vue'
-import Avatar from '@/components/ui/Avatar.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 import {
   formatCount,
@@ -1007,15 +1002,13 @@ post-meta {
   flex: 1;
 }
 
-.post-author-avatar.ui-avatar {
+.post-author-avatar.public-author-avatar {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: var(--radius-full);
   flex-shrink: 0;
   background: var(--glass-bg-subtle);
   border: 1px solid rgba(148, 163, 184, 0.16);
-  --ui-avatar-fallback-color: var(--color-text-tertiary);
-  --ui-avatar-fallback-bg: transparent;
 }
 
 .post-author {

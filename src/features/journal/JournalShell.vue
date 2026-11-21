@@ -2,7 +2,8 @@
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <a class="skip-link" href="#main-content" tabindex="0">{{ t('common.skipToContent') }}</a>
     <div class="edition-workspace">
-      <header class="edition-header">
+      <header class="edition-header liquid-surface">
+        <LiquidGlass v-if="settingsStore.settings.appearancePreset === 'fluent-soft'" />
         <RouterLink
           class="edition-logo"
           to="/"
@@ -85,8 +86,7 @@
               :to="item.path"
               :aria-current="pageName === item.key ? 'page' : undefined"
               @click="menuOpen = false"
-              ><small>{{ item.index }}</small
-              ><JournalIcon v-if="isNext" :name="item.icon" class="directory-icon" /><span>{{
+              ><JournalIcon :name="item.icon" class="directory-icon" /><span>{{
                 t(isNext ? item.archiveKey : item.mainKey)
               }}</span
               ><JournalIcon name="arrow-up-right"
@@ -118,8 +118,7 @@
           MomiChan<span>®</span>
         </div>
         <div class="footer-bottom">
-          <span>MOMICHAN · {{ new Date().getFullYear() }}</span
-          ><span>{{ isNext ? 'NEXT' : 'JOURNAL' }}</span
+          <span>© {{ new Date().getFullYear() }} MomiChan</span
           ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
             >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }}
             <JournalIcon name="arrow-up-right" /></a
@@ -132,6 +131,7 @@
     <nav
       v-if="!isAuthRoute"
       class="mobile-navigation"
+      :class="{ 'liquid-surface': settingsStore.settings.appearancePreset === 'fluent-soft' }"
       data-indicator
       :aria-label="t('journal.nav.mobileNavigation')"
     >
@@ -149,8 +149,7 @@
     <JournalAppearanceDialog v-if="appearanceOpen" @close="appearanceOpen = false" />
     <dialog id="app-dialog" aria-labelledby="dialog-title">
       <div class="dialog-head">
-        <span class="eyebrow">MOMICHAN</span
-        ><button class="icon-button" data-close :aria-label="t('common.close')">
+        <button class="icon-button" data-close :aria-label="t('common.close')">
           <JournalIcon name="x" />
         </button>
       </div>
@@ -192,6 +191,7 @@ import { useJournalEvents } from './useJournalEvents'
 import { useJournalDirectory } from './useJournalDirectory'
 import { installDisplayPreferences } from './displayPreferences'
 import JournalIcon from './JournalIcon.vue'
+import LiquidGlass from './LiquidGlass.vue'
 import AccountNavigation from './AccountNavigation.vue'
 const JournalAppearanceDialog = defineAsyncComponent(() => import('./JournalAppearanceDialog.vue'))
 import { useI18n } from 'vue-i18n'
@@ -232,7 +232,6 @@ const navigation = [
     mainKey: 'nav.home',
     archiveKey: 'journal.nav.overview',
     icon: 'home',
-    index: '01',
   },
   {
     path: '/explore',
@@ -240,7 +239,6 @@ const navigation = [
     mainKey: 'journal.nav.posts',
     archiveKey: 'journal.nav.records',
     icon: 'compass',
-    index: '02',
   },
   {
     path: '/schedule',
@@ -248,7 +246,6 @@ const navigation = [
     mainKey: 'nav.schedule',
     archiveKey: 'journal.nav.calendar',
     icon: 'calendar',
-    index: '03',
   },
   {
     path: '/community',
@@ -256,7 +253,6 @@ const navigation = [
     mainKey: 'nav.community',
     archiveKey: 'journal.nav.discussions',
     icon: 'messages',
-    index: '04',
   },
   {
     path: '/profile/favorites',
@@ -264,7 +260,6 @@ const navigation = [
     mainKey: 'nav.favorites',
     archiveKey: 'journal.nav.collection',
     icon: 'bookmark',
-    index: '05',
   },
 ]
 const pageName = computed(() =>

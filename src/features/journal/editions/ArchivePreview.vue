@@ -10,7 +10,7 @@
         <div class="preview-caption">
           <span>{{
             journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
-          }}</span><span>{{ journalContentTypeLabel(post.type, t) }}</span>
+          }}</span>
         </div>
         <button
           class="preview-media"
@@ -32,8 +32,16 @@
         </button>
         <div class="preview-copy">
           <div class="meta-line">
-            <button :data-author-id="post.authorId" :data-author-query="post.author">
-              {{ post.author }}</button><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
+            <button
+              v-if="post.author || post.authorId"
+              class="preview-author"
+              :data-author-id="post.authorId"
+              :data-author-query="post.author"
+              :aria-label="post.author || t('search.type.author')"
+            >
+              <PublicAuthorAvatar :src="post.avatar" :author-id="post.authorId" :size="24" />
+              <span>{{ post.author || t('search.type.author') }}</span></button
+            ><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
           </div>
           <h2 v-if="post.image || post.text.trim() !== post.title.trim()">
             <button :data-open="post.id">{{ post.title }}</button>
@@ -87,9 +95,10 @@
 </template>
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
-import { journalContentTypeLabel, journalSourceLabel } from '../controlLabels'
+import { journalSourceLabel } from '../controlLabels'
 import { journalPostTimeLabel } from '../localizedPostTime'
 import { platforms, type JournalPost } from '../models'
 import type { JournalResourceState } from '../resourceState'

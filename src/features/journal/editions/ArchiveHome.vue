@@ -7,7 +7,7 @@
         <h1 class="next-desk-mark" aria-label="MomiChan Next">
           <MotionTitle text="next" /><span aria-hidden="true">↗</span>
         </h1>
-        <form class="next-searchbar" role="search" @submit.prevent="commitSearch">
+        <form class="next-searchbar liquid-surface" role="search" @submit.prevent="commitSearch">
           <JournalIcon name="search" />
           <input
             ref="searchInput"
@@ -20,7 +20,6 @@
           <button type="submit" class="icon-button" :aria-label="t('common.search')">
             <JournalIcon name="arrow" />
           </button>
-          <kbd aria-hidden="true">Ctrl K</kbd>
         </form>
       </header>
       <NextCollection

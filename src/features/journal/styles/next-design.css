@@ -131,9 +131,9 @@
 }
 .site-body .journal-shell .next-orbit {
   position: absolute;
-  inset-inline: 0;
+  inset-inline: 9%;
   inset-block-start: 34%;
-  block-size: 14rem;
+  block-size: min(14rem, 56vw);
   border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   border-radius: 50%;
   transform: rotate(-18deg);
@@ -146,7 +146,7 @@
   pointer-events: none;
 }
 .site-body .journal-shell .next-orbit-tall {
-  inset-inline: 10% 5%;
+  inset-inline: 12%;
   transform: rotate(65deg);
   background: transparent;
 }
@@ -172,7 +172,7 @@
   overflow: hidden;
   text-align: start;
   transform: translate3d(
-      calc(var(--slot) * 3rem),
+      calc(clamp(-1, var(--slot), 1) * min(2rem, 7%)),
       calc(var(--depth) * 1.4rem),
       calc(var(--depth) * -6rem)
     )
@@ -249,7 +249,7 @@
 .site-body .journal-shell .next-stage-satellite {
   position: absolute;
   inline-size: 36%;
-  inset-inline-start: 0;
+  inset-inline-start: clamp(1.25rem, 8%, 2.75rem);
   inset-block-end: 8rem;
   padding: 0.6rem;
   border: 1px solid color-mix(in srgb, var(--paper) 85%, var(--line));
@@ -689,7 +689,7 @@
 }
 .site-body .journal-shell .next-collection .archive-result-row {
   display: grid;
-  grid-template-columns: 3.2rem minmax(0, 1fr) 5rem 7rem auto;
+  grid-template-columns: 3.2rem minmax(0, 1fr) auto;
   gap: 0.8rem;
   padding: 1rem;
   min-block-size: 5.75rem;
@@ -846,8 +846,8 @@
     min-block-size: 27rem;
   }
   .site-body .journal-shell .next-stage-photo {
-    inset-inline-start: 17%;
-    inline-size: 72%;
+    inset-inline-start: 22%;
+    inline-size: 61%;
   }
   .site-body .journal-shell .next-stage-satellite {
     inline-size: 42%;
@@ -928,7 +928,7 @@
   }
   .site-body .journal-shell .next-stage-photo {
     inset-inline-start: 24%;
-    inline-size: 65%;
+    inline-size: 59%;
     inset-block-start: 1rem;
   }
   .site-body .journal-shell .next-stage-satellite {

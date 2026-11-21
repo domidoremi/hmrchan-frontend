@@ -10,14 +10,12 @@
     @click="emit('click', author.id)"
   >
     <div class="author-card__head">
-      <Avatar
+      <PublicAuthorAvatar
         class="author-avatar"
-        size="custom"
-        :src="resolvedAvatarSrc"
+        :size="64"
+        :src="author.avatar_url"
+        :author-id="author.id"
         :alt="displayName"
-        :fallback="fallbackLabel"
-        loading="lazy"
-        decoding="async"
       />
       <span v-if="author.is_verified" class="author-verified">
         <BadgeCheck :size="14" />
@@ -79,8 +77,7 @@ export interface AuthorCardProps {
 import { computed } from 'vue'
 import { ArrowRight, BadgeCheck, FileText, Users } from '@lucide/vue'
 
-import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
-import Avatar from '@/components/ui/Avatar.vue'
+import PublicAuthorAvatar from './PublicAuthorAvatar.vue'
 
 defineOptions({ name: 'AuthorCard' })
 
@@ -95,17 +92,6 @@ const emit = defineEmits<{
 
 const displayName = computed(
   () => props.author.display_name || props.author.name || props.author.username || 'Unknown'
-)
-
-const resolvedAvatarSrc = computed(() => resolveAvatarSrc(props.author.avatar_url))
-
-const fallbackLabel = computed(() =>
-  getAvatarFallbackLabel(
-    props.author.display_name,
-    props.author.name,
-    props.author.username,
-    displayName.value
-  )
 )
 
 const hasFollowerCount = computed(
@@ -151,7 +137,7 @@ function formatCompactCount(value: number): string {
   flex-shrink: 0;
 }
 
-.author-avatar.ui-avatar {
+.author-avatar.public-author-avatar {
   inline-size: 4rem;
   block-size: 4rem;
   border-radius: 1.4rem;
@@ -161,28 +147,21 @@ function formatCompactCount(value: number): string {
     radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.08), transparent 55%),
     rgba(255, 255, 255, 0.82);
   box-shadow: 0 1rem 1.8rem -1.3rem rgba(15, 23, 42, 0.45);
-  --ui-avatar-fallback-font-size: 1.25rem;
-  --ui-avatar-fallback-font-weight: var(--font-semibold);
-  --ui-avatar-fallback-color: var(--page-control-ink-strong);
-  --ui-avatar-fallback-bg:
-    radial-gradient(circle at 30% 20%, rgba(var(--color-accent-rgb), 0.22), transparent 55%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.9));
-  --ui-avatar-fallback-border: 1px solid var(--page-control-border);
 }
 
 @media (min-width: 768px) {
-  .author-avatar.ui-avatar {
+  .author-avatar.public-author-avatar {
     inline-size: 4.5rem;
     block-size: 4.5rem;
   }
 
-  .author-card--compact .author-avatar.ui-avatar {
+  .author-card--compact .author-avatar.public-author-avatar {
     inline-size: 3.25rem;
     block-size: 3.25rem;
   }
 }
 
-.author-card--compact .author-avatar.ui-avatar {
+.author-card--compact .author-avatar.public-author-avatar {
   inline-size: 3rem;
   block-size: 3rem;
   border-radius: 1.15rem;
@@ -190,8 +169,8 @@ function formatCompactCount(value: number): string {
 
 .author-verified {
   position: absolute;
-  inset-inline-end: -0.25rem;
-  inset-block-end: -0.25rem;
+  inset-inline-end: 0;
+  inset-block-end: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;

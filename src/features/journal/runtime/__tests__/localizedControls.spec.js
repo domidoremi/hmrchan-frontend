@@ -33,7 +33,7 @@ beforeEach(() => {
   setActivePinia(pinia)
   store = useToastStore()
   document.body.innerHTML =
-    '<button id="outside">Open</button><main id="main-content"></main><dialog id="app-dialog"><div class="dialog-head"><span class="eyebrow">MOMICHAN</span><button data-close>Close</button></div><div id="dialog-content"></div></dialog><div id="toast"></div>'
+    '<button id="outside">Open</button><main id="main-content"></main><dialog id="app-dialog"><div class="dialog-head"><button data-close>Close</button></div><div id="dialog-content"></div></dialog><div id="toast"></div>'
   dialog = document.querySelector('#app-dialog')
   content = document.querySelector('#dialog-content')
   content.getAnimations = () => []

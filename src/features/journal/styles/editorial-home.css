@@ -157,13 +157,14 @@ html[data-color-mode='dark'] .site-body .journal-shell .cover-story .round-actio
   translate: 0 calc(var(--scroll-depth, 0) * -1.25rem);
 }
 .site-body .journal-shell .cover-sheet {
+  --sheet-slot: clamp(-2, var(--slot), 2);
   padding: 0.45rem;
   border: 1px solid color-mix(in srgb, var(--paper) 85%, var(--line));
   border-radius: 1.1rem;
   background: var(--paper);
   overflow: hidden;
   transform: translate3d(
-      calc(var(--slot) * 3.6rem),
+      calc(var(--sheet-slot) * min(3rem, 9%)),
       calc(var(--depth) * 1.2rem),
       calc(var(--depth) * -5rem)
     )
@@ -686,7 +687,7 @@ html[data-color-mode='dark'] .site-body .journal-shell .cover-story .round-actio
   }
   .site-body .journal-shell .cover-sheet {
     transform: translate3d(
-        calc(var(--slot) * 2rem),
+        calc(var(--sheet-slot) * min(2rem, 8%)),
         calc(var(--depth) * 1rem),
         calc(var(--depth) * -5rem)
       )

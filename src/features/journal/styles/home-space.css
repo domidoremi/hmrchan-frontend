@@ -82,7 +82,7 @@
 }
 .site-body .journal-shell [data-space-world='true'] .cover-sheet {
   transform: translate3d(
-      calc(var(--slot) * clamp(1.9rem, 5vw, 5.5rem)),
+      calc(var(--sheet-slot) * min(3.5rem, 10%)),
       calc(var(--depth) * 1.05rem),
       calc(var(--depth) * -8rem)
     )
@@ -90,7 +90,7 @@
 }
 .site-body .journal-shell [data-space-world='true'] .next-stage-photo {
   transform: translate3d(
-      calc(var(--slot) * clamp(1.7rem, 4vw, 4.4rem)),
+      calc(clamp(-2, var(--slot), 2) * min(2.8rem, 9%)),
       calc(var(--slot) * -1.5rem),
       calc(var(--depth) * -8.5rem)
     )

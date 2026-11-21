@@ -222,7 +222,7 @@ body.site-body .journal-legacy :is(.page-hero-shell__title, .sub-header h1) {
   border-color: var(--accent);
   transform: translateY(-4px);
 }
-.site-body .journal-legacy .author-card .author-avatar {
+.site-body .journal-legacy .author-card .author-avatar.public-author-avatar {
   width: 88px;
   height: 88px;
   border-radius: 50%;
@@ -570,7 +570,7 @@ body.site-body.next-body .journal-legacy :is(.page-hero-shell__title, .sub-heade
   background: transparent;
   align-items: center;
 }
-.site-body.next-body .journal-legacy .author-card .author-avatar {
+.site-body.next-body .journal-legacy .author-card .author-avatar.public-author-avatar {
   width: 64px;
   height: 64px;
   border-radius: 6px;
@@ -599,7 +599,7 @@ body.site-body.next-body .journal-legacy :is(.page-hero-shell__title, .sub-heade
   line-height: 1.4;
   font-family: inherit;
 }
-.site-body.next-body .journal-legacy .author-header .author-avatar {
+.site-body.next-body .journal-legacy .author-header .author-avatar.public-author-avatar {
   width: 80px;
   height: 80px;
   border-radius: 8px;

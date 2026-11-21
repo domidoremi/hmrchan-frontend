@@ -218,7 +218,7 @@
   min-block-size: clamp(21rem, calc(var(--chapter-height) - 13.5rem), 37rem);
 }
 .site-body .journal-shell .immersive-home .cover-deck {
-  inset: 1.2rem 14% 1rem;
+  inset: 1.2rem 19% 1rem;
 }
 .site-body .journal-shell .immersive-home .cover-sheet {
   box-shadow:
@@ -435,7 +435,11 @@
 /* Copy shares a stable grid cell; photographs move continuously around readable text. */
 .site-body .journal-shell .cover-copy {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
+}
+.site-body .journal-shell .cover-copy > * {
+  min-inline-size: 0;
 }
 .site-body .journal-shell .cover-kicker {
   grid-area: 1 / 1;
@@ -445,6 +449,20 @@
 }
 .site-body .journal-shell .cover-controls {
   grid-area: 3 / 1;
+  flex-wrap: wrap;
+}
+.site-body .journal-shell .cover-controls .cover-pagination {
+  flex: 1 1 5rem;
+  min-inline-size: 0;
+}
+.site-body .journal-shell .cover-controls .cover-pagination button {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  max-inline-size: 1.1rem;
+}
+.site-body .journal-shell .cover-controls .cover-pagination button.active {
+  flex-grow: 1.7;
+  max-inline-size: 1.9rem;
 }
 .site-body .journal-shell .next-stage-copy {
   display: grid;

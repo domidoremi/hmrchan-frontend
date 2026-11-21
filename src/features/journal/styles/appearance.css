@@ -1,9 +1,6 @@
 html[data-color-mode='light']:has(.site-body) {
   color-scheme: light;
 }
-:is(:root, #app)[data-preset='clay-playful'][data-color-mode='light'] {
-  --appearance-accent: #9a3412;
-}
 html[data-color-mode='dark']:has(.site-body) {
   color-scheme: dark;
 }
