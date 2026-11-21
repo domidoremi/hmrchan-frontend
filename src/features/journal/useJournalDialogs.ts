@@ -16,6 +16,11 @@ import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { useAuthStore, useFavoritesStore } from '@/stores'
 import { isUuidV7String } from '@/types/publicId'
 import { getMediaStreamUrl, getMediaThumbnailUrl } from '@/utils/mediaOptimizer'
+import {
+  AUTHOR_AVATAR_FALLBACK,
+  loadPublicAuthorAvatar,
+  publicAuthorAvatar,
+} from '@/utils/publicAuthorAvatar'
 import { journalPostTimeLabel } from './localizedPostTime'
 import { journalSourceLabel } from './controlLabels'
 import { postModel, platforms, type JournalPost } from './models'
@@ -83,6 +88,28 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
   }
   const config = () => ({ signal: lifetime.signal, skipErrorToast: true })
   const lines = (value: string) => esc(value).replace(/\n/g, '<br>')
+  function portrait(
+    post: { avatar?: string | null | undefined; authorId?: string | null | undefined },
+    size: number
+  ) {
+    const source = publicAuthorAvatar(post.avatar)
+    return `<img data-author-avatar="${esc(post.authorId ?? '')}"${source ? ` src="${esc(source)}"` : ''} alt="" width="${size}" height="${size}" decoding="async" referrerpolicy="no-referrer">`
+  }
+  function hydratePortraits(excludedAuthorIds: ReadonlySet<string> = new Set()) {
+    for (const image of document.querySelectorAll<HTMLImageElement>(
+      '#app-dialog img[data-author-avatar]'
+    )) {
+      const fallback = () => {
+        if (image.isConnected) image.src = AUTHOR_AVATAR_FALLBACK
+      }
+      image.addEventListener('error', fallback, { once: true })
+      if (excludedAuthorIds.has(image.dataset['authorAvatar'] ?? '')) continue
+      if (image.getAttribute('src')) continue
+      void loadPublicAuthorAvatar(image.dataset['authorAvatar']).then((source) => {
+        if (image.isConnected) image.src = source ?? AUTHOR_AVATAR_FALLBACK
+      })
+    }
+  }
   function remember(items: JournalPost[]) {
     for (const item of items) posts.set(item.id, item)
     while (posts.size > 120) posts.delete(posts.keys().next().value!)
@@ -130,7 +157,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
           .map((post) => ({
             ...post,
             image: post.image ? '/journal/' + post.image : null,
-            avatar: '/journal/himeri-garden.webp',
+            avatar: null,
             authorId: null,
           }))
           .filter((post) =>
@@ -216,7 +243,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         ? `<p class="dialog-copy">${lines(post.text)}</p>`
         : ''
     ui().openDialog(
-      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i><span class="detail-platform-label" data-platform="${esc(post.platform)}">${esc(journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t))}</span></span><span class="dialog-post-time" data-post-time="${esc(post.id)}">${esc(journalPostTimeLabel(post, t, locale.value))}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div><button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}"><img src="${esc(post.avatar)}" alt="" width="33" height="33"><span>${esc(post.author)}<small><span class="detail-author-label">${esc(t('search.type.author'))}</span> ${icon('arrow-up-right')}</small></span></button><div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id)?.active ?? post.liked ?? false}">${icon('heart')}<span>${liked.get(post.id)?.count ?? post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="${esc(t('journal.actions.openPostNamed', { title: post.title }))}">${icon('arrow-up-right')}</a></div></div></div>`,
+      `<div class="post-detail${post.image ? '' : ' post-detail--text'}">${media ? `<div class="detail-media">${media}</div>` : ''}<div class="detail-copy"><div class="post-meta"><span class="platform"><i class="platform-dot platform-${esc(post.platform)}"></i><span class="detail-platform-label" data-platform="${esc(post.platform)}">${esc(journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t))}</span></span><span class="dialog-post-time" data-post-time="${esc(post.id)}">${esc(journalPostTimeLabel(post, t, locale.value))}</span></div><h2 id="dialog-title">${esc(post.title)}</h2>${copy}<div class="detail-tags">${post.tags.map((tag) => `<button class="badge badge-purple" data-search-term="${esc(tag)}"># ${esc(tag)}</button>`).join('')}</div>${post.author || post.authorId ? `<button class="detail-author" data-author-id="${esc(post.authorId || '')}" data-author-query="${esc(post.author)}">${portrait(post, 33)}<span>${esc(post.author || t('search.type.author'))}</span>${icon('arrow-up-right')}</button>` : ''}<div class="detail-actions">${saveButton(post)}${post.likes !== null ? `<button class="button button-outline button-small" data-dialog-like="${esc(post.id)}" aria-pressed="${liked.get(post.id)?.active ?? post.liked ?? false}">${icon('heart')}<span>${liked.get(post.id)?.count ?? post.communityLikes ?? post.likes}</span></button>` : ''}<a class="text-button" href="/post/${esc(post.id)}" aria-label="${esc(t('journal.actions.openPostNamed', { title: post.title }))}">${icon('arrow-up-right')}</a></div></div></div>`,
       post.image ? 'detail-dialog' : 'detail-dialog detail-dialog--text',
       {
         key: `post:${post.id}`,
@@ -224,6 +251,7 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         render: () => renderPost(posts.get(post.id) || post),
       }
     )
+    hydratePortraits()
   }
   async function openPost(post: JournalPost) {
     const likeSnapshot = liked.get(post.id)
@@ -422,14 +450,16 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     let items = [...posts.values()].filter((post) =>
       id ? post.authorId === id : post.author === name
     )
-    let avatar = items[0]?.avatar || '/journal/mascot.webp',
+    let avatar = id ? items.find((item) => item.avatar)?.avatar : undefined,
       count: number | null = null
-    const render = () =>
+    const render = () => {
       ui().openDialog(
-        `<div class="profile-summary"><img src="${esc(avatar)}" alt="${esc(name)}" width="85" height="85"><h2 id="dialog-title">${esc(name)}</h2><div class="profile-stats">${count !== null ? `<span class="author-post-count" data-count="${count}">${esc(t('author.postCount', { count }))}</span>` : ''}<span class="author-favorite-count" data-count="${items.filter((post) => saved(post.id)).length}">${esc(t('favorites.totalCount', { count: items.filter((post) => saved(post.id)).length }))}</span></div>${id ? `<a class="button button-dark" href="/author/${esc(id)}"><span class="author-profile-label">${esc(t('nav.authorDetail'))}</span> ${icon('arrow-up-right')}</a>` : ''}</div><div class="search-results">${resultRows(items, true)}</div>`,
+        `<div class="profile-summary">${portrait({ avatar, authorId: id }, 85)}<h2 id="dialog-title">${esc(name || t('search.type.author'))}</h2>${count !== null ? `<p class="author-post-count" data-count="${count}">${esc(t('author.postCount', { count }))}</p>` : ''}${isUuidV7String(id) ? `<a class="button button-dark" href="/author/${esc(id)}"><span class="author-profile-label">${esc(t('nav.authorDetail'))}</span> ${icon('arrow-up-right')}</a>` : ''}</div><div class="search-results">${resultRows(items, true)}</div>`,
         'author-dialog',
         { key: viewKey, labelKey: 'search.type.author', render }
       )
+      hydratePortraits(id ? new Set([id]) : undefined)
+    }
     render()
     const request = generation
     try {
@@ -437,22 +467,31 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
         if (fixture.value) return
         const found = await searchService.searchAuthors({ q: name, limit: 6 }, config())
         if (request !== generation) return
-        const match = found.items.find((author) =>
+        const matches = found.items.filter((author) =>
           [author.display_name, author.username, author.name].includes(name)
         )
-        if (!match) return
-        id = match.id
+        if (matches.length !== 1 || !matches[0]) return
+        id = matches[0].id
       }
-      const [author, response] = await Promise.all([
+      const [profile, recent] = await Promise.allSettled([
         authorService.getAuthor(id, config()),
         authorService.listAuthorPosts(id, { limit: 12 }, config()),
       ])
       if (request !== generation || !active('author-dialog')) return
-      items = response.items.map(postModel)
-      remember(items)
-      avatar = author.avatar_url || avatar
-      count = author.post_count ?? null
+      if (recent.status === 'fulfilled') {
+        items = recent.value.items.map(postModel)
+        remember(items)
+      }
+      if (profile.status === 'fulfilled' && profile.value.id === id) {
+        const author = profile.value
+        avatar = publicAuthorAvatar(author.avatar_url) ?? avatar ?? AUTHOR_AVATAR_FALLBACK
+        name = author.display_name || author.name || author.username || name
+        count = author.post_count ?? null
+      } else avatar ??= AUTHOR_AVATAR_FALLBACK
       render()
+      if (profile.status === 'rejected' && recent.status === 'rejected') {
+        ui().toast(t('journal.toast.authorFailed'))
+      }
     } catch {
       if (request === generation) ui().toast(t('journal.toast.authorFailed'))
     }
@@ -472,7 +511,8 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
     }
     if (data['dialogSave']) void toggleSave(data['dialogSave'], button)
     if (data['dialogLike']) void toggleLike(data['dialogLike'])
-    if (data['authorQuery']) void openAuthor(data['authorId'] || '', data['authorQuery'])
+    if (data['authorQuery'] || data['authorId'])
+      void openAuthor(data['authorId'] || '', data['authorQuery'] || '')
     if (data['realGalleryStep'])
       renderGallery(
         galleryIndex + Number(data['realGalleryStep']),
@@ -522,7 +562,6 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       text('.detail-photo-label', t('journal.gallery.open'))
       const photo = root.querySelector('[data-dialog-gallery]')
       if (photo) photo.setAttribute('aria-label', t('journal.gallery.open'))
-      text('.detail-author-label', t('search.type.author'))
       const platform = root.querySelector<HTMLElement>('.detail-platform-label')
       if (platform) {
         const key = platform.dataset['platform']!
@@ -557,11 +596,6 @@ export function useJournalDialogs(runtime: ShallowRef<JournalRuntime | null>) {
       const count = root.querySelector<HTMLElement>('.author-post-count')
       if (count)
         count.textContent = t('author.postCount', { count: Number(count.dataset['count']) })
-      const favorites = root.querySelector<HTMLElement>('.author-favorite-count')
-      if (favorites)
-        favorites.textContent = t('favorites.totalCount', {
-          count: Number(favorites.dataset['count']),
-        })
     }
   }
   const changed = () => {

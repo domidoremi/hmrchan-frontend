@@ -90,7 +90,7 @@ export function useJournalData(page: Ref<string>) {
             : reference.posts.map((post) => ({
                 ...post,
                 image: post.image ? '/journal/' + post.image : null,
-                avatar: '/journal/himeri-garden.webp',
+                avatar: null,
                 authorId: null,
               }))
         events.value = reference.events.map((event) => ({

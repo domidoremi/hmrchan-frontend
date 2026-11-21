@@ -200,8 +200,8 @@ body.site-body.journal-directory-open {
   }
   .site-body .journal-shell .browse-filter-row .chips {
     flex-basis: 100%;
-    min-height: 44px;
-    padding-right: 148px;
+    min-inline-size: 0;
+    min-block-size: 2.75rem;
   }
   .site-body .journal-shell .browse-filter-row select {
     border: 1px solid var(--line);

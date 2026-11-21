@@ -110,10 +110,10 @@ beforeEach(() => {
   })
   mocks.listPosts.mockResolvedValue({ items: [post()], has_more: false })
   mocks.searchPosts.mockResolvedValue({ items: [post()], has_more: false })
-  mocks.getAuthor.mockResolvedValue({ avatar_url: '/author.webp', post_count: 3 })
+  mocks.getAuthor.mockResolvedValue({ id, avatar_url: '/author.webp', post_count: 3 })
   mocks.listAuthorPosts.mockResolvedValue({ items: [post()] })
   document.body.innerHTML =
-    '<main id="main-content"></main><dialog id="app-dialog"><div class="dialog-head"><span class="eyebrow">MOMICHAN</span><button data-close>Close</button></div><div id="dialog-content"></div></dialog><div id="toast"></div>'
+    '<main id="main-content"></main><dialog id="app-dialog"><div class="dialog-head"><button data-close>Close</button></div><div id="dialog-content"></div></dialog><div id="toast"></div>'
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
     value: vi.fn(),
@@ -302,6 +302,9 @@ describe('imperative dialog language changes', () => {
     expect(result.textContent).toContain(post().title)
     expect(document.querySelector('.author-post-count')!.textContent).toBe(
       i18n.global.t('author.postCount', { count: 3 })
+    )
+    expect(document.querySelector<HTMLImageElement>('.profile-summary img')!.src).toContain(
+      '/author.webp'
     )
     expect(mocks.getAuthor).toHaveBeenCalledOnce()
     expect(mocks.listAuthorPosts).toHaveBeenCalledOnce()

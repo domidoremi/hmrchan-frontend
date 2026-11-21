@@ -14,7 +14,6 @@
     @keydown.right.prevent="step(1)"
   >
     <div class="next-stage-copy">
-      <span class="eyebrow"><span class="status-light" />{{ t('journal.next.featured') }}</span>
       <div
         v-for="(post, i) in items"
         :key="post.id"
@@ -24,7 +23,16 @@
         :aria-hidden="post.id !== selectedId || undefined"
       >
         <h2 :aria-label="post.title"><MotionTitle :text="post.title" /></h2>
-        <p>{{ post.author }} · {{ journalPostTimeLabel(post, t, locale) }}</p>
+        <p class="next-stage-byline">
+          <PublicAuthorAvatar
+            v-if="post.author || post.authorId"
+            :src="post.avatar"
+            :author-id="post.authorId"
+            :size="28"
+          />
+          <span>{{ post.author || t('search.type.author') }}</span><span aria-hidden="true">·</span
+          ><span>{{ journalPostTimeLabel(post, t, locale) }}</span>
+        </p>
         <button class="button button-dark" :data-open="post.id" data-magnet>
           {{ t('journal.actions.open') }}<JournalIcon name="arrow-up-right" />
         </button>
@@ -103,7 +111,6 @@
         </Transition>
       </div>
       <div class="next-feature-controls">
-        <span id="next-featured-label">{{ t('journal.next.featured') }}</span>
         <button
           class="icon-button"
           :aria-label="t('journal.selection.previous')"
@@ -153,6 +160,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import { journalPostTimeLabel } from '../localizedPostTime'
 import { journalSourceLabel } from '../controlLabels'
 import { platforms, type JournalPost } from '../models'

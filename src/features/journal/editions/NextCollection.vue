@@ -36,17 +36,21 @@
           type="button"
           :class="{ active: view === 'grid' }"
           :aria-pressed="view === 'grid'"
+          :aria-label="t('journal.next.gallery')"
+          :title="t('journal.next.gallery')"
           @click="changeView('grid')"
         >
-          <JournalIcon name="grid" />{{ t('journal.next.gallery') }}
+          <JournalIcon name="grid" />
         </button>
         <button
           type="button"
           :class="{ active: view === 'list' }"
           :aria-pressed="view === 'list'"
+          :aria-label="t('journal.next.index')"
+          :title="t('journal.next.index')"
           @click="changeView('list')"
         >
-          <JournalIcon name="list" />{{ t('journal.next.index') }}
+          <JournalIcon name="list" />
         </button>
       </div>
     </header>
@@ -78,7 +82,7 @@
       </div>
       <div class="next-filter-selects archive-querybar">
         <label v-if="showType">
-          <span>{{ t('journal.filters.contentType') }}</span>
+          <span class="sr-only">{{ t('journal.filters.contentType') }}</span>
           <select
             :value="contentType"
             @change="$emit('change', 'type', ($event.target as HTMLSelectElement).value)"
@@ -108,7 +112,6 @@
       class="next-filter-summary active-query-summary"
       :aria-label="t('journal.filters.active')"
     >
-      <span>{{ t('journal.filters.active') }}</span>
       <button
         v-for="filter in activeFilters"
         :key="filter.key"
@@ -121,7 +124,7 @@
     </div>
     <div v-if="view === 'grid'" class="next-gallery" :aria-busy="readState === 'loading'">
       <article
-        v-for="(post, i) in posts"
+        v-for="post in posts"
         :key="post.id"
         class="post-card next-gallery-card"
         :class="{ 'next-gallery-text': !post.image }"
@@ -144,7 +147,6 @@
             loading="lazy"
           />
           <span v-else class="next-gallery-quote">{{ post.text || post.title }}</span>
-          <span class="next-gallery-number">{{ String(i + 1).padStart(2, '0') }}</span>
           <span class="next-gallery-caption">
             <small
               >{{
@@ -153,9 +155,6 @@
               · {{ post.author }}<time>{{ journalPostTimeLabel(post, t, locale) }}</time></small
             >
             <b>{{ post.title }}</b>
-            <span class="next-gallery-open"
-              >{{ t('journal.actions.open') }}<JournalIcon name="arrow-up-right"
-            /></span>
           </span>
         </button>
         <button
@@ -186,11 +185,6 @@
           :title="selected?.title"
           :state="readState"
         />
-        <div class="next-index-heading">
-          <span>{{ t('journal.browse.postAuthor') }}</span>
-          <span>{{ t('journal.filters.source') }}</span>
-          <span>{{ t('journal.browse.time') }}</span>
-        </div>
         <div class="archive-result-list" :aria-busy="readState === 'loading'">
           <button
             v-for="post in posts"
@@ -217,13 +211,15 @@
             />
             <span v-else class="result-text-icon"><JournalIcon name="file" /></span>
             <span class="result-title"
-              ><b>{{ post.title }}</b
-              ><small>{{ post.author }}</small></span
-            >
-            <span class="result-source">{{
-              journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
-            }}</span>
-            <time>{{ journalPostTimeLabel(post, t, locale) }}</time>
+              ><b>{{ post.title }}</b>
+              <span class="result-byline">
+                <span v-if="post.author">{{ post.author }}</span>
+                <span>{{
+                  journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
+                }}</span>
+                <time>{{ journalPostTimeLabel(post, t, locale) }}</time>
+              </span>
+            </span>
             <JournalIcon name="chevron" />
           </button>
         </div>
@@ -235,8 +231,7 @@
         :aria-label="t('post.preview')"
       >
         <div class="inspector-heading">
-          <span>{{ t('journal.selection.preview') }}</span>
-          <span v-if="selected">{{ journalContentTypeLabel(selected.type, t) }}</span>
+          <JournalIcon name="file" aria-hidden="true" />
           <span class="next-preview-position" v-if="selected">
             {{ String(index + 1).padStart(2, '0') }} / {{ String(posts.length).padStart(2, '0') }}
           </span>

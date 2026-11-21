@@ -20,19 +20,19 @@
           </template>
 
           <template v-else-if="author">
-            <Avatar
+            <PublicAuthorAvatar
               class="author-avatar"
-              size="custom"
-              :src="resolvedAuthorAvatarSrc"
-              :alt="author.display_name || author.name"
+              :size="88"
+              :src="author.avatar_url"
+              :author-id="author.id"
+              :alt="author.display_name || author.name || author.username"
               loading="eager"
-              decoding="async"
-              fetch-priority="high"
-              :fallback="authorFallbackLabel"
             />
 
             <div class="author-info">
-              <h1 class="author-name">{{ author.display_name || author.name }}</h1>
+              <h1 class="author-name">
+                {{ author.display_name || author.name || author.username }}
+              </h1>
               <p class="author-username">@{{ author.username }}</p>
               <p v-if="author.bio || author.description" class="author-biography">
                 {{ author.bio || author.description }}
@@ -89,14 +89,13 @@ import { authorService, type AuthorResponse, type PostListItem, ApiError } from 
 import { authorCache, getPublicSnapshot, setPublicSnapshot } from '@/utils/cache'
 import { storePostNavigationContext } from '@/utils/postNavigation'
 import { applyPageMeta } from '@/utils/pageMeta'
-import { getAvatarFallbackLabel, resolveAvatarSrc } from '@/utils/avatarPresentation'
 import { cachePostThumbnailPreview } from '@/utils/thumbnailPresentation'
 import { getFallbackAuthorById, getFallbackAuthorPosts } from '@/fallbacks/authorsFallback'
 import {
   isServiceUnavailableError,
   type PublicPageDataSource,
 } from '@/fallbacks/publicPageFallback'
-import Avatar from '@/components/ui/Avatar.vue'
+import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import StateIndicator from '@/components/ui/StateIndicator.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import Button from '@/components/ui/Button.vue'
@@ -122,10 +121,6 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const dataSource = ref<PublicPageDataSource>('live')
 const isUsingFallback = computed(() => dataSource.value === 'fallback')
-const resolvedAuthorAvatarSrc = computed(() => resolveAvatarSrc(author.value?.avatar_url))
-const authorFallbackLabel = computed(() =>
-  getAvatarFallbackLabel(author.value?.display_name, author.value?.name, author.value?.username)
-)
 let latestRequestId = 0
 let authorController: AbortController | null = null
 const AUTHOR_DETAIL_SNAPSHOT_SCOPE = 'author/detail'
@@ -373,7 +368,7 @@ onBeforeUnmount(() => {
   gap: var(--spacing-4);
 }
 
-.author-avatar {
+.author-avatar.public-author-avatar {
   --avatar-size: 4.5rem;
 }
 

@@ -29,10 +29,6 @@ body.site-body.app-dialog-open {
   padding: 0 24px;
   border-bottom: 1px solid var(--line);
 }
-.site-body #app-dialog .dialog-head .eyebrow {
-  font: 9px monospace;
-  letter-spacing: 2px;
-}
 .site-body #app-dialog .dialog-head [data-close] {
   margin-left: auto;
 }

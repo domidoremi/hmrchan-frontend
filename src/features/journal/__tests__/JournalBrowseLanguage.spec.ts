@@ -160,7 +160,8 @@ it('keeps the Next density from settings, selected record and exact reset values
   expect(localStorage.getItem('momichan-journal:archive-density')).toBe('compact')
   expect(wrapper.get('[data-select-post="first"]').element).toBe(selected.element)
   expect(document.activeElement).toBe(selected.element)
-  expect(wrapper.get('.inspector-heading').text()).toContain(post('first').type)
+  expect(wrapper.get('.inspector-heading').text()).toContain('01 / 02')
+  expect(wrapper.get('.inspector-heading').get('journal-icon-stub').attributes('name')).toBe('file')
   const filters = wrapper.findAll('.active-query-summary button')
   expect(filters[0]!.text()).toBe(
     i18n.global.t('journal.filters.querySummary', { query: '作者原文' })
@@ -177,7 +178,7 @@ it('keeps the Next density from settings, selected record and exact reset values
   ])
 })
 
-it('localizes named preview actions and keeps custom author taxonomy untouched', async () => {
+it('localizes preview actions and omits redundant taxonomy labels', async () => {
   const i18n = createJournalTestI18n('en')
   const item = post('first')
   const wrapper = mount(ArchivePreview, {
@@ -195,7 +196,7 @@ it('localizes named preview actions and keeps custom author taxonomy untouched',
   expect(save.attributes('aria-label')).toBe(
     i18n.global.t('journal.actions.removeFavorite', { title: item.title })
   )
-  expect(wrapper.text()).toContain(item.type)
+  expect(wrapper.text()).not.toContain(item.type)
   expect(wrapper.text()).toContain(item.text)
   expect(wrapper.text()).toContain(item.tags[0])
   expect(journalContentTypeLabel(item.type, i18n.global.t)).toBe(item.type)

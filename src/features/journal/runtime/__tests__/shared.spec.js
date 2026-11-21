@@ -6,7 +6,7 @@ const content = (label, action = 'data-dialog-like="post"') =>
   `<h2 id="dialog-title">${label}</h2><button ${action}>Action</button>`
 beforeEach(() => {
   document.body.innerHTML =
-    '<button id="outside">Open</button><dialog id="app-dialog"><div class="dialog-head"><span class="eyebrow">MOMICHAN</span><button data-close>Close</button></div><div id="dialog-content"></div></dialog><div id="toast"></div>'
+    '<button id="outside">Open</button><dialog id="app-dialog"><div class="dialog-head"><button data-close>Close</button></div><div id="dialog-content"></div></dialog><div id="toast"></div>'
   lifetime = new AbortController()
   const scopedDocument = new Proxy(document, {
     get(target, key) {

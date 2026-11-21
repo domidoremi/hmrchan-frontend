@@ -2,7 +2,6 @@
   <div class="archive-page archive-browse next-browse">
     <header class="archive-page-title" data-reveal>
       <div>
-        <span class="eyebrow">MOMICHAN / NEXT</span>
         <h1>{{ t(favorites ? 'journal.nav.collection' : 'journal.next.browse') }}</h1>
       </div>
     </header>

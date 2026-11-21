@@ -41,12 +41,15 @@
         </h1>
         <p v-if="post.text && post.text !== post.title">{{ post.text }}</p>
         <button
-          v-if="post.author"
+          v-if="post.author || post.authorId"
           class="cover-author"
+          :aria-label="post.author || t('search.type.author')"
           :data-author-id="post.authorId"
           :data-author-query="post.author"
         >
-          <img :src="post.avatar" alt="" width="28" height="28" /><span>{{ post.author }}</span>
+          <PublicAuthorAvatar :src="post.avatar" :author-id="post.authorId" :size="28" /><span>{{
+            post.author || t('search.type.author')
+          }}</span>
         </button>
         <button
           class="round-action"
@@ -148,6 +151,7 @@
   </section>
 </template>
 <script setup lang="ts">
+import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import { useI18n } from 'vue-i18n'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'

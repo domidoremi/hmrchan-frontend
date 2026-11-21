@@ -41,6 +41,9 @@
 .site-body[data-motion='full'] .journal-shell .preview-spatial {
   animation: desk-arrive 1.2s cubic-bezier(0.16, 0.8, 0.23, 1) both;
 }
+.site-body[data-motion='full'] .journal-shell .archive-inspector .preview-spatial {
+  animation-name: inspector-arrive;
+}
 .site-body[data-motion='full'] .journal-shell .status-light:not(.dim) {
   position: relative;
 }
@@ -171,6 +174,16 @@
   to {
     opacity: 1;
     transform: perspective(1800px) rotateY(-7deg) translateX(0) translateY(0);
+  }
+}
+@keyframes inspector-arrive {
+  from {
+    opacity: 0.1;
+    transform: perspective(112.5rem) rotateY(-18deg) rotateX(3deg) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(112.5rem) rotateY(-7deg) scale(1);
   }
 }
 @keyframes status-breathe {

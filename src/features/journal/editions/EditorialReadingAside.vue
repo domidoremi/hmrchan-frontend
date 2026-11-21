@@ -1,17 +1,13 @@
 <template>
   <aside class="editorial-reading-aside">
     <section v-if="featured" class="reading-author-panel" data-reveal>
-      <div class="reading-author-art" aria-hidden="true">
-        <img :src="'/journal/mascot.webp'" alt="" width="180" height="180" loading="lazy" />
-      </div>
       <button
         class="reading-author-link"
         :data-author-id="featured.authorId"
         :data-author-query="featured.author"
       >
-        <img :src="featured.avatar" alt="" width="64" height="64" loading="lazy" />
+        <PublicAuthorAvatar :src="featured.avatar" :author-id="featured.authorId" :size="64" />
         <span
-          ><small>{{ t('search.type.author') }}</small
           ><b>{{ featured.author }}</b></span
         >
         <JournalIcon name="arrow-up-right" />
@@ -51,8 +47,12 @@
         @retry="$emit('retry')"
       />
     </section>
-    <section v-if="sources.length" class="reading-sources-panel" data-reveal>
-      <h3>{{ t('journal.home.sourceDistribution') }}</h3>
+    <section
+      v-if="sources.length"
+      class="reading-sources-panel"
+      :aria-label="t('journal.home.sourceDistribution')"
+      data-reveal
+    >
       <div v-for="source in sources" :key="source.key">
         <span>{{ journalSourceLabel(source.key, source.label, t) }}</span>
         <span class="reading-source-meter" aria-hidden="true">
@@ -68,6 +68,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import { journalSourceLabel } from '../controlLabels'
 import { journalEventTimeLabel } from '../localizedEventTime'
 import { sourceGroups } from '../presentation'

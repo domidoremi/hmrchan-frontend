@@ -20,7 +20,6 @@
           <button type="submit" class="icon-button" :aria-label="t('common.search')">
             <JournalIcon name="arrow" />
           </button>
-          <kbd aria-hidden="true">Ctrl K</kbd>
         </form>
       </header>
       <NextCollection

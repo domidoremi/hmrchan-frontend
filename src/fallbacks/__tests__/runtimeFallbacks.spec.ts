@@ -58,11 +58,11 @@ describe('runtime public fallbacks', () => {
     expect(comments.items.length).toBeGreaterThan(0)
   })
 
-  it('keeps the author shelf useful and its profiles navigable', () => {
+  it('keeps the author shelf useful without assigning post photographs as profile portraits', () => {
     const result = getFallbackAuthors({ limit: 10 })
 
     expect(result.items.length).toBeGreaterThanOrEqual(5)
-    expect(result.items.every((author) => author.avatar_url?.startsWith('/'))).toBe(true)
+    expect(result.items.every((author) => author.avatar_url === null)).toBe(true)
     expect(result.items.every((author) => author.description?.trim())).toBe(true)
 
     const authorWithPosts = result.items.find(
@@ -75,6 +75,7 @@ describe('runtime public fallbacks', () => {
     })
     expect(getFallbackAuthorPosts(authorWithPosts!.id).items[0]).toMatchObject({
       author_id: authorWithPosts!.id,
+      author_avatar_url: null,
     })
   })
 })

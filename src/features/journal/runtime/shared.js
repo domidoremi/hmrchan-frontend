@@ -210,7 +210,6 @@ export function installUI(runtime, environment) {
     back.hidden = !previous
     back.innerHTML = `${icon('arrow-left')}<span></span>`
     refreshBackLabel()
-    el.querySelector('.dialog-head .eyebrow').hidden = Boolean(previous)
     hydrate(el)
     prepareDialogLinks(el)
     document.body.classList.add('app-dialog-open')

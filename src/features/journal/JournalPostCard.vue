@@ -53,9 +53,14 @@
     </button>
     <p v-if="post.image && copy.showImageExcerpt" class="post-excerpt">{{ post.text }}</p>
     <div class="post-bottom">
-      <button class="post-author" :data-author-id="post.authorId" :data-author-query="post.author">
-        <img :src="post.avatar" alt="" width="19" height="19" loading="lazy" /><span>{{
-          post.author
+      <button
+        v-if="post.author || post.authorId"
+        class="post-author"
+        :data-author-id="post.authorId"
+        :data-author-query="post.author"
+      >
+        <PublicAuthorAvatar :src="post.avatar" :author-id="post.authorId" :size="19" /><span>{{
+          post.author || t('search.type.author')
         }}</span></button
       ><span v-if="!post.editorial && post.likes !== null" class="post-likes"
         ><JournalIcon name="heart" />{{ post.likes }}</span
@@ -66,6 +71,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
+import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import JournalIcon from './JournalIcon.vue'
 import JournalImage from './JournalImage.vue'
 import { journalContentTypeLabel, journalSourceLabel } from './controlLabels'

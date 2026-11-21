@@ -18,7 +18,7 @@ export interface JournalPost {
   originalImage?: string | null
   author: string
   authorId: string | null
-  avatar: string
+  avatar: string | null
   time: string
   publishedAt?: string
   likes: number | null
@@ -85,7 +85,7 @@ export function postModel(post: PostListItem | PostDetailResponse): JournalPost 
     originalImage: media.kind === 'image' ? media.streamUrl : null,
     author: post.author_name || post.author_username || '',
     authorId: post.author_id || null,
-    avatar: post.author_avatar_url || '/journal/mascot.webp',
+    avatar: post.author_avatar_url ?? null,
     time: post.published_at ? formatRelativeTime(post.published_at) : '',
     publishedAt: post.published_at || post.created_at || '',
     likes: post.like_count || 0,
@@ -125,7 +125,7 @@ export function favoriteModel(
     originalImage: media.kind === 'image' ? media.streamUrl : null,
     author: post?.author_name || favorite.author?.username || '',
     authorId: favorite.author?.id || null,
-    avatar: '/journal/mascot.webp',
+    avatar: null,
     time: formatRelativeTime(favorite.created_at),
     publishedAt: favorite.created_at,
     likes: null,

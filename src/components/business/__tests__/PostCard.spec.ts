@@ -95,18 +95,19 @@ describe('PostCard', () => {
     expect(emitted).toEqual([['post-1', null]])
   })
 
-  it('falls back to the shared avatar fallback when author image loading fails', async () => {
+  it('falls back to the brand mascot when author image loading fails', async () => {
     const { host } = mountPostCard(createPost())
 
-    const img = host.querySelector('.post-author-avatar img')
+    const img = host.querySelector('.post-author-avatar')
 
     expect(img).not.toBeNull()
 
     img?.dispatchEvent(new Event('error'))
     await nextTick()
 
-    expect(host.querySelector('.post-author-avatar img')).toBeNull()
-    expect(host.querySelector('.post-author-avatar .ui-avatar__fallback')).not.toBeNull()
+    expect(host.querySelector('.post-author-avatar')?.getAttribute('src')).toBe(
+      '/journal/mascot.webp'
+    )
   })
 
   it('upgrades undersized large thumbnails to an image stream', async () => {

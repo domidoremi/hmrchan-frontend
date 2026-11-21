@@ -17,7 +17,7 @@ const basePost: JournalPost = {
   image: null,
   author: 'Sample author',
   authorId: '01a1b5a5-0c10-7d5d-9ba8-39318248b252',
-  avatar: '/journal/mascot.webp',
+  avatar: null,
   time: 'Today',
   likes: 0,
   platform: 'x',
@@ -83,6 +83,15 @@ describe('journal post card copy and controls', () => {
     expect(wrapper.get('.post-title').attributes('data-open')).toBe(post.id)
     expect(wrapper.get('.post-author').attributes('data-author-id')).toBe(post.authorId)
     expect(wrapper.get('.post-author').attributes('data-author-query')).toBe(post.author)
+    expect(wrapper.findComponent({ name: 'PublicAuthorAvatar' }).exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('passes a missing portrait to the author resolver with its verified identity', () => {
+    const wrapper = render({ ...basePost, avatar: null })
+    const portrait = wrapper.getComponent({ name: 'PublicAuthorAvatar' })
+    expect(portrait.props('src')).toBeNull()
+    expect(portrait.props('authorId')).toBe(basePost.authorId)
     wrapper.unmount()
   })
 
