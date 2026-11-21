@@ -5,7 +5,7 @@
     @toggle="syncCurrent"
     @keydown.esc.prevent.stop="dismiss(true)"
   >
-    <summary>{{ t('journal.home.contents') }}<JournalIcon name="chevron-down" /></summary>
+    <summary>{{ t('journal.home.contents') }}<JournalIcon name="down" /></summary>
     <nav :aria-label="t('journal.home.contents')">
       <a
         v-for="section in sections"
