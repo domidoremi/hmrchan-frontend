@@ -1,11 +1,13 @@
 <template>
   <div class="editorial-home editorial-page immersive-home">
     <HomeAtmosphere />
-    <EditorialContents :sections="contents" />
     <ImmersiveChapter id="issue-cover" kind="cover">
       <div class="journal-masthead" data-masthead>
         <strong><MotionTitle text="MomiChan" /></strong>
-        <time>{{ date }}</time>
+        <div class="masthead-tools">
+          <time>{{ date }}</time>
+          <HomeContentsMenu :sections="contents" />
+        </div>
       </div>
       <div
         v-if="states.posts === 'loading' && !posts.length"
@@ -187,7 +189,7 @@ import SpatialCover from './SpatialCover.vue'
 import HomeAtmosphere from './HomeAtmosphere.vue'
 import MotionTitle from './MotionTitle.vue'
 import ImmersiveChapter from './ImmersiveChapter.vue'
-import EditorialContents from './EditorialContents.vue'
+import HomeContentsMenu from './HomeContentsMenu.vue'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
 import type { JournalResourceStates } from '../resourceState'

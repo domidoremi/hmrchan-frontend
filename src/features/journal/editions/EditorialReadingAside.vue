@@ -1,5 +1,5 @@
 <template>
-  <aside class="editorial-reading-aside">
+  <aside ref="aside" class="editorial-reading-aside">
     <section v-if="featured" class="reading-author-panel" data-reveal>
       <button
         class="reading-author-link"
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
@@ -76,6 +76,8 @@ import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
 import type { JournalPost, JournalEvent } from '../models'
 import type { JournalResourceStates } from '../resourceState'
+import { useReadingAside } from './useReadingAside'
+import '../styles/home-reading-layout.css'
 
 const props = defineProps<{
   posts: JournalPost[]
@@ -87,4 +89,6 @@ defineEmits<{ retry: [] }>()
 const { t } = useI18n({ useScope: 'global' })
 const featured = computed(() => props.posts.find((post) => post.author))
 const sources = computed(() => sourceGroups(props.posts))
+const aside = ref<HTMLElement>()
+useReadingAside(aside)
 </script>
