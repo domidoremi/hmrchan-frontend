@@ -36,20 +36,6 @@ body.site-body {
 }
 .site-body
   .journal-shell
-  :is(
-    .home-reading-grid .post-card:nth-child(n),
-    .post-media,
-    .cover-sheet,
-    .next-stage-photo,
-    .next-gallery-card,
-    .next-gallery-media,
-    .preview-artwork,
-    .archive-preview-media
-  ) {
-  border-radius: var(--theme-photo-radius);
-}
-.site-body
-  .journal-shell
   :is(.home-reading-grid, .archive-bottom-grid, .author-grid, .forum-layout) {
   gap: var(--theme-gap);
 }
@@ -171,11 +157,6 @@ body.site-body {
 }
 
 /* Glass uses inset panels and rounded, separated records. */
-[data-preset='fluent-soft']
-  .journal-shell
-  :is(.archive-inspector, .next-stage, .month-poster, .community-welcome) {
-  background-image: var(--theme-wash);
-}
 [data-preset='fluent-soft'] .journal-shell .archive-result-row {
   margin-block: 0.4rem;
   border: 1px solid var(--line);
@@ -212,11 +193,6 @@ body.site-body {
 }
 
 /* Spectrum uses split compositions, luminous edges and quiet surfaces behind text. */
-[data-preset='gradient-narrative']
-  .journal-shell
-  :is(.archive-inspector, .next-stage, .spatial-cover, .community-welcome) {
-  background-image: var(--theme-wash);
-}
 [data-preset='gradient-narrative'] .journal-shell .section-heading {
   border-inline-start: 3px solid var(--accent);
   padding-inline-start: 1rem;
@@ -284,27 +260,8 @@ body.site-body {
 .site-body[data-motion='full'] .journal-shell .cover-deck {
   animation: theme-photo-float var(--theme-ambient-duration) ease-in-out infinite alternate;
 }
-.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-planes {
-  animation:
-    next-scene-arrive 1450ms var(--theme-ease) backwards,
-    theme-photo-float var(--theme-ambient-duration) ease-in-out 1450ms infinite alternate;
-}
-.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-orbit {
-  animation:
-    next-orbit-arrive 1600ms var(--theme-ease) backwards,
-    theme-orbit-breathe var(--theme-ambient-duration) ease-in-out 1600ms infinite alternate;
-}
 .site-body[data-motion='full'] .journal-shell .status-light:not(.dim)::after {
   animation-iteration-count: infinite;
-}
-.site-body[data-motion='full'] .journal-shell :is(.cover-sheet, .next-stage-photo) {
-  transition-timing-function: var(--theme-ease);
-}
-.site-body[data-motion='full']
-  .journal-shell
-  :is(.spatial-cover, .next-stage).motion-offscreen
-  :is(.cover-deck, .scene-light, .next-stage-planes, .next-orbit) {
-  animation-play-state: paused;
 }
 @keyframes theme-photo-float {
   from {

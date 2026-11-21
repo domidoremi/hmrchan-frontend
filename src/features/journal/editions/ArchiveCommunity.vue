@@ -2,18 +2,19 @@
   <div class="archive-page archive-community">
     <header class="archive-page-title" data-reveal>
       <div>
-        <h1>{{ t('journal.nav.discussions') }}<span class="title-dot">.</span></h1>
+        <h1>{{ t('journal.nav.discussions') }}</h1>
       </div>
       <button class="button button-dark" @click="$emit('compose')">
         <JournalIcon name="plus" />{{ t('community.newDiscussion') }}
       </button>
     </header>
     <div class="archive-forum">
-      <nav class="forum-categories" :aria-label="t('journal.community.categories')">
+      <div class="forum-categories" role="group" :aria-label="t('journal.community.categories')">
         <button
           v-for="(label, i) in categories"
           :key="label"
           :class="{ active: category === label }"
+          :aria-pressed="category === label"
           @click="$emit('category', label)"
         >
           <JournalIcon :name="icons[i] || 'messages'" /><span>{{
@@ -21,7 +22,7 @@
           }}</span
           ><JournalIcon name="chevron" />
         </button>
-      </nav>
+      </div>
       <section class="forum-threads" data-reveal>
         <div class="panel-heading">
           <h2>
@@ -33,27 +34,37 @@
           </h2>
           <span class="meta-count">{{ discussions.length }}</span>
         </div>
-        <button
-          v-for="item in discussions"
-          :key="item.id"
-          class="forum-thread"
-          :class="{ selected: selected?.id === item.id }"
-          :aria-pressed="selected?.id === item.id"
-          @click="selectedId = item.id"
-        >
-          <div class="meta-line">
-            <span>{{ journalCategoryLabel(item.category, t) }}</span><span v-if="item.pinned">{{
-              t('community.pinned')
-            }}</span
-            ><time>{{ journalDateLabel(item.time, locale) }}</time>
-          </div>
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.text }}</p>
-          <div>
-            <span class="discussion-avatar">{{ item.avatar }}</span><span>{{ item.author }}</span
-            ><small>{{ item.replies }} <JournalIcon name="messages" /></small>
-          </div></button
-        ><slot name="state" />
+        <div v-for="item in discussions" :key="item.id" class="idol-thread">
+          <button
+            class="forum-thread"
+            :class="{ selected: selected?.id === item.id }"
+            :aria-pressed="selected?.id === item.id"
+            @click="selectedId = item.id"
+          >
+            <div class="meta-line">
+              <span>{{ journalCategoryLabel(item.category, t) }}</span><span v-if="item.pinned">{{
+                t('community.pinned')
+              }}</span
+              ><time>{{ journalDateLabel(item.time, locale) }}</time>
+            </div>
+            <span class="thread-title">{{ item.title }}</span>
+            <p>{{ item.text }}</p>
+            <div>
+              <span class="discussion-avatar" aria-hidden="true">{{ item.avatar }}</span><span>{{
+                item.author
+              }}</span
+              ><small>{{ item.replies }} <JournalIcon name="messages" /></small>
+            </div>
+          </button>
+          <button
+            v-if="selected?.id === item.id"
+            class="text-button idol-thread-open"
+            :data-discussion="item.id"
+          >
+            {{ t('journal.community.readAndReply') }} <JournalIcon name="arrow-up-right" />
+          </button>
+        </div>
+        <slot name="state" />
         <div v-if="!discussions.length && !loading && !error" class="empty-state">
           <JournalIcon name="messages" />
           <h3>{{ t('journal.states.noDiscussions') }}</h3>

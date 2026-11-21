@@ -60,6 +60,9 @@ async function routerAt(path: string) {
   const paths = [
     '/',
     '/explore',
+    '/authors',
+    '/about',
+    '/contact',
     '/schedule',
     '/community',
     '/profile',
@@ -92,15 +95,14 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
       wrappers.push(wrapper)
       const selector = '.desktop-navigation'
       const links = wrapper.findAll(`${selector} a`)
-      expect(links.map((link) => link.attributes('href'))).toEqual([
-        '/',
-        '/explore',
-        '/schedule',
-        '/community',
-        '/profile/favorites',
-      ])
-      expect(links[2]!.attributes('aria-current')).toBe('page')
-      expect(links[2]!.text()).toContain(
+      expect(links.map((link) => link.attributes('href'))).toEqual(
+        edition === 'archive'
+          ? ['/', '/explore', '/authors', '/schedule', '/community']
+          : ['/', '/explore', '/schedule', '/community', '/profile/favorites']
+      )
+      const calendar = wrapper.get(`${selector} a[href="/schedule"]`)
+      expect(calendar.attributes('aria-current')).toBe('page')
+      expect(calendar.text()).toContain(
         i18n.global.t(edition === 'archive' ? 'journal.nav.calendar' : 'nav.schedule')
       )
       const nodes = links.map((link) => link.element)
@@ -109,7 +111,12 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
       wrapper.findAll(`${selector} a`).forEach((link, index) => {
         expect(link.element).toBe(nodes[index])
       })
-      expect(links[2]!.attributes('aria-current')).toBe('page')
+      expect(calendar.attributes('aria-current')).toBe('page')
+      expect(wrapper.findAll('.favorites-trigger').map((link) => link.attributes('href'))).toEqual(
+        edition === 'archive' ? ['/profile/favorites'] : []
+      )
+      expect(wrapper.get('.edition-logo').attributes('aria-label')).toBe('MomiChan')
+      expect(wrapper.find('.edition-brand-name small').exists()).toBe(false)
       expect(router.currentRoute.value.path).toBe('/schedule')
       expect(mocks.refresh).toHaveBeenCalledOnce()
       const translate = mocks.createRuntime.mock.calls[0]![1].translate as (key: string) => string

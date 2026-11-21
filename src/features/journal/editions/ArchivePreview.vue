@@ -5,7 +5,7 @@
     <Transition
       name="archive-preview"
       mode="out-in"
-      :css="!followingScroll"
+      :css="fullMotion && !followingScroll"
       @enter="(element) => $emit('previewEnter', element)"
       ><article
         v-if="post"
@@ -22,7 +22,7 @@
           ref="media"
           class="preview-media"
           :class="{ 'is-text': !post.image }"
-          :data-tilt="post.image ? '' : undefined"
+          :data-tilt="spatial && post.image ? '' : undefined"
           :data-open="post.id"
           :aria-label="post.image ? post.title : undefined"
         >
@@ -94,7 +94,7 @@
         <small>· · ·</small>
       </div>
       <div v-else class="preview-empty">
-        <JournalIcon name="file" /><span>{{
+        <JournalIcon name="image" /><span>{{
           t(state === 'error' ? 'journal.selection.unavailable' : 'journal.selection.empty')
         }}</span>
       </div>
@@ -102,7 +102,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import JournalIcon from '../JournalIcon.vue'
@@ -122,6 +122,11 @@ const props = defineProps<{
 defineEmits<{ save: [post: JournalPost, event: MouseEvent]; previewEnter: [element: Element] }>()
 
 const media = useTemplateRef<HTMLButtonElement>('media')
+const fullMotion = ref(document.body.dataset['motion'] === 'full')
+function syncMotion() {
+  fullMotion.value = document.body.dataset['motion'] === 'full'
+}
+onMounted(() => document.addEventListener('journalmotionchange', syncMotion))
 let fade: Animation | undefined
 watch(
   () => props.post?.id,
@@ -132,5 +137,8 @@ watch(
   },
   { flush: 'post' }
 )
-onBeforeUnmount(() => fade?.cancel())
+onBeforeUnmount(() => {
+  fade?.cancel()
+  document.removeEventListener('journalmotionchange', syncMotion)
+})
 </script>

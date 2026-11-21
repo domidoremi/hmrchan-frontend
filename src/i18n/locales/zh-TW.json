@@ -1662,7 +1662,7 @@
       "saved": "已收藏"
     },
     "appearance": {
-      "archiveEdition": "Next",
+      "archiveEdition": "寫真版",
       "colorMode": "明暗",
       "currentSite": "目前站點",
       "journalEdition": "主站",
@@ -1691,8 +1691,8 @@
       "emptyKicker": "目前條件",
       "errorKicker": "讀取未完成",
       "favoritesHint": "你收藏的動態會出現在這裡。先去動態看看。",
-      "index": "貼文索引",
-      "loadingHint": "正在讀取資料，目前搜尋與篩選會保留。",
+      "index": "動態列表",
+      "loadingHint": "正在載入動態，目前搜尋與篩選會保留。",
       "loadingKicker": "正在讀取",
       "moreRetryHint": "下一批內容暫未載入。可以繼續瀏覽已有內容，或重試。",
       "postAuthor": "貼文 / 作者",
@@ -1765,16 +1765,17 @@
       "closeDirectory": "關閉目錄",
       "collection": "我的收藏",
       "discussions": "討論",
-      "goToArchive": "前往資料庫",
-      "goToJournal": "前往雜誌",
+      "goToArchive": "瀏覽寫真",
+      "more": "更多入口",
+      "goToJournal": "閱讀主站",
       "loginOrRegister": "登入 / 註冊",
       "mobileNavigation": "行動版導覽",
       "my": "我的",
       "myAccount": "我的帳號",
       "openDirectory": "開啟目錄",
-      "overview": "總覽",
+      "overview": "首頁",
       "posts": "貼文",
-      "records": "資料檢索",
+      "records": "動態",
       "savedSchedule": "已記下的日程"
     },
     "search": {
@@ -1798,13 +1799,13 @@
       "official": "官方"
     },
     "states": {
-      "archiveReadySoon": "紀錄與預覽即將就緒。",
+      "archiveReadySoon": "寫真與動態正在載入。",
       "checkNetwork": "請檢查網路後重試，或繼續瀏覽其他頁面。",
       "failed": "{label}暫時無法載入",
       "journalReadySoon": "內容正在載入，稍後即可閱讀。",
       "loading": "正在載入{label}…",
       "loadingPage": "正在翻開這一頁。",
-      "loadingRecords": "正在讀取內容。",
+      "loadingRecords": "正在載入動態…",
       "noDiscussions": "尚無討論",
       "noEvents": "暫無日程",
       "noFavorites": "尚無收藏",
@@ -1857,13 +1858,14 @@
       "position": "第 {index} 張，共 {total} 張"
     },
     "next": {
-      "featured": "推薦內容",
+      "spotlight": "寫真與現場",
+      "portrait": "籾山ひめり寫真",
       "intro": "動態、圖片、演出。\n在這裡，接著看。",
-      "browse": "瀏覽內容",
+      "browse": "探索動態",
       "view": "瀏覽方式",
-      "gallery": "圖片瀏覽",
-      "index": "資料索引",
-      "indexDensity": "資料索引密度"
+      "gallery": "寫真與動態",
+      "index": "最新動態",
+      "indexDensity": "列表密度"
     }
   }
 }

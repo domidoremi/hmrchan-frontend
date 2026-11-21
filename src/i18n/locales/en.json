@@ -1662,7 +1662,7 @@
       "saved": "Saved"
     },
     "appearance": {
-      "archiveEdition": "Next",
+      "archiveEdition": "Photo edition",
       "colorMode": "Color mode",
       "currentSite": "Current site",
       "journalEdition": "Main site",
@@ -1691,8 +1691,8 @@
       "emptyKicker": "Current filters",
       "errorKicker": "Loading incomplete",
       "favoritesHint": "Your saved posts appear here. Explore posts to start your collection.",
-      "index": "Post index",
-      "loadingHint": "Loading records. Your search and filters stay in place.",
+      "index": "Posts",
+      "loadingHint": "Loading posts. Your search and filters will stay in place.",
       "loadingKicker": "Loading",
       "moreRetryHint": "The next set of records could not load. You can keep browsing the current results or retry.",
       "postAuthor": "Post / author",
@@ -1765,16 +1765,17 @@
       "closeDirectory": "Close menu",
       "collection": "My favorites",
       "discussions": "Discussions",
-      "goToArchive": "Go to Archive",
-      "goToJournal": "Go to Journal",
+      "goToArchive": "Browse photographs",
+      "more": "More destinations",
+      "goToJournal": "Read the journal",
       "loginOrRegister": "Sign in / register",
       "mobileNavigation": "Mobile navigation",
       "my": "Account",
       "myAccount": "My account",
       "openDirectory": "Open menu",
-      "overview": "Overview",
+      "overview": "Home",
       "posts": "Posts",
-      "records": "Search records",
+      "records": "Posts",
       "savedSchedule": "Saved events"
     },
     "search": {
@@ -1798,13 +1799,13 @@
       "official": "Official"
     },
     "states": {
-      "archiveReadySoon": "Records and previews will be ready shortly.",
+      "archiveReadySoon": "Photos and posts will be ready shortly.",
       "checkNetwork": "Check your connection and try again, or browse another page.",
       "failed": "Couldn't load {label}",
       "journalReadySoon": "The page will be ready to read shortly.",
       "loading": "Loading {label}…",
       "loadingPage": "Opening this page…",
-      "loadingRecords": "Loading records…",
+      "loadingRecords": "Loading posts…",
       "noDiscussions": "No discussions yet",
       "noEvents": "No events",
       "noFavorites": "No favorites yet",
@@ -1857,13 +1858,14 @@
       "position": "Photograph {index} of {total}"
     },
     "next": {
-      "featured": "Featured posts",
+      "spotlight": "Photos & live",
+      "portrait": "Himeri Momiyama portrait",
       "intro": "Posts, photos, and performances.\nKeep up with them here.",
-      "browse": "Browse posts",
+      "browse": "Explore posts",
       "view": "Browse view",
-      "gallery": "Gallery",
-      "index": "Index",
-      "indexDensity": "Index density"
+      "gallery": "Photos & posts",
+      "index": "Latest posts",
+      "indexDensity": "List density"
     }
   }
 }

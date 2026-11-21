@@ -15,7 +15,7 @@ import { createWheelRegion } from './wheelRegion'
 import { chapterKey } from './chapterContext'
 import type { JournalPost } from '../models'
 
-export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
+export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>, { wheel = true } = {}) {
   const chapter = inject(chapterKey, null)
   const items = computed(() => posts.value.slice(0, 6))
   const selection = usePostSelection(items)
@@ -124,8 +124,8 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     root.value = element instanceof HTMLElement ? element : undefined
   }
   function bindWheel() {
-    const element =
-      root.value?.querySelector<HTMLElement>('.cover-scene, .next-stage-scene') ?? null
+    if (!wheel) return
+    const element = root.value?.querySelector<HTMLElement>('.cover-scene') ?? null
     if (element === wheelElement) return
     if (wheelElement && wheelHandler) wheelElement.removeEventListener('wheel', wheelHandler)
     wheelElement = element
@@ -225,6 +225,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     focused,
     paused,
     playing,
+    fullMotion,
     hasEntered,
     position,
     copyStyle,

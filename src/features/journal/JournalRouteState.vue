@@ -6,9 +6,7 @@
   >
     <div class="route-state-heading">
       <div>
-        <span class="route-state-eyebrow"
-          >{{ isArchive ? 'ARCHIVE' : 'THE JOURNAL' }} / {{ pageLabel }}</span
-        >
+        <span class="route-state-eyebrow">MomiChan · {{ pageLabel }}</span>
         <h1>
           {{
             t(

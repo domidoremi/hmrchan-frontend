@@ -100,3 +100,79 @@ it('replaces the initial preview placeholder with the first available record', a
   expect(wrapper.find('.archive-loading-preview').exists()).toBe(false)
   wrapper.unmount()
 })
+
+it('keeps recommendations in document flow before browsing and preserves search across states', async () => {
+  const post: JournalPost = {
+    id: 'photo-story',
+    title: 'Live photographs',
+    text: 'Live photographs',
+    image: null,
+    author: 'Author',
+    authorId: null,
+    avatar: '',
+    time: '',
+    likes: null,
+    platform: 'x',
+    type: '文字',
+    tags: [],
+  }
+  const wrapper = mount(ArchiveHome, {
+    props: {
+      ...props({ posts: 'ready', events: 'ready', discussions: 'ready' }),
+      posts: [post],
+      allPosts: [post],
+      query: '',
+    },
+    global,
+  })
+  expect(wrapper.findAll('h1')).toHaveLength(1)
+  expect(wrapper.find('.editorial-contents').exists()).toBe(false)
+  expect(wrapper.get('.idol-feature').element.closest('.immersive-chapter')).toBeNull()
+  expect(
+    wrapper
+      .get('.idol-feature')
+      .element.compareDocumentPosition(wrapper.get('.next-collection').element)
+  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  const input = wrapper.get('input[type="search"]')
+  await input.setValue('live')
+  await wrapper.get('form[role="search"]').trigger('submit')
+  expect(wrapper.emitted('change')).toContainEqual(['q', 'live'])
+  await wrapper.setProps({ query: 'live' })
+  expect(wrapper.find('.idol-feature').exists()).toBe(false)
+  expect(wrapper.get('input[type="search"]').element).toBe(input.element)
+  expect(wrapper.findAll('h1')).toHaveLength(1)
+  await wrapper.setProps({ query: '' })
+  expect(wrapper.find('.idol-feature').exists()).toBe(true)
+  wrapper.unmount()
+})
+
+it('switches reduced-motion previews without waiting for an animation frame', async () => {
+  document.body.dataset['motion'] = 'reduced'
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1)
+  const post: JournalPost = {
+    id: 'first',
+    title: 'First photograph',
+    text: 'First photograph',
+    image: null,
+    author: '',
+    authorId: null,
+    avatar: '',
+    time: '',
+    likes: null,
+    platform: 'x',
+    type: '文字',
+    tags: [],
+  }
+  const wrapper = mount(ArchivePreview, {
+    props: { post, saved: false },
+    global: { ...global, stubs: { ...global.stubs, transition: false } },
+  })
+  try {
+    await wrapper.setProps({ post: { ...post, id: 'second', title: 'Second photograph' } })
+    expect(wrapper.get('.preview-face').attributes('data-post')).toBe('second')
+  } finally {
+    wrapper.unmount()
+    frame.mockRestore()
+    delete document.body.dataset['motion']
+  }
+})

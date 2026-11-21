@@ -1,6 +1,6 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-export function useJournalDirectory() {
+export function useJournalDirectory(desktopQuery = '(min-width: 801px)') {
   const menuOpen = ref(false)
   const menuButton = ref<HTMLButtonElement | null>(null)
   const directory = ref<HTMLElement | null>(null)
@@ -34,7 +34,7 @@ export function useJournalDirectory() {
     { flush: 'sync' }
   )
   onMounted(() => {
-    desktop = window.matchMedia('(min-width: 801px)')
+    desktop = window.matchMedia(desktopQuery)
     desktop.addEventListener('change', resizeMenu)
     document.addEventListener('keydown', escapeMenu)
     document.addEventListener('focusin', leaveMenu)

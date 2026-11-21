@@ -1,7 +1,7 @@
 <template>
   <div class="about-page">
     <header class="about-masthead">
-      <h1>MomiChan<span v-if="isArchive">Next</span></h1>
+      <h1>MomiChan</h1>
       <nav class="about-index" :aria-label="$t('common.primaryNavigation')">
         <RouterLink v-for="item in destinations" :key="item.path" :to="item.path">
           <component :is="item.icon" aria-hidden="true" />
@@ -60,9 +60,7 @@ import {
   MessagesSquare,
 } from '@lucide/vue'
 import { IconInstagram, IconX, IconYoutube } from '@/components/icons'
-import { designEdition } from '@/config/designEdition'
 const { t } = useI18n()
-const isArchive = designEdition === 'archive'
 const destinations = [
   { path: '/explore', label: 'nav.explore', icon: Compass },
   { path: '/authors', label: 'nav.authors', icon: Users },

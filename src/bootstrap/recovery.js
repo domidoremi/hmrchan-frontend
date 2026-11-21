@@ -23,10 +23,7 @@
         'Keep the moments\nthat matter.',
         'Photos, posts and upcoming encounters, ready to browse at your own pace.',
       ],
-      archive: [
-        'Every record,\na new connection.',
-        'Find posts, discover authors and pick up where you left off.',
-      ],
+      archive: ['Photos and performances', 'Photos, posts and upcoming events.'],
       navigation: 'Browse MomiChan',
     },
     'zh-CN': {
@@ -40,10 +37,7 @@
       authors: '作者',
       schedule: '日程',
       editorial: ['把喜欢的日常，\n一页页收好。', '照片、动态与即将到来的相遇，在这里慢慢翻阅。'],
-      archive: [
-        '每一条记录，\n都有迹可循。',
-        '查找动态、认识作者、追踪日程，接着上次的线索继续探索。',
-      ],
+      archive: ['写真与现场', '写真、动态与活动日程。'],
       navigation: '浏览入口',
     },
     'zh-TW': {
@@ -57,10 +51,7 @@
       authors: '作者',
       schedule: '日程',
       editorial: ['把喜歡的日常，\n一頁頁收好。', '照片、動態與即將到來的相遇，在這裡慢慢翻閱。'],
-      archive: [
-        '每一筆記錄，\n都有跡可循。',
-        '尋找動態、認識作者、追蹤日程，接著上次的線索繼續探索。',
-      ],
+      archive: ['寫真與現場', '寫真、動態與活動日程。'],
       navigation: '瀏覽入口',
     },
     ja: {
@@ -77,10 +68,7 @@
       authors: '投稿者',
       schedule: 'スケジュール',
       editorial: ['好きな日常を、\n一ページずつ。', '写真、投稿、これからの出会いを、ゆっくりと。'],
-      archive: [
-        '一つの記録から、\n次のつながりへ。',
-        '投稿や投稿者、予定を探して、前回の続きから。',
-      ],
+      archive: ['写真とライブ', '写真、投稿、イベント情報。'],
       navigation: 'MomiChan を見る',
     },
   }
@@ -202,25 +190,11 @@
     panel.dataset.reduced = String(reduced)
     panel.setAttribute('aria-label', copy.navigation)
     const top = element('header', 'boot-recovery__top')
-    top.append(
-      link(edition === 'archive' ? 'm.' : 'MomiChan', '/', 'boot-recovery__brand'),
-      element(
-        'span',
-        'boot-recovery__index',
-        edition === 'archive' ? 'INDEX / COLLECTION' : 'THE JOURNAL'
-      )
-    )
+    top.append(link('MomiChan', '/', 'boot-recovery__brand'))
     const main = element('div', 'boot-recovery__body')
     const intro = element('div', 'boot-recovery__intro')
-    intro.append(
-      element('small', '', edition === 'archive' ? 'MOMICHAN / ARCHIVE' : 'MOMICHAN / JOURNAL'),
-      element('h1', '', copy[edition][0]),
-      element('p', '', copy[edition][1])
-    )
+    intro.append(element('h1', '', copy[edition][0]), element('p', '', copy[edition][1]))
     const status = element('div', 'boot-recovery__status')
-    status.append(
-      element('small', '', edition === 'archive' ? 'WORKSPACE / STATUS' : 'OPENING / 01')
-    )
     const live = element('div', 'boot-recovery__live')
     live.setAttribute('role', 'status')
     live.setAttribute('aria-live', 'polite')

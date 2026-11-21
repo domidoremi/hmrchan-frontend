@@ -2,7 +2,7 @@
   <div class="archive-page archive-schedule">
     <header class="archive-page-title" data-reveal>
       <div>
-        <h1>{{ t('journal.nav.calendar') }}<span class="title-dot">.</span></h1>
+        <h1>{{ t('journal.nav.calendar') }}</h1>
       </div>
       <button class="button button-outline" data-action="notifications">
         <JournalIcon name="bookmark" />{{ t('journal.nav.savedSchedule') }} {{ reminders.size }}
@@ -17,7 +17,9 @@
         >
           <JournalIcon name="arrow-left" />
         </button>
-        <h2>{{ year }} <span>/</span> {{ String(number).padStart(2, '0') }}</h2>
+        <h2 id="calendar-month-heading">
+          {{ year }} <span>/</span> {{ String(number).padStart(2, '0') }}
+        </h2>
         <button
           class="icon-button journal-month-next"
           :aria-label="t('schedule.nextMonth')"
@@ -39,7 +41,7 @@
       </button>
     </div>
     <div class="archive-calendar-workspace">
-      <section class="archive-month" data-reveal>
+      <section class="archive-month" aria-labelledby="calendar-month-heading" data-reveal>
         <div class="calendar-weekdays">
           <span v-for="day in weekdays" :key="day">{{ day }}</span>
         </div>
@@ -52,6 +54,7 @@
               :class="{ selected: selectedDay === String(day), today: isToday(day) }"
               :data-day="day"
               :aria-pressed="selectedDay === String(day)"
+              :aria-current="isToday(day) ? 'date' : undefined"
               :aria-label="dayLabel(day)"
               @click="$emit('change', 'day', String(day))"
             >
@@ -64,20 +67,19 @@
                   v-for="event in dayEvents(day).slice(0, 2)"
                   :key="event.id"
                   :class="event.tone"
-                  ><i />{{ event.title }}</span
+                  ><i /><span>{{ event.title }}</span></span
                 ><b v-if="dayEvents(day).length > 2">+{{ dayEvents(day).length - 2 }}</b>
               </div>
             </button>
           </div></Transition
         >
       </section>
-      <aside class="archive-calendar-inspector">
+      <section class="archive-calendar-inspector" aria-labelledby="calendar-events-heading">
         <div class="panel-heading">
-          <span>{{ monthName }}</span>
-          <h2>
+          <h2 id="calendar-events-heading" aria-live="polite">
             {{
               selectedDay === 'all'
-                ? t('journal.calendar.monthEvents')
+                ? t('journal.home.monthEvents', { month: monthName })
                 : number + ' / ' + selectedDay
             }}
           </h2>
@@ -85,7 +87,7 @@
         </div>
         <article v-for="event in visible" :key="event.id" class="calendar-inspector-event">
           <div>
-            <span class="status-light" /><time
+            <time :datetime="event.date"
               >{{ event.month }}/{{ event.day }} · {{ journalEventTimeLabel(event, t) }}</time
             ><button
               class="icon-button remind"
@@ -113,7 +115,7 @@
           <JournalIcon name="calendar" />
           <h3>{{ loading ? t('common.loading') : t('journal.states.noEvents') }}</h3>
         </div>
-      </aside>
+      </section>
     </div>
     <slot name="state" />
   </div>

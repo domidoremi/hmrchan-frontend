@@ -10,6 +10,7 @@
       <div>
         <h2>
           {{
+            heading ||
             t(
               favorites
                 ? 'journal.nav.collection'
@@ -54,6 +55,7 @@
         </button>
       </div>
     </header>
+    <slot name="search" />
     <div class="next-collection-filters">
       <div
         class="stream-tabs chips"
@@ -134,26 +136,28 @@
           class="next-gallery-media"
           :data-open="post.id"
           :data-select-post="post.id"
-          :aria-label="post.title"
           @focus="choosePost(post.id)"
         >
           <JournalImage
             v-if="post.image"
             :src="post.image"
             :original-src="post.originalImage"
-            :alt="post.title"
+            alt=""
             width="640"
             height="760"
             loading="lazy"
           />
-          <span v-else class="next-gallery-quote">{{ post.text || post.title }}</span>
+          <span v-else class="next-gallery-quote"
+            ><span>{{ post.text || post.title }}</span></span
+          >
           <span class="next-gallery-caption">
-            <small
-              >{{
+            <small>
+              <span>{{
                 journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
-              }}
-              · {{ post.author }}<time>{{ journalPostTimeLabel(post, t, locale) }}</time></small
-            >
+              }}</span>
+              <span v-if="post.author">{{ post.author }}</span>
+              <time>{{ journalPostTimeLabel(post, t, locale) }}</time>
+            </small>
             <b>{{ post.title }}</b>
           </span>
         </button>
@@ -210,7 +214,7 @@
               loading="lazy"
               :upgrade="false"
             />
-            <span v-else class="result-text-icon"><JournalIcon name="file" /></span>
+            <span v-else class="result-text-icon"><JournalIcon name="messages" /></span>
             <span class="result-title"
               ><b>{{ post.title }}</b>
               <span class="result-byline">
@@ -232,7 +236,7 @@
         :aria-label="t('post.preview')"
       >
         <div class="inspector-heading">
-          <JournalIcon name="file" aria-hidden="true" />
+          <span>{{ t('post.preview') }}</span>
           <span class="next-preview-position" v-if="selected">
             {{ String(index + 1).padStart(2, '0') }} / {{ String(posts.length).padStart(2, '0') }}
           </span>
@@ -246,7 +250,6 @@
           </button>
         </div>
         <ArchivePreview
-          spatial
           :post="selected"
           :state="readState"
           :following-scroll="Boolean(selectedId && selectedId === scrollSelection)"
@@ -322,6 +325,7 @@ const props = withDefaults(
     query?: string
     contentType?: string
     showType?: boolean
+    heading?: string
     favorites?: boolean
     loading?: boolean
     hasMore?: boolean

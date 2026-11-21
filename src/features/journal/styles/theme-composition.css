@@ -289,13 +289,6 @@ html[data-preset='organic-natural']
   border-inline-start: 2px solid color-mix(in srgb, var(--accent) 42%, transparent);
 }
 
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  :is(.post-card, .next-gallery-card, .cover-sheet, .next-stage-photo) {
-  clip-path: inset(0 round 2.8rem 0.75rem 2.1rem 0.8rem);
-}
-
 html[data-preset='organic-natural'] .site-body .journal-shell .mobile-navigation {
   inset-inline: 6%;
   border-radius: 2rem 0.7rem 2rem 0.7rem;
@@ -319,19 +312,6 @@ html[data-preset='gradient-narrative']
   position: relative;
   padding-inline-start: clamp(1rem, 2.2vw, 2rem);
   border-inline-start: 2px solid var(--accent);
-}
-
-html[data-preset='gradient-narrative']
-  .site-body
-  .journal-shell
-  :is(.archive-inspector, .next-stage-scene, .spatial-cover, .community-cover, .archive-panel) {
-  background-image:
-    radial-gradient(
-      ellipse at 72% 12%,
-      color-mix(in srgb, var(--accent) 17%, transparent),
-      transparent 58%
-    ),
-    var(--theme-wash);
 }
 
 html[data-preset='gradient-narrative']

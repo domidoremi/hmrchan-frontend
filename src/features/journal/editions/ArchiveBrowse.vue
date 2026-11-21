@@ -4,25 +4,25 @@
       <div>
         <h1>{{ t(favorites ? 'journal.nav.collection' : 'journal.next.browse') }}</h1>
       </div>
+      <form
+        class="archive-searchbar next-searchbar"
+        role="search"
+        @submit.prevent="$emit('change', 'q', search.trim())"
+      >
+        <JournalIcon name="search" />
+        <input
+          id="explore-input"
+          ref="searchInput"
+          v-model="search"
+          type="search"
+          :placeholder="t('search.placeholder')"
+          :aria-label="t('journal.search.inputLabel')"
+        />
+        <button class="button button-dark" type="submit">
+          {{ t('common.search') }}<JournalIcon name="arrow" />
+        </button>
+      </form>
     </header>
-    <form
-      class="archive-searchbar next-searchbar"
-      role="search"
-      @submit.prevent="$emit('change', 'q', search.trim())"
-    >
-      <JournalIcon name="search" />
-      <input
-        id="explore-input"
-        ref="searchInput"
-        v-model="search"
-        type="search"
-        :placeholder="t('search.placeholder')"
-        :aria-label="t('journal.search.inputLabel')"
-      />
-      <button class="button button-dark" type="submit">
-        {{ t('common.search') }}<JournalIcon name="arrow" />
-      </button>
-    </form>
     <NextCollection
       v-bind="collectionProps"
       show-type

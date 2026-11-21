@@ -35,7 +35,7 @@ export function renderPublicShell(
 ): string {
   const archive = edition === 'archive'
   return `<section class="prerender-shell" data-prerender-shell="true" data-prerender-shell-variant="${config.shellVariant}" data-edition="${edition}" aria-label="MomiChan">
-    <header class="prerender-shell__header"><a class="prerender-shell__brand" href="/" aria-label="${archive ? 'm. MomiChan home' : 'MomiChan home'}">${archive ? 'm.' : 'MomiChan'}</a><span>${archive ? 'INDEX / COLLECTION' : 'THE JOURNAL'}</span></header>
+    <header class="prerender-shell__header"><a class="prerender-shell__brand" href="/" aria-label="MomiChan home">MomiChan</a></header>
     <div class="prerender-shell__body" data-prerender-shell-content="true">
       <div class="prerender-shell__intro"><p class="prerender-shell__eyebrow">${escapeHtml(config.shellEyebrow)}</p><h1>${escapeHtml(config.shellTitle)}</h1><p class="prerender-shell__description">${escapeHtml(config.shellBody)}</p>
         <span class="prerender-shell__loading" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Opening this page</span></span>

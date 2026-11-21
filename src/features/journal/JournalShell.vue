@@ -1,18 +1,10 @@
 <template>
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
-    <a class="skip-link" href="#main-content" tabindex="0">{{ t('common.skipToContent') }}</a>
     <div class="edition-workspace">
-      <header class="edition-header liquid-surface">
-        <LiquidGlass v-if="settingsStore.settings.appearancePreset === 'fluent-soft'" />
-        <RouterLink
-          class="edition-logo"
-          to="/"
-          tabindex="0"
-          :aria-label="`MomiChan${isNext ? ' Next' : ''}`"
-        >
-          <span v-if="isNext" class="next-brand-mark" aria-hidden="true">n↗</span>
-          <img v-else :src="'/journal/mascot.webp'" alt="" width="40" height="40" />
-          <span class="edition-brand-name">MomiChan<small v-if="isNext">NEXT</small></span>
+      <header class="edition-header" :class="isNext ? 'idol-header' : 'liquid-surface'">
+        <RouterLink class="edition-logo" to="/" tabindex="0" aria-label="MomiChan">
+          <img :src="'/journal/mascot.webp'" alt="" width="40" height="40" />
+          <span class="edition-brand-name">MomiChan</span>
         </RouterLink>
         <nav
           v-if="!isAuthRoute"
@@ -21,11 +13,11 @@
         >
           <RouterLink
             tabindex="0"
-            v-for="item in navigation"
+            v-for="item in desktopNavigation"
             :key="item.path"
             :to="item.path"
-            :class="{ active: pageName === item.key }"
-            :aria-current="pageName === item.key ? 'page' : undefined"
+            :class="{ active: isCurrent(item) }"
+            :aria-current="isCurrent(item) ? 'page' : undefined"
             >{{ t(isNext ? item.archiveKey : item.mainKey) }}</RouterLink
           >
         </nav>
@@ -41,12 +33,20 @@
             <JournalIcon name="search" />
           </button>
           <button
-            class="icon-button"
+            class="icon-button saved-schedule-trigger"
             data-action="notifications"
             :aria-label="t('journal.nav.savedSchedule')"
           >
             <JournalIcon name="calendar" />
           </button>
+          <RouterLink
+            v-if="isNext"
+            class="icon-button favorites-trigger"
+            to="/profile/favorites"
+            :aria-label="t('journal.nav.collection')"
+            :aria-current="pageName === 'favorites' ? 'page' : undefined"
+            ><JournalIcon name="bookmark"
+          /></RouterLink>
           <RouterLink
             tabindex="0"
             class="account-link"
@@ -63,7 +63,15 @@
             class="mobile-menu-button icon-button"
             :aria-expanded="menuOpen"
             :aria-controls="menuOpen ? 'edition-mobile-menu' : undefined"
-            :aria-label="t(menuOpen ? 'journal.nav.closeDirectory' : 'journal.nav.openDirectory')"
+            :aria-label="
+              t(
+                menuOpen
+                  ? 'common.close'
+                  : isNext
+                    ? 'journal.nav.more'
+                    : 'journal.nav.openDirectory'
+              )
+            "
             @click="menuOpen = !menuOpen"
           >
             <JournalIcon :name="menuOpen ? 'x' : 'menu'" />
@@ -77,13 +85,13 @@
           :ref="(element) => (directory = element as HTMLElement | null)"
           class="mobile-directory"
         >
-          <nav :aria-label="t('journal.nav.mobileNavigation')">
+          <nav :aria-label="t(isNext ? 'journal.nav.more' : 'journal.nav.mobileNavigation')">
             <RouterLink
               tabindex="0"
-              v-for="item in navigation"
+              v-for="item in directoryNavigation"
               :key="item.path"
               :to="item.path"
-              :aria-current="pageName === item.key ? 'page' : undefined"
+              :aria-current="isCurrent(item) ? 'page' : undefined"
               @click="menuOpen = false"
               ><JournalIcon :name="item.icon" class="directory-icon" /><span>{{
                 t(isNext ? item.archiveKey : item.mainKey)
@@ -92,6 +100,14 @@
             /></RouterLink>
           </nav>
           <div class="directory-footer">
+            <button
+              v-if="isNext"
+              class="directory-saved"
+              data-action="notifications"
+              @click="menuOpen = false"
+            >
+              <JournalIcon name="calendar" />{{ t('journal.nav.savedSchedule') }}
+            </button>
             <RouterLink to="/profile" @click="menuOpen = false"
               ><JournalIcon name="users" />{{
                 t(auth.isAuthenticated ? 'journal.nav.myAccount' : 'journal.nav.loginOrRegister')
@@ -112,7 +128,12 @@
         <AccountNavigation v-if="isAccountPage" />
         <slot />
       </main>
-      <footer v-if="!isAuthRoute" class="edition-footer" data-reveal>
+      <footer
+        v-if="!isAuthRoute"
+        class="edition-footer"
+        :class="{ 'idol-footer': isNext }"
+        data-reveal
+      >
         <div v-if="!isNext && !isAccountPage" class="footer-wordmark" aria-hidden="true">
           MomiChan<span>®</span>
         </div>
@@ -134,11 +155,11 @@
       :aria-label="t('journal.nav.mobileNavigation')"
     >
       <RouterLink
-        v-for="item in navigation"
+        v-for="item in mobileNavigation"
         :key="item.path"
         :to="item.path"
-        :class="{ active: pageName === item.key }"
-        :aria-current="pageName === item.key ? 'page' : undefined"
+        :class="{ active: isCurrent(item) }"
+        :aria-current="isCurrent(item) ? 'page' : undefined"
         ><JournalIcon :name="item.icon" /><span>{{
           t(isNext ? item.archiveKey : item.mainKey)
         }}</span></RouterLink
@@ -189,12 +210,13 @@ import { useJournalEvents } from './useJournalEvents'
 import { useJournalDirectory } from './useJournalDirectory'
 import { installDisplayPreferences } from './displayPreferences'
 import JournalIcon from './JournalIcon.vue'
-import LiquidGlass from './LiquidGlass.vue'
 import AccountNavigation from './AccountNavigation.vue'
 const JournalAppearanceDialog = defineAsyncComponent(() => import('./JournalAppearanceDialog.vue'))
 import { useI18n } from 'vue-i18n'
 import './styles/index.css'
 import './styles/theme-layouts.css'
+import './styles/idol-chrome.css'
+import './styles/idol-pages.css'
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()
@@ -220,7 +242,9 @@ const isAuthRoute = computed(() => authRoutes.has(String(route.name)))
 const runtime = shallowRef<JournalRuntime | null>(null)
 const appearanceOpen = ref(false)
 const displayLifetime = new AbortController()
-const { menuOpen, menuButton, directory } = useJournalDirectory()
+const { menuOpen, menuButton, directory } = useJournalDirectory(
+  isNext ? '(width > 59rem)' : undefined
+)
 provide(journalKey, runtime)
 useJournalDialogs(runtime)
 useJournalEvents(runtime)
@@ -229,14 +253,14 @@ const navigation = [
     path: '/',
     key: 'home',
     mainKey: 'nav.home',
-    archiveKey: 'journal.nav.overview',
+    archiveKey: 'nav.home',
     icon: 'home',
   },
   {
     path: '/explore',
     key: 'explore',
     mainKey: 'journal.nav.posts',
-    archiveKey: 'journal.nav.records',
+    archiveKey: 'journal.nav.posts',
     icon: 'compass',
   },
   {
@@ -261,6 +285,23 @@ const navigation = [
     icon: 'bookmark',
   },
 ]
+const authors = {
+  path: '/authors',
+  key: 'authors',
+  mainKey: 'nav.authors',
+  archiveKey: 'nav.authors',
+  icon: 'users',
+}
+const mobileNavigation = isNext ? navigation.filter((item) => item.key !== 'favorites') : navigation
+const desktopNavigation = isNext ? mobileNavigation.toSpliced(2, 0, authors) : navigation
+const favoritesNavigation = navigation.filter((item) => item.key === 'favorites')
+const directoryNavigation = computed(() => {
+  if (!isNext) return navigation
+  return [...(isAuthRoute.value ? desktopNavigation : [authors]), ...favoritesNavigation]
+})
+const isCurrent = (item: (typeof navigation)[number]) =>
+  pageName.value === item.key ||
+  (item.key === 'authors' && (route.path === item.path || route.path.startsWith('/authors/')))
 const pageName = computed(() =>
   import.meta.env.DEV && route.path.startsWith('/__journal/')
     ? String(route.params['page'])

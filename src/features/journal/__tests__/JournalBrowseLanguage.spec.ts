@@ -161,7 +161,7 @@ it('keeps the Next density from settings, selected record and exact reset values
   expect(wrapper.get('[data-select-post="first"]').element).toBe(selected.element)
   expect(document.activeElement).toBe(selected.element)
   expect(wrapper.get('.inspector-heading').text()).toContain('01 / 02')
-  expect(wrapper.get('.inspector-heading').get('journal-icon-stub').attributes('name')).toBe('file')
+  expect(wrapper.get('.inspector-heading').text()).toContain(i18n.global.t('post.preview'))
   const filters = wrapper.findAll('.active-query-summary button')
   expect(filters[0]!.text()).toBe(
     i18n.global.t('journal.filters.querySummary', { query: '作者原文' })

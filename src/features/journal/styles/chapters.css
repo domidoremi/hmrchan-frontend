@@ -30,11 +30,6 @@
 }
 
 /* Native content flows continuously; only media sequences reserve scroll travel. */
-.site-body .journal-shell .immersive-home:is(.editorial-home, .next-home) {
-  --chapter-inset: max(1.5rem, calc((100% - 82rem) / 2));
-  inline-size: 100%;
-  margin: 0;
-}
 .site-body .journal-shell .immersive-home section.immersive-chapter {
   --chapter-height: calc(100svh - 4.5rem);
   position: relative;
@@ -166,24 +161,6 @@
   line-height: 1;
 }
 /* Next keeps its floating workspace, with a wider spatial stage between collections. */
-.site-body .journal-shell .next-home.immersive-home {
-  --chapter-inset: max(1.5rem, calc((100% - 82rem) / 2));
-}
-.site-body .journal-shell .next-home.immersive-home .archive-bottom-grid {
-  display: block;
-  margin: 0;
-}
-.site-body .journal-shell .immersive-chapter .next-stage {
-  margin: 0;
-  min-block-size: calc(var(--chapter-height) - 4rem);
-}
-.site-body .journal-shell .immersive-chapter .next-stage-scene {
-  min-block-size: max(25rem, calc(var(--chapter-height) - 6rem));
-}
-.site-body .journal-shell .immersive-chapter .next-stage-entry h2 {
-  font-size: calc(clamp(1.8rem, 3.4vw, 3.75rem) * var(--journal-reading-scale));
-  max-inline-size: 15ch;
-}
 .site-body .journal-shell .immersive-chapter .archive-panel {
   padding: clamp(1.25rem, 4vw, 4rem);
   min-block-size: calc(var(--chapter-height) - 4rem);
@@ -207,12 +184,8 @@
   inset-block-end: 1rem;
 }
 @media (max-width: 800px) {
-  .site-body .journal-shell .immersive-home,
-  .site-body .journal-shell .next-home.immersive-home {
+  .site-body .journal-shell .immersive-home {
     --chapter-inset: 1rem;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage {
-    gap: 1rem;
   }
 }
 @media (max-width: 560px) {
@@ -234,19 +207,6 @@
   .site-body .journal-shell .immersive-home .spatial-cover {
     gap: 0.5rem;
     padding-block: 0.75rem 0;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-copy {
-    padding-block: 0;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-entry h2 {
-    font-size: calc(1.75rem * var(--journal-reading-scale));
-    max-inline-size: none;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-scene {
-    min-block-size: clamp(22rem, 50svh, 30rem);
   }
   .site-body .journal-shell .immersive-chapter .archive-panel {
     padding: 1rem;
@@ -270,30 +230,5 @@
   }
   .site-body .journal-shell .immersive-home .cover-source {
     margin-block-end: 0.25rem;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-copy > .eyebrow {
-    display: none;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-entry {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 0.75rem;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-entry h2 {
-    font-size: calc(1.45rem * var(--journal-reading-scale));
-    margin: 0;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-entry p {
-    grid-column: 1;
-    margin-block: 0.5rem 0;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-entry .button {
-    grid-column: 2;
-    grid-row: 1 / 3;
-  }
-  .site-body .journal-shell .immersive-chapter .next-stage-scene {
-    min-block-size: max(15rem, calc(var(--chapter-height) - 10rem));
-    margin-block-start: 0;
   }
 }

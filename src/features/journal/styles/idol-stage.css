@@ -1,0 +1,452 @@
+.site-body .journal-shell .idol-feature {
+  --stage-lamp: #eb9ab6;
+  --stage-fill: #c1afed;
+  --stage-warmth: #f6bf8c;
+  --stage-surface: color-mix(in srgb, var(--paper) 82%, var(--stage-fill));
+  --stage-curve: cubic-bezier(0.22, 1, 0.36, 1);
+  --stage-exposure: 520ms;
+  --stage-travel: translate3d(4%, 0, 0) scale(1.035);
+  position: relative;
+  isolation: isolate;
+  view-timeline: --idol-stage block;
+  display: grid;
+  grid-template-columns: minmax(0, 0.76fr) minmax(0, 1.42fr);
+  grid-template-areas: 'title media' 'copy media' '. reel';
+  grid-template-rows: 1fr auto auto;
+  column-gap: clamp(1.25rem, 4vw, 4rem);
+  row-gap: 1rem;
+  padding: clamp(1.25rem, 4.5vw, 4.25rem);
+  padding-block-end: clamp(1.25rem, 3.4vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: 2.5rem 2.5rem 0.9rem 2.5rem;
+  background: var(--stage-surface);
+}
+
+.idol-stage-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  contain: paint;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 12% 8%, var(--stage-warmth) 0%, transparent 55%),
+    radial-gradient(ellipse at 96% 80%, var(--stage-fill), transparent 66%);
+}
+
+.idol-stage-art i {
+  display: block;
+  position: absolute;
+  pointer-events: none;
+}
+
+.idol-stage-art i:first-child {
+  inset: -15% auto auto 6%;
+  inline-size: 75%;
+  aspect-ratio: 1.45;
+  background: radial-gradient(ellipse, var(--stage-lamp), transparent 67%);
+  opacity: 0.62;
+  transform-origin: 30% 50%;
+}
+
+.idol-stage-art i:nth-child(2) {
+  inset: auto -15% -72% auto;
+  inline-size: 73%;
+  aspect-ratio: 0.8;
+  border-radius: 49%;
+  background: radial-gradient(ellipse at 33% 19%, var(--stage-warmth), transparent 64%);
+  rotate: -23deg;
+  opacity: 0.75;
+}
+
+.idol-stage-art i:nth-child(3) {
+  inset: 14% 4% auto auto;
+  inline-size: 46%;
+  aspect-ratio: 1.4;
+  background: radial-gradient(ellipse, var(--stage-fill), transparent 66%);
+  opacity: 0.75;
+}
+
+.site-body .journal-shell .idol-feature > h1 {
+  grid-area: title;
+  align-self: end;
+  margin: 0;
+  max-inline-size: 11ch;
+  font-family: var(--idol-display);
+  font-size: calc(clamp(2.5rem, 5vw, 5.45rem) * var(--journal-reading-scale));
+  font-weight: var(--idol-heading-weight, 600);
+  line-height: 1.09;
+  letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.idol-feature-copy {
+  grid-area: copy;
+  min-inline-size: 0;
+  position: relative;
+  align-self: start;
+  display: grid;
+  justify-items: start;
+  gap: 0.85rem;
+  padding-block-end: 0.25rem;
+}
+
+.site-body .journal-shell .idol-feature-byline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  align-items: center;
+  font-size: calc(0.83rem * var(--journal-reading-scale));
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.idol-feature-byline > span:first-child {
+  font-weight: 700;
+}
+
+.idol-feature-byline time {
+  white-space: nowrap;
+}
+
+.site-body .journal-shell .idol-feature-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  max-inline-size: 32ch;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: calc(clamp(1.04rem, 1.7vw, 1.4rem) * var(--journal-reading-scale));
+  font-weight: 550;
+  line-height: 1.55;
+}
+
+.site-body .journal-shell .idol-story-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  min-block-size: 2.75rem;
+  padding: 0.65em 1.2em;
+  border-radius: var(--idol-control-radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: calc(0.9rem * var(--journal-reading-scale));
+  font-weight: 650;
+  text-align: start;
+}
+
+.site-body .journal-shell .idol-story-open:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.site-body .journal-shell .idol-story-open .icon {
+  inline-size: 1em;
+  block-size: 1em;
+}
+
+.idol-feature-media {
+  grid-area: media;
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.4rem, 1.4vw, 1.2rem);
+  min-inline-size: 0;
+  touch-action: pan-y pinch-zoom;
+}
+
+.idol-photo {
+  position: relative;
+  isolation: isolate;
+  contain: paint;
+  inline-size: 100%;
+  aspect-ratio: 0.88;
+  overflow: clip;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--paper) 54%, var(--line));
+  border-radius: 0.5rem;
+  box-shadow: 0 1.6rem 3rem -1.5rem color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+.idol-photo-companion {
+  aspect-ratio: 0.73;
+  margin-block-start: 16%;
+  border-radius: 0.35rem;
+}
+
+.idol-photo-take {
+  position: absolute;
+  inset: 0;
+}
+
+.site-body .journal-shell .idol-photo :is(.journal-image, img) {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 0;
+  object-fit: cover;
+  object-position: 50% 36%;
+}
+
+.idol-feature-controls {
+  grid-area: reel;
+  justify-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.15rem, 0.65vw, 0.55rem);
+  min-inline-size: 0;
+}
+
+.idol-feature-frames {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.site-body
+  .journal-shell
+  .idol-feature-controls
+  :is(.idol-feature-step, .idol-feature-pause, .idol-feature-frame) {
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  margin: 0;
+  border-radius: var(--idol-control-radius);
+  color: var(--ink);
+}
+
+.site-body .journal-shell .idol-feature-frame {
+  padding: 0.18rem;
+  border: 2px solid transparent;
+  background: var(--paper);
+}
+
+.site-body .journal-shell .idol-feature-frame img {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 0.22rem;
+}
+
+.site-body .journal-shell .idol-feature-frame[aria-pressed='true'] {
+  border-color: var(--ink);
+}
+
+.site-body .journal-shell .idol-feature-controls .icon-button:hover {
+  background: var(--paper);
+}
+
+[data-color-mode='dark'] .site-body .journal-shell .idol-feature {
+  --stage-lamp: #572446;
+  --stage-fill: #372654;
+  --stage-warmth: #542f37;
+}
+
+html[data-preset='minimal-editorial'] .journal-shell .idol-feature {
+  --stage-lamp: color-mix(in srgb, var(--accent) 16%, transparent);
+  --stage-fill: var(--canvas);
+  --stage-warmth: var(--paper);
+  --stage-exposure: 390ms;
+  --stage-travel: translate3d(0, 5%, 0);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-areas: 'media title' 'media copy' 'reel copy';
+  grid-template-rows: 1fr 1fr auto;
+  border-radius: 0;
+  border-inline: 0;
+  border-block: 1px solid var(--ink);
+}
+
+html[data-preset='minimal-editorial'] .idol-stage-art {
+  background: linear-gradient(104deg, var(--paper) 50%, var(--canvas) 50%);
+}
+
+html[data-preset='minimal-editorial'] .idol-stage-art i:nth-child(3) {
+  border-block-start: 1px solid var(--line);
+  background: none;
+}
+
+html[data-preset='minimal-editorial'] .idol-photo {
+  border-radius: 0;
+  margin-block: 0;
+  border: 0.45rem solid var(--paper);
+  aspect-ratio: 0.8;
+}
+
+html[data-preset='fluent-soft'] .journal-shell .idol-feature {
+  --stage-lamp: color-mix(in srgb, var(--accent) 28%, var(--paper));
+  --stage-fill: color-mix(in srgb, #b396d9 35%, var(--paper));
+  --stage-warmth: var(--paper);
+  --stage-exposure: 610ms;
+  --stage-travel: translate3d(-3%, 0, 0) scale(1.045);
+  grid-template-columns: minmax(0, 1.23fr) minmax(0, 0.77fr);
+  grid-template-areas: 'media title' 'media copy' 'media reel';
+  grid-template-rows: 1fr auto 1fr;
+  align-items: start;
+  border-radius: clamp(1.5rem, 6vw, 4.5rem);
+}
+
+html[data-preset='fluent-soft'] .idol-feature-media {
+  align-self: center;
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.65fr);
+}
+
+html[data-preset='fluent-soft'] .idol-photo {
+  border-radius: clamp(0.9rem, 3vw, 2.2rem);
+  border: 0.25rem solid color-mix(in srgb, var(--paper) 70%, transparent);
+}
+
+html[data-preset='fluent-soft'] .idol-photo-companion {
+  margin-block: 0 10%;
+}
+
+html[data-preset='fluent-soft'] .idol-stage-art i:first-child {
+  inset: auto auto 8% -7%;
+  opacity: 0.8;
+}
+
+html[data-preset='organic-natural'] .journal-shell .idol-feature {
+  --stage-lamp: color-mix(in srgb, #a5b86d 33%, var(--paper));
+  --stage-fill: color-mix(in srgb, var(--accent) 18%, var(--canvas));
+  --stage-warmth: color-mix(in srgb, #e8a970 24%, var(--paper));
+  --stage-exposure: 700ms;
+  --stage-travel: translate3d(0, 4%, 0) rotate(1.5deg) scale(1.05);
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  grid-template-areas: 'title media' 'copy media' 'reel media';
+  grid-template-rows: 1fr auto auto;
+  border-radius: 3rem 0.75rem 3rem 0.75rem;
+}
+
+html[data-preset='organic-natural'] .idol-feature-controls {
+  justify-self: start;
+}
+
+html[data-preset='organic-natural'] .idol-stage-art i:nth-child(2) {
+  inset: 60% auto auto -4%;
+  inline-size: 110%;
+  background: var(--stage-fill);
+  rotate: -7deg;
+  opacity: 0.49;
+  border-radius: 60% 40% 0 0;
+}
+
+html[data-preset='organic-natural'] .idol-photo-lead {
+  border: 0.35rem solid var(--paper);
+  border-radius: 1.5rem 0.35rem;
+  rotate: -2deg;
+}
+
+html[data-preset='organic-natural'] .idol-photo-companion {
+  border: 0.3rem solid var(--paper);
+  border-radius: 0.35rem 1.3rem;
+  rotate: 3deg;
+}
+
+.site-body[data-motion='full'] .idol-exposure-enter-active,
+.site-body[data-motion='full'] .idol-exposure-leave-active {
+  transition:
+    opacity var(--stage-exposure) var(--stage-curve),
+    transform var(--stage-exposure) var(--stage-curve);
+}
+
+.site-body[data-motion='full'] .idol-exposure-enter-active {
+  z-index: 1;
+}
+
+.site-body[data-motion='full'] .idol-exposure-enter-from {
+  opacity: 0;
+  transform: var(--stage-travel);
+}
+
+.site-body[data-motion='full'] .idol-exposure-leave-to {
+  opacity: 0;
+}
+
+.site-body[data-motion='full'] .idol-feature .idol-stage-art i:first-child {
+  animation: idol-light-drift 11s ease-in-out infinite alternate;
+}
+
+.site-body[data-motion='full']
+  :is(.idol-feature.motion-offscreen, .journal-shell:has(dialog[open]))
+  .idol-stage-art
+  i:first-child {
+  animation-play-state: paused;
+}
+
+.site-body[data-motion='full'] .idol-story-open .icon {
+  transition: transform 220ms var(--stage-curve);
+}
+
+.site-body[data-motion='full'] .idol-story-open:hover .icon {
+  transform: translate(0.15em, -0.15em);
+}
+
+@supports (animation-timeline: view()) and (animation-range: exit 0% exit 100%) {
+  .site-body[data-motion='full'] .idol-stage-art i:nth-child(3) {
+    animation: idol-light-exit linear both;
+    animation-timeline: --idol-stage;
+    animation-range: exit 0% exit 100%;
+  }
+}
+
+@keyframes idol-light-drift {
+  to {
+    transform: translate3d(25%, 13%, 0) scale(1.12);
+  }
+}
+
+@keyframes idol-light-exit {
+  to {
+    transform: translate3d(-28%, 56%, 0);
+  }
+}
+
+@media (max-width: 52rem) {
+  html[data-preset] .site-body .journal-shell .idol-feature {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'title' 'media' 'copy' 'reel';
+    grid-template-rows: auto;
+  }
+
+  .site-body .journal-shell .idol-feature > h1 {
+    max-inline-size: none;
+    font-size: calc(clamp(2.05rem, 7.2vw, 3.75rem) * var(--journal-reading-scale));
+    text-wrap: pretty;
+  }
+
+  .idol-feature-media {
+    max-inline-size: 38rem;
+    inline-size: 100%;
+    justify-self: center;
+  }
+
+  html[data-preset] .idol-photo-lead {
+    aspect-ratio: 1;
+  }
+  html[data-preset] .idol-photo-companion {
+    aspect-ratio: 0.76;
+  }
+
+  html[data-preset='organic-natural'] .idol-feature-controls {
+    justify-self: center;
+  }
+}
+
+@media (max-width: 34rem) {
+  .idol-feature-controls {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+  }
+
+  .idol-feature-frames {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .idol-feature-step,
+  .idol-feature-pause {
+    grid-row: 2;
+    justify-self: center;
+  }
+}

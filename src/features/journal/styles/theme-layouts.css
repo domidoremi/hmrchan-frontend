@@ -120,21 +120,6 @@ html[data-preset='minimal-editorial']
   background: var(--paper);
 }
 
-html[data-preset='minimal-editorial']
-  .site-body
-  .journal-shell
-  :is(.next-desk-mark, .archive-page-title h1) {
-  font-family: var(--theme-title-font);
-  font-style: normal;
-  font-weight: 450;
-}
-
-html[data-preset='minimal-editorial'] .site-body .journal-shell .next-home .next-searchbar {
-  border-radius: 0;
-  border-block-end: 2px solid var(--ink);
-  box-shadow: none;
-}
-
 /* Glass: a centered lens, floating controls and two separate levels in the workspace. */
 html[data-preset='fluent-soft'] .site-body .journal-shell {
   --edition-band:
@@ -231,21 +216,6 @@ html[data-preset='fluent-soft'] .site-body .journal-shell .immersive-home .cover
   align-self: center;
 }
 
-html[data-preset='fluent-soft'] .site-body .journal-shell .next-home .next-desk-header {
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
-  gap: 0.7rem;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .next-home .next-searchbar {
-  inline-size: min(100%, 46rem);
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .next-home .next-collection {
-  background: color-mix(in srgb, var(--paper) 72%, transparent);
-  border-color: var(--lens-rim);
-}
-
 /* Garden: a laid path, staggered beds and botanical marks in the edges. */
 html[data-preset='organic-natural'] .site-body .journal-shell {
   --edition-band:
@@ -317,16 +287,6 @@ html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .j
   scale: none;
 }
 
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  .immersive-home
-  :is(.journal-masthead > strong, .cover-story h1, .next-desk-mark) {
-  font-family: 'Palatino Linotype', 'Book Antiqua', 'Kaiti SC', KaiTi, Georgia, serif;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
 html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .spatial-cover {
   background: color-mix(in srgb, var(--canvas) 84%, transparent);
   border-radius: 3rem 0.7rem 3rem 0.7rem;
@@ -334,27 +294,6 @@ html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .s
 
 html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .cover-copy {
   align-self: center;
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .next-home .next-searchbar {
-  align-self: end;
-  border-radius: 1.5rem 0.45rem 1.5rem 0.45rem;
-  border-block-end: 2px solid var(--accent);
-}
-
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  :is(.archive-result-row, .next-home .next-collection) {
-  border-radius: 1.45rem 0.3rem 1.45rem 0.3rem;
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .next-home .next-collection {
-  background: color-mix(in srgb, var(--paper) 86%, transparent);
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .next-home .preview-face {
-  clip-path: none;
 }
 
 /* Spectrum: a full instrument rail, rulers and a keyed index with a framed preview. */
@@ -447,42 +386,9 @@ html[data-preset='gradient-narrative']
   letter-spacing: 0;
 }
 
-html[data-preset='gradient-narrative']
-  .site-body
-  .journal-shell
-  :is(
-    .cover-sheet,
-    .next-stage-photo,
-    .cover-sheet .journal-image,
-    .next-stage-photo .journal-image
-  ) {
-  border-radius: 0.35rem;
-}
-
 html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home .spatial-cover {
   border-radius: 0.35rem;
   background: color-mix(in srgb, var(--canvas) 76%, transparent);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .next-home .next-desk-header {
-  padding: clamp(0.85rem, 2vw, 1.8rem);
-  border-block: 1px solid var(--accent);
-  background: var(--edition-band), color-mix(in srgb, var(--canvas) 82%, transparent);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .next-home .next-searchbar {
-  border-radius: 0.35rem;
-  box-shadow: inset 0 -2px var(--accent);
-}
-
-html[data-preset='gradient-narrative']
-  .site-body
-  .journal-shell
-  .next-home
-  :is(.next-collection, .archive-inspector) {
-  border-radius: 0.35rem;
-  box-shadow: inset 0 1px var(--accent);
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
 }
 
 html[data-preset='gradient-narrative'] .site-body .journal-shell .archive-result-row.selected {
@@ -544,29 +450,6 @@ html[data-preset='gradient-narrative']
   html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .cover-deck {
     inset: 8% 7% 12%;
   }
-
-  html[data-preset='minimal-editorial'] .site-body .journal-shell .next-home .next-index-browser {
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.8fr);
-  }
-
-  html[data-preset='fluent-soft'] .site-body .journal-shell .next-home .next-index-browser {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  }
-
-  html[data-preset='organic-natural'] .site-body .journal-shell .next-home .next-index-browser {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: clamp(1.2rem, 5vw, 5rem);
-  }
-
-  html[data-preset='organic-natural'] .site-body .journal-shell .next-home .archive-inspector {
-    margin-block-start: 1.2rem;
-    border-radius: 2rem 0.6rem;
-  }
-
-  html[data-preset='gradient-narrative'] .site-body .journal-shell .next-home .next-index-browser {
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-    gap: clamp(0.65rem, 1.2vw, 1.6rem);
-  }
 }
 
 @media (max-width: 560px) {
@@ -581,10 +464,6 @@ html[data-preset='gradient-narrative']
     .journal-masthead {
     flex-wrap: wrap;
   }
-
-  html[data-preset='gradient-narrative'] .site-body .journal-shell .next-home .next-desk-header {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 @media (max-width: 390px) {
@@ -595,9 +474,5 @@ html[data-preset='gradient-narrative']
 
   html[data-preset] .site-body .journal-shell.edition-archive .edition-brand-name {
     font-size: 0.95rem;
-  }
-
-  .site-body .journal-shell.edition-archive .next-brand-mark {
-    font-size: 1.8rem;
   }
 }

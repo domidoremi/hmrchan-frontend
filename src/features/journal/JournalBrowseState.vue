@@ -4,8 +4,9 @@
     <section class="browse-state-panel" :aria-labelledby="titleId" :aria-busy="busy">
       <div class="browse-state-visual" aria-hidden="true">
         <svg v-if="isArchive" viewBox="0 0 80 64" fill="none">
-          <path d="M12 24V12h24l8 8h22v34H12" />
-          <path d="M12 54 22 32h52L64 54Z" />
+          <path d="m14 10 48 4-4 44-48-4Z" class="state-paper" />
+          <path d="m22 18 32 3-2 24-32-3Zm-2 24 13-13 7 8 5-4 7 12m-34 5 22 2" />
+          <circle cx="46" cy="27" r="3" />
           <circle v-if="phase === 'error'" cx="51" cy="12" r="8" class="state-accent" />
           <path v-if="phase === 'error'" d="M51 8v5m0 3v.1" class="state-accent" />
         </svg>

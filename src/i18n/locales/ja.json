@@ -1662,7 +1662,7 @@
       "saved": "保存済み"
     },
     "appearance": {
-      "archiveEdition": "Next",
+      "archiveEdition": "フォトエディション",
       "colorMode": "カラーモード",
       "currentSite": "現在のサイト",
       "journalEdition": "メインサイト",
@@ -1692,7 +1692,7 @@
       "errorKicker": "読み込みが完了していません",
       "favoritesHint": "保存した投稿がここに表示されます。まずは投稿を見てみましょう。",
       "index": "投稿一覧",
-      "loadingHint": "データを読み込んでいます。検索と絞り込み条件はそのまま保持されます。",
+      "loadingHint": "投稿を読み込んでいます。検索条件と絞り込みは保持されます。",
       "loadingKicker": "読み込み中",
       "moreRetryHint": "続きのデータを読み込めませんでした。表示済みの結果を閲覧するか、再読み込みできます。",
       "postAuthor": "投稿 / 作者",
@@ -1765,16 +1765,17 @@
       "closeDirectory": "メニューを閉じる",
       "collection": "お気に入り",
       "discussions": "スレッド",
-      "goToArchive": "Archiveへ",
-      "goToJournal": "Journalへ",
+      "goToArchive": "写真を見る",
+      "more": "その他のメニュー",
+      "goToJournal": "ジャーナルを読む",
       "loginOrRegister": "ログイン / 新規登録",
       "mobileNavigation": "モバイルナビゲーション",
       "my": "マイページ",
       "myAccount": "マイアカウント",
       "openDirectory": "メニューを開く",
-      "overview": "概要",
+      "overview": "ホーム",
       "posts": "投稿",
-      "records": "資料検索",
+      "records": "投稿",
       "savedSchedule": "保存した予定"
     },
     "search": {
@@ -1798,13 +1799,13 @@
       "official": "公式"
     },
     "states": {
-      "archiveReadySoon": "まもなく記録とプレビューを表示できます。",
+      "archiveReadySoon": "写真と投稿を読み込んでいます。",
       "checkNetwork": "接続を確認して再試行するか、ほかのページをご覧ください。",
       "failed": "{label}を読み込めません",
       "journalReadySoon": "まもなく内容を読めます。",
       "loading": "{label}を読み込み中…",
       "loadingPage": "ページを開いています…",
-      "loadingRecords": "記録を読み込んでいます…",
+      "loadingRecords": "投稿を読み込んでいます…",
       "noDiscussions": "スレッドはまだありません",
       "noEvents": "予定はありません",
       "noFavorites": "お気に入りはまだありません",
@@ -1857,13 +1858,14 @@
       "position": "{total} 枚中 {index} 枚目"
     },
     "next": {
-      "featured": "おすすめ",
+      "spotlight": "写真とライブ",
+      "portrait": "籾山ひめりの写真",
       "intro": "投稿、写真、出演情報。\nここで、続きを見よう。",
-      "browse": "投稿を見る",
+      "browse": "投稿を探す",
       "view": "表示形式",
-      "gallery": "ギャラリー",
-      "index": "インデックス",
-      "indexDensity": "インデックスの密度"
+      "gallery": "写真と投稿",
+      "index": "最新の投稿",
+      "indexDensity": "リストの密度"
     }
   }
 }

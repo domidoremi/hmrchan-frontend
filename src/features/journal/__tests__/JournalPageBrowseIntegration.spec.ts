@@ -264,7 +264,7 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
     ]
     finishRequest(data, 'ready')
     const { wrapper } = await renderPage(edition, '/', data)
-    const grid = edition === 'archive' ? '.archive-result-list' : '.home-reading-grid'
+    const grid = edition === 'archive' ? '.next-gallery' : '.home-reading-grid'
     const sort =
       edition === 'archive' ? '.next-filter-selects select' : '.editorial-source-bar select'
     const original = wrapper.findAll(`${grid} > [data-post]`).map((item) => item.element)
@@ -290,7 +290,7 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
     ).toEqual(data.posts.value)
   })
   it.runIf(edition === 'archive')(
-    'keeps an explicit gallery URL and returns to the default index',
+    'keeps an explicit list URL and returns to the photograph gallery',
     async () => {
       mocks.router.replace.mockImplementation((location: { query: Record<string, string> }) => {
         mocks.route.query = location.query
@@ -300,15 +300,15 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
       finishRequest(data, 'ready')
       const { wrapper } = await renderPage(edition, '/', data)
       const modes = wrapper.findAll('.next-view-toggle button')
-      expect(wrapper.find('.next-index-browser').exists()).toBe(true)
-      await modes[0]!.trigger('click')
-      await flushPromises()
-      expect(mocks.route.query['view']).toBe('grid')
       expect(wrapper.find('.next-gallery').exists()).toBe(true)
       await modes[1]!.trigger('click')
       await flushPromises()
-      expect(mocks.route.query['view']).toBeUndefined()
+      expect(mocks.route.query['view']).toBe('list')
       expect(wrapper.find('.next-index-browser').exists()).toBe(true)
+      await modes[0]!.trigger('click')
+      await flushPromises()
+      expect(mocks.route.query['view']).toBeUndefined()
+      expect(wrapper.find('.next-gallery').exists()).toBe(true)
     }
   )
   it.each(routes)('passes %s idle/loading/error before confirming empty', async (path, page) => {

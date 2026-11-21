@@ -181,12 +181,10 @@ const param = (key: string, fallback = '') =>
 const query = computed(() => param('q')),
   platform = computed(() => param('platform', 'all')),
   sort = computed(() => param('sort', 'latest'))
-const defaultLayout = computed(() =>
-  designEdition === 'archive' && page.value === 'home' ? 'list' : 'grid'
-)
+const defaultLayout = 'grid'
 const contentType = computed(() => param('type', '全部')),
   layout = computed(() =>
-    ['grid', 'list', 'wall'].includes(param('view')) ? param('view') : defaultLayout.value
+    ['grid', 'list', 'wall'].includes(param('view')) ? param('view') : defaultLayout
   )
 const visiblePosts = computed(() => {
   const values = posts.value.filter(
@@ -259,9 +257,7 @@ function change(key: string, value: string) {
   const next: LocationQueryRaw = { ...route.query }
   if (
     !value ||
-    (key === 'view'
-      ? value === defaultLayout.value
-      : ['all', 'latest', '全部', 'week'].includes(value))
+    (key === 'view' ? value === defaultLayout : ['all', 'latest', '全部', 'week'].includes(value))
   )
     delete next[key]
   else next[key] = value

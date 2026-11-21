@@ -1662,7 +1662,7 @@
       "saved": "已收藏"
     },
     "appearance": {
-      "archiveEdition": "Next",
+      "archiveEdition": "写真版",
       "colorMode": "明暗",
       "currentSite": "当前站点",
       "journalEdition": "主站",
@@ -1691,8 +1691,8 @@
       "emptyKicker": "当前条件",
       "errorKicker": "读取未完成",
       "favoritesHint": "你收藏的动态会出现在这里。先去动态看看。",
-      "index": "动态索引",
-      "loadingHint": "正在读取资料，当前搜索与筛选会保留。",
+      "index": "动态列表",
+      "loadingHint": "正在加载动态，当前搜索与筛选会保留。",
       "loadingKicker": "正在读取",
       "moreRetryHint": "下一批内容暂未载入。可以继续浏览已有内容，或重试。",
       "postAuthor": "动态 / 作者",
@@ -1765,16 +1765,17 @@
       "closeDirectory": "关闭目录",
       "collection": "我的收藏",
       "discussions": "讨论",
-      "goToArchive": "前往资料库",
-      "goToJournal": "前往杂志",
+      "goToArchive": "浏览写真",
+      "more": "更多入口",
+      "goToJournal": "阅读主站",
       "loginOrRegister": "登录 / 注册",
       "mobileNavigation": "移动导航",
       "my": "我的",
       "myAccount": "我的账号",
       "openDirectory": "打开目录",
-      "overview": "总览",
+      "overview": "首页",
       "posts": "动态",
-      "records": "资料检索",
+      "records": "动态",
       "savedSchedule": "已记下的日程"
     },
     "search": {
@@ -1798,13 +1799,13 @@
       "official": "官方"
     },
     "states": {
-      "archiveReadySoon": "记录与预览即将就绪。",
+      "archiveReadySoon": "写真与动态正在载入。",
       "checkNetwork": "请检查网络后重试，或继续浏览其他页面。",
       "failed": "{label}暂时无法加载",
       "journalReadySoon": "内容正在载入，稍后即可阅读。",
       "loading": "正在加载{label}…",
       "loadingPage": "正在翻开这一页。",
-      "loadingRecords": "正在读取内容。",
+      "loadingRecords": "正在加载动态…",
       "noDiscussions": "暂无讨论",
       "noEvents": "暂无日程",
       "noFavorites": "还没有收藏",
@@ -1857,13 +1858,14 @@
       "position": "第 {index} 张，共 {total} 张"
     },
     "next": {
-      "featured": "推荐内容",
+      "spotlight": "写真与现场",
+      "portrait": "籾山ひめり写真",
       "intro": "动态、图片、演出。\n在这里，接着看。",
-      "browse": "浏览内容",
+      "browse": "探索动态",
       "view": "浏览方式",
-      "gallery": "图片浏览",
-      "index": "资料索引",
-      "indexDensity": "资料索引密度"
+      "gallery": "写真与动态",
+      "index": "最新动态",
+      "indexDensity": "列表密度"
     }
   }
 }

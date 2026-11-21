@@ -243,28 +243,6 @@
 .site-body[data-motion='full'] .journal-shell .journal-masthead > strong {
   animation: journal-masthead-arrive 1100ms cubic-bezier(0.16, 0.8, 0.23, 1) backwards;
 }
-.site-body[data-motion='full'] .journal-shell .next-stage:not(.has-entered) .motion-letter {
-  animation: none;
-}
-.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-planes {
-  animation: next-scene-arrive 1450ms cubic-bezier(0.16, 0.8, 0.23, 1) backwards;
-}
-.site-body[data-motion='full'] .journal-shell .next-stage-photo {
-  transition:
-    transform 1100ms cubic-bezier(0.16, 0.8, 0.23, 1),
-    opacity 800ms,
-    box-shadow 600ms;
-}
-.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-stage-copy {
-  animation: next-copy-arrive 900ms var(--journal-ease) 180ms backwards;
-}
-.site-body[data-motion='full'] .journal-shell .next-desk-mark .motion-letter {
-  animation-duration: 1100ms;
-  animation-delay: calc(120ms + var(--letter-index) * 80ms);
-}
-.site-body[data-motion='full'] .journal-shell .next-stage.has-entered .next-orbit {
-  animation: next-orbit-arrive 1600ms var(--journal-ease) backwards;
-}
 .site-body .next-satellite-enter-active,
 .site-body .next-satellite-leave-active {
   transition:
@@ -292,16 +270,8 @@
 .site-body[data-motion='full'] .journal-shell .next-gallery-media:hover .next-gallery-caption {
   translate: 0 -0.3rem;
 }
-.site-body[data-motion='reduced']
-  .journal-shell
-  :is(.cover-deck, .next-stage-planes, .next-stage-satellite) {
-  translate: 0 0;
-}
 .site-body[data-motion='reduced'] .journal-shell .button:hover {
   transform: none;
-}
-.site-body[data-motion='reduced'] .journal-shell .next-stage-satellite:hover {
-  transform: translateZ(2rem) rotate(-9deg);
 }
 .site-body[data-motion='reduced'] .journal-shell .next-gallery-media:hover .journal-image img {
   transform: none;
