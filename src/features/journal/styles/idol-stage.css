@@ -186,12 +186,16 @@
 }
 
 .site-body .journal-shell .idol-feature-frame {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   padding: 0.26rem;
   border: 1px solid transparent;
   background: transparent;
 }
 
 .site-body .journal-shell .idol-feature-frame img {
+  min-inline-size: 0;
+  min-block-size: 0;
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;

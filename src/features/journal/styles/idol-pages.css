@@ -45,6 +45,9 @@
   margin-block: 0.5rem 1.25rem;
   border-block-end: 1px solid var(--line);
 }
+#app .edition-archive .next-collection .stream-tabs {
+  min-block-size: 0;
+}
 #app
   .edition-archive
   :is(
@@ -53,8 +56,11 @@
     .next-filter-selects select,
     .next-filter-selects .text-button
   ) {
+  block-size: auto;
   min-block-size: 2.75rem;
   font-size: calc(0.82rem * var(--journal-reading-scale));
+  line-height: 1.35;
+  border-radius: var(--idol-control-radius);
 }
 #app .edition-archive :is(.stream-tabs .chip, .next-view-toggle button)[aria-pressed='true'] {
   background: var(--ink);

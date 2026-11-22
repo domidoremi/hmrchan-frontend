@@ -27,7 +27,7 @@ html[data-preset='fluent-soft'] #app .journal-shell.edition-archive {
   --idol-display: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
   --idol-heading-weight: 680;
   --idol-panel-radius: 1.8rem;
-  --idol-control-radius: 2rem;
+  --idol-control-radius: 0.8rem;
 }
 
 html[data-preset='organic-natural'] #app .journal-shell.edition-archive {
