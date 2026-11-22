@@ -50,6 +50,15 @@ export function createJournalRuntime(navigate, options = {}) {
     fullMotion: () => motion === 'full',
     signal: lifetime.signal,
   })
+  const revealTransform = () => {
+    const preset = document.documentElement.dataset.preset
+    if (!document.body.classList.contains('next-body'))
+      return ['perspective(1200px) translateY(2.8rem) rotateX(4deg)', 'none']
+    if (preset === 'minimal-editorial') return ['translateY(1.1rem)', 'none']
+    if (preset === 'fluent-soft') return ['translateY(1.7rem) scale(0.965)', 'none']
+    if (preset === 'organic-natural') return ['translateY(1.5rem) rotate(-0.8deg)', 'none']
+    return ['translateY(2rem) scale(0.98)', 'none']
+  }
   const preference = createMotionPreference({
     read: runtime.UI.read,
     save: runtime.UI.save,
@@ -140,11 +149,11 @@ export function createJournalRuntime(navigate, options = {}) {
           [
             {
               opacity: 0.15,
-              transform: 'perspective(1200px) translateY(2.8rem) rotateX(4deg)',
+              transform: revealTransform()[0],
             },
             {
               opacity: 1,
-              transform: 'perspective(1200px) translateY(0) rotateX(0deg)',
+              transform: revealTransform()[1],
             },
           ],
           { delay: Math.min(index * 65, 260) }
@@ -241,14 +250,20 @@ export function createJournalRuntime(navigate, options = {}) {
   }
   runtime.SpatialMotion = {
     dialog(element) {
+      const transforms = document.body.classList.contains('next-body')
+        ? revealTransform()
+        : [
+            'perspective(1300px) translateY(1.5rem) rotateX(-4deg) scale(.97)',
+            'perspective(1300px) translateY(0) rotateX(0deg) scale(1)',
+          ]
       animate(
         element.querySelector('#dialog-content'),
         [
           {
             opacity: 0.15,
-            transform: 'perspective(1300px) translateY(1.5rem) rotateX(-4deg) scale(.97)',
+            transform: transforms[0],
           },
-          { opacity: 1, transform: 'perspective(1300px) translateY(0) rotateX(0deg) scale(1)' },
+          { opacity: 1, transform: transforms[1] },
         ],
         { id: 'dialog', duration: motionTiming.dialog }
       )
@@ -263,11 +278,14 @@ export function createJournalRuntime(navigate, options = {}) {
   runtime.transition = () => {
     if (lifetime.signal.aborted) return
     runtime.UI.closeDialog(true)
+    const transforms = document.body.classList.contains('next-body')
+      ? revealTransform()
+      : ['translateY(18px)', 'translateY(0)']
     animate(
       document.querySelector('.journal-page, .journal-legacy'),
       [
-        { opacity: 0.2, transform: 'translateY(18px)' },
-        { opacity: 1, transform: 'translateY(0)' },
+        { opacity: 0.2, transform: transforms[0] },
+        { opacity: 1, transform: transforms[1] },
       ],
       { duration: motionTiming.page }
     )

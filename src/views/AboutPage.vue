@@ -1,13 +1,7 @@
 <template>
   <div class="about-page">
     <header class="about-masthead">
-      <h1>MomiChan</h1>
-      <nav class="about-index" :aria-label="$t('common.primaryNavigation')">
-        <RouterLink v-for="item in destinations" :key="item.path" :to="item.path">
-          <component :is="item.icon" aria-hidden="true" />
-          <span>{{ $t(item.label) }}</span>
-        </RouterLink>
-      </nav>
+      <h1>{{ $t('about.links.title') }}</h1>
     </header>
     <nav class="about-directory" :aria-label="$t('about.links.title')">
       <section
@@ -54,19 +48,9 @@ import {
   MessageCircle,
   Camera,
   Disc,
-  Compass,
-  Users,
-  CalendarDays,
-  MessagesSquare,
 } from '@lucide/vue'
 import { IconInstagram, IconX, IconYoutube } from '@/components/icons'
 const { t } = useI18n()
-const destinations = [
-  { path: '/explore', label: 'nav.explore', icon: Compass },
-  { path: '/authors', label: 'nav.authors', icon: Users },
-  { path: '/schedule', label: 'nav.schedule', icon: CalendarDays },
-  { path: '/community', label: 'nav.community', icon: MessagesSquare },
-]
 const officialLinks = computed(() => [
   {
     name: t('about.links.groupSite'),

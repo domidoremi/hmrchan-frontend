@@ -17,9 +17,10 @@ export function createLayoutMotion({ animate, frame, fullMotion, signal }) {
     const request = { generation, animations: new Set() }
     requests.set(root, request)
     const enabled = fullMotion() && root.isConnected
+    const elements = () => root.querySelectorAll('[data-post]:not(.preview-face)')
     const before = new Map()
     if (enabled)
-      for (const element of root.querySelectorAll('[data-post]'))
+      for (const element of elements())
         before.set(element.dataset.post, element.getBoundingClientRect())
     for (const animation of previousRequest?.animations || []) animation.cancel()
     await update()
@@ -33,7 +34,7 @@ export function createLayoutMotion({ animate, frame, fullMotion, signal }) {
     frame(() => {
       if (!current()) return
       const changes = []
-      for (const element of root.querySelectorAll('[data-post]')) {
+      for (const element of elements()) {
         const previous = before.get(element.dataset.post)
         if (!previous?.width || !previous.height) continue
         const next = element.getBoundingClientRect()

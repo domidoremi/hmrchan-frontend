@@ -15,7 +15,7 @@
     "actionFailed": "操作未完成，請重試。"
   },
   "app": {
-    "name": "MomiChan"
+    "name": "寫真"
   },
   "nav": {
     "home": "首頁",
@@ -1476,7 +1476,7 @@
     }
   },
   "about": {
-    "title": "關於 MomiChan",
+    "title": "連結",
     "subtitle": "動態、日程與討論",
     "origin": {
       "title": "關於 Himeri",
@@ -1503,7 +1503,7 @@
       "aboutTitle": "簡介"
     },
     "links": {
-      "title": "官方網站 & 社群媒體",
+      "title": "官方與社群",
       "official": "官方網站",
       "personal": "ひめり 個人社群",
       "groupSocial": "團體社群媒體",
@@ -1766,7 +1766,7 @@
       "collection": "我的收藏",
       "discussions": "討論",
       "goToArchive": "瀏覽寫真",
-      "more": "更多入口",
+      "more": "更多",
       "goToJournal": "閱讀主站",
       "loginOrRegister": "登入 / 註冊",
       "mobileNavigation": "行動版導覽",
@@ -1835,7 +1835,7 @@
       "wall": "照片牆"
     },
     "home": {
-      "latest": "最近更新",
+      "latest": "最近",
       "allPosts": "全部動態",
       "visitCommunity": "進入社群",
       "contents": "本期目錄",
@@ -1863,8 +1863,8 @@
       "intro": "動態、圖片、演出。\n在這裡，接著看。",
       "browse": "探索動態",
       "view": "瀏覽方式",
-      "gallery": "寫真與動態",
-      "index": "最新動態",
+      "gallery": "圖集",
+      "index": "列表",
       "indexDensity": "列表密度"
     }
   }

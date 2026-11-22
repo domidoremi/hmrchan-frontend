@@ -29,11 +29,12 @@ describe('createPrerenderedHtml', () => {
   it('rewrites the homepage using the dedicated home prerender shell', () => {
     const html = createPrerenderedHtml(template, '/')
 
-    expect(html).toContain('<title>Home · MomiChan</title>')
+    expect(html).toContain('<title>Home</title>')
     expect(html).toContain('data-prerender-shell-variant="home"')
     expect(html).toContain('data-prerender-shell-content="true"')
-    expect(html).toContain('Start here')
-    expect(html).toContain('Public posts, creators, and discussions')
+    expect(html).toContain('<h1>Home</h1>')
+    expect(html).toContain('Loading')
+    expect(html).not.toContain('prerender-shell__brand')
     expect(html).not.toContain('data-prerender-preload-image="true"')
     expect(html).not.toContain('Quick bridge')
   })
@@ -41,14 +42,14 @@ describe('createPrerenderedHtml', () => {
   it('rewrites public route metadata and shell markup', () => {
     const html = createPrerenderedHtml(template, '/explore')
 
-    expect(html).toContain('<title>Explore · MomiChan</title>')
+    expect(html).toContain('<title>Explore</title>')
     expect(html).toContain(
       'name="description" content="按平台、主题和时间浏览最新公开内容与作者动态。"'
     )
     expect(html).toContain('rel="canonical" href="https://momichan.com/explore"')
     expect(html).toContain('property="og:url" content="https://momichan.com/explore"')
     expect(html).toContain('data-prerender-shell="true"')
-    expect(html).toContain('Browse public posts, tags, and creator updates')
+    expect(html).toContain('<h1>Explore</h1>')
     expect(html).toContain('data-prerender-structured-data="true"')
     expect(html).toContain('"@type":"CollectionPage"')
     expect(html).not.toContain('Rendering mode')
@@ -57,7 +58,7 @@ describe('createPrerenderedHtml', () => {
   it('rewrites 404 documents as noindex shells', () => {
     const html = createPrerenderedHtml(template, '/404')
 
-    expect(html).toContain('<title>Page not found · MomiChan</title>')
+    expect(html).toContain('<title>Page not found</title>')
     expect(html).toContain('name="robots" content="noindex, nofollow"')
     expect(html).toContain('Page not found')
     expect(html).not.toContain('application/json" data-prerender-structured-data="true"')
@@ -66,7 +67,7 @@ describe('createPrerenderedHtml', () => {
   it('injects image preload hints for prerendered detail routes', () => {
     const html = applyPrerenderDocument(template, {
       status: 200,
-      title: 'Post detail · MomiChan',
+      title: 'Post detail',
       description: 'detail description',
       canonicalPath: '/post/post-1',
       ogType: 'article',

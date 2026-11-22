@@ -21,7 +21,7 @@
         <div class="auth-shell__copy">
           <slot name="eyebrow" />
           <h1 class="auth-title">{{ title }}</h1>
-          <p v-if="subtitle" class="auth-subtitle">{{ subtitle }}</p>
+          <p v-if="subtitle && designEdition !== 'archive'" class="auth-subtitle">{{ subtitle }}</p>
         </div>
       </div>
 
@@ -48,6 +48,7 @@ import { ArrowLeft } from '@lucide/vue'
 import AuthTabNav from './AuthTabNav.vue'
 import EditionAuthArt from './EditionAuthArt.vue'
 import type { AuthEntryTab } from './authTypes'
+import { designEdition } from '@/config/designEdition'
 
 defineOptions({ name: 'AuthEntryShell' })
 

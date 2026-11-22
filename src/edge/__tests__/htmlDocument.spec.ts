@@ -5,6 +5,7 @@ import {
   resolveHtmlDocument,
   renderPrerenderShell,
   renderStructuredDataScript,
+  buildTitle,
 } from '@/edge/htmlDocument'
 
 describe('resolveHtmlDocument', () => {
@@ -16,19 +17,19 @@ describe('resolveHtmlDocument', () => {
     const contactConfig = resolveHtmlDocument(new URL('https://momichan.com/contact'))
 
     expect(homeConfig.status).toBe(200)
-    expect(homeConfig.title).toBe('Home · MomiChan')
+    expect(homeConfig.title).toBe('Home')
     expect(homeConfig.robots).toBe('index, follow')
     expect(resolveCanonicalUrl(homeConfig)).toBe('https://momichan.com/')
     expect(homeConfig.structuredData.length).toBeGreaterThan(0)
     expect(homeConfig.preloadImages).toEqual([])
 
     expect(exploreConfig.status).toBe(200)
-    expect(exploreConfig.title).toBe('Explore · MomiChan')
+    expect(exploreConfig.title).toBe('Explore')
     expect(exploreConfig.robots).toBe('index, follow')
     expect(resolveCanonicalUrl(exploreConfig)).toBe('https://momichan.com/explore')
 
     expect(contactConfig.status).toBe(200)
-    expect(contactConfig.title).toBe('Contact · MomiChan')
+    expect(contactConfig.title).toBe('Contact')
     expect(contactConfig.robots).toBe('index, follow')
     expect(contactConfig.description).toContain('留言')
     expect(resolveCanonicalUrl(contactConfig)).toBe('https://momichan.com/contact')
@@ -64,30 +65,30 @@ describe('resolveHtmlDocument', () => {
 
     expect(loginConfig.status).toBe(200)
     expect(loginConfig.robots).toBe('noindex, nofollow')
-    expect(loginConfig.title).toBe('Login · MomiChan')
+    expect(loginConfig.title).toBe('Login')
 
     expect(authCallbackConfig.status).toBe(200)
     expect(authCallbackConfig.robots).toBe('noindex, nofollow')
-    expect(authCallbackConfig.title).toBe('Authentication callback · MomiChan')
+    expect(authCallbackConfig.title).toBe('Authentication callback')
 
     expect(passkeyRecoveryConfig.status).toBe(200)
     expect(passkeyRecoveryConfig.robots).toBe('noindex, nofollow')
-    expect(passkeyRecoveryConfig.title).toBe('Account security · MomiChan')
+    expect(passkeyRecoveryConfig.title).toBe('Account security')
 
     expect(passkeyRecoveryDetailConfig.status).toBe(200)
     expect(passkeyRecoveryDetailConfig.robots).toBe('noindex, nofollow')
-    expect(passkeyRecoveryDetailConfig.title).toBe('Account security · MomiChan')
+    expect(passkeyRecoveryDetailConfig.title).toBe('Account security')
 
     expect(favoritesConfig.status).toBe(200)
     expect(favoritesConfig.robots).toBe('noindex, nofollow')
-    expect(favoritesConfig.title).toBe('Account area · MomiChan')
+    expect(favoritesConfig.title).toBe('Account area')
 
     for (const privatePath of privateProfilePaths) {
       const config = resolveHtmlDocument(new URL(`https://momichan.com${privatePath}`))
 
       expect(config.status).toBe(200)
       expect(config.robots).toBe('noindex, nofollow')
-      expect(config.title).toBe('Account area · MomiChan')
+      expect(config.title).toBe('Account area')
     }
   })
 
@@ -105,7 +106,7 @@ describe('resolveHtmlDocument', () => {
 
     expect(authorConfig.status).toBe(200)
     expect(authorConfig.ogType).toBe('article')
-    expect(authorConfig.title).toBe('Author detail · MomiChan')
+    expect(authorConfig.title).toBe('Author detail')
 
     expect(discussionConfig.status).toBe(200)
     expect(resolveCanonicalUrl(discussionConfig)).toBe(
@@ -130,7 +131,7 @@ describe('resolveHtmlDocument', () => {
       const invalidConfig = resolveHtmlDocument(new URL(invalidPath, 'https://momichan.com'))
       expect(invalidConfig.status).toBe(404)
       expect(invalidConfig.robots).toBe('noindex, nofollow')
-      expect(invalidConfig.title).toBe('Page not found · MomiChan')
+      expect(invalidConfig.title).toBe('Page not found')
       expect(resolveCanonicalUrl(invalidConfig)).toBe(`https://momichan.com${invalidPath}`)
     }
 
@@ -144,7 +145,7 @@ describe('resolveHtmlDocument', () => {
   it('renders a prerender shell with escaped copy', () => {
     const shell = renderPrerenderShell({
       status: 404,
-      title: 'Page not found · MomiChan',
+      title: 'Page <missing> "not found"',
       description: 'missing',
       canonicalPath: '/missing',
       ogType: 'website',
@@ -154,7 +155,7 @@ describe('resolveHtmlDocument', () => {
       shellBody: 'Try another route & keep browsing.',
       shellSummary: ['Missing route & keep browsing'],
       shellStats: [{ label: 'Status', value: 'Unavailable' }],
-      shellLinks: [{ href: '/explore', label: 'Explore' }],
+      shellLinks: [{ href: '/explore?q="photos"&type=all', label: 'Explore & photos' }],
       structuredData: [],
       shellVariant: 'default',
     })
@@ -162,11 +163,11 @@ describe('resolveHtmlDocument', () => {
     expect(shell).toContain('data-prerender-shell="true"')
     expect(shell).toContain('data-prerender-shell-variant="default"')
     expect(shell).toContain('data-prerender-shell-content="true"')
-    expect(shell).toContain('404 &lt;missing&gt;')
-    expect(shell).toContain('Page &quot;not found&quot;')
-    expect(shell).toContain('Try another route &amp; keep browsing.')
-    expect(shell).toContain('Missing route &amp; keep browsing')
-    expect(shell).toContain('href="/explore"')
+    expect(shell).toContain('Page &lt;missing&gt; &quot;not found&quot;')
+    expect(shell).not.toContain('Page <missing>')
+    expect(shell).not.toContain('prerender-shell__description')
+    expect(shell).toContain('Explore &amp; photos')
+    expect(shell).toContain('href="/explore?q=&quot;photos&quot;&amp;type=all"')
   })
 
   it('renders the homepage shell with the dedicated home variant', () => {
@@ -176,8 +177,11 @@ describe('resolveHtmlDocument', () => {
     expect(homeConfig.shellVariant).toBe('home')
     expect(shell).toContain('data-prerender-shell-variant="home"')
     expect(shell).toContain('data-prerender-shell-content="true"')
-    expect(shell).toContain('Start here')
-    expect(shell).toContain('Public posts, creators, and discussions')
+    expect(shell).toContain('<h1>Home</h1>')
+    expect(shell).toContain('Loading')
+    expect(shell).not.toContain('prerender-shell__brand')
+    expect(shell).not.toContain('prerender-shell__record')
+    expect(shell).not.toContain('MomiChan')
     expect(shell).not.toContain('Quick bridge')
     expect(shell).not.toContain('client takeover')
   })
@@ -198,12 +202,19 @@ describe('resolveHtmlDocument', () => {
 
     expect(contactConfig.shellEyebrow).toBe('Contact')
     expect(contactConfig.shellTitle).toContain('share feedback')
-    expect(shell).toContain('questions, suggestions, corrections')
+    expect(shell).toContain('<h1>Contact</h1>')
     expect(shell).toContain('Private reporting')
     expect(shell).not.toContain('partnership requests')
     expect(shell).not.toContain('private security reporting')
     expect(shell).not.toContain('首包')
   })
+})
+
+it('keeps genuine author and post names while omitting automatic site branding', () => {
+  expect(buildTitle('MomiChan (@momichan)')).toBe('MomiChan (@momichan)')
+  expect(buildTitle('A photo by MomiChan')).toBe('A photo by MomiChan')
+  expect(buildTitle('Summer · MomiChan')).toBe('Summer · MomiChan')
+  expect(buildTitle('  Explore  ')).toBe('Explore')
 })
 
 describe('htmlDocument path normalization', () => {

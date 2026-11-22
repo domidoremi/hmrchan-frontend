@@ -1,9 +1,10 @@
 import { isContractResourceId } from '../utils/contractResourceId.ts'
 import { renderPublicShell } from './prerenderShell.ts'
+import { buildTitle, SITE_NAME } from './documentTitle.ts'
 
-const SITE_NAME = 'MomiChan'
+export { buildTitle } from './documentTitle.ts'
 export const SITE_ORIGIN = 'https://momichan.com'
-export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/icons/sitting-512.webp`
+export const DEFAULT_OG_IMAGE = 'https://next.momichan.com/journal/himeri-portrait.webp'
 
 export type HtmlStructuredData = Record<string, unknown>
 
@@ -54,10 +55,6 @@ type HtmlDocumentOverrides = {
   structuredData?: HtmlStructuredData[]
   shellVariant?: HtmlDocumentConfig['shellVariant']
   preloadImages?: HtmlDocumentPreloadImage[]
-}
-
-function buildTitle(pageTitle: string): string {
-  return pageTitle === SITE_NAME ? SITE_NAME : `${pageTitle} · ${SITE_NAME}`
 }
 
 function hasContent(value: unknown): boolean {
@@ -198,12 +195,12 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   const path = normalizeDocumentPath(url.pathname)
 
   if (path === '/') {
-    const description = 'MomiChan 首页集中显示公开内容、趋势作者、日程与社区入口。'
+    const description = '写真、动态与活动日程。'
     return createDocumentConfig(
       '/',
       'Home',
       description,
-      'MomiChan',
+      'Home',
       'Public posts, creators, and discussions',
       '从首页浏览公开内容、趋势作者、近期日程和社区讨论。',
       {
@@ -366,14 +363,14 @@ export function resolveHtmlDocument(url: URL): HtmlDocumentConfig {
   }
 
   if (path === '/about') {
-    const description = '了解 MomiChan 的定位、内容组织方式以及多语言与性能优化设计。'
+    const description = '官方网站与社交媒体。'
     return createDocumentConfig(
       path,
       'About',
       description,
       'About',
-      'MomiChan product and content structure',
-      '了解 MomiChan 如何整理公开内容、作者与讨论入口。',
+      'Official and social links',
+      description,
       {
         shellSummary: ['Read the overview for product scope, browsing focus, and public sections.'],
         shellLinks: [

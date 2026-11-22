@@ -15,7 +15,10 @@ import { createWheelRegion } from './wheelRegion'
 import { chapterKey } from './chapterContext'
 import type { JournalPost } from '../models'
 
-export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>, { wheel = true } = {}) {
+export function useCoverPlayback(
+  posts: Readonly<Ref<JournalPost[]>>,
+  { wheel = true, interval = 6500 } = {}
+) {
   const chapter = inject(chapterKey, null)
   const items = computed(() => posts.value.slice(0, 6))
   const selection = usePostSelection(items)
@@ -62,7 +65,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>, { wheel = 
       timer = setTimeout(() => {
         timer = undefined
         if (playing.value) selection.step(1)
-      }, 6500)
+      }, interval)
   })
   function syncEnvironment() {
     documentVisible.value = !document.hidden

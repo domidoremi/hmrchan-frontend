@@ -2,12 +2,12 @@
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <div class="edition-workspace">
       <header class="edition-header" :class="isNext ? 'idol-header' : 'liquid-surface'">
-        <RouterLink class="edition-logo" to="/" tabindex="0" aria-label="MomiChan">
+        <RouterLink v-if="!isNext" class="edition-logo" to="/" tabindex="0" aria-label="MomiChan">
           <img :src="'/journal/mascot.webp'" alt="" width="40" height="40" />
           <span class="edition-brand-name">MomiChan</span>
         </RouterLink>
         <nav
-          v-if="!isAuthRoute"
+          v-if="isNext || !isAuthRoute"
           class="desktop-navigation"
           :aria-label="t('common.primaryNavigation')"
         >
@@ -59,19 +59,12 @@
             }}</span></RouterLink
           >
           <button
+            v-if="!isNext"
             :ref="(element) => (menuButton = element as HTMLButtonElement | null)"
             class="mobile-menu-button icon-button"
             :aria-expanded="menuOpen"
             :aria-controls="menuOpen ? 'edition-mobile-menu' : undefined"
-            :aria-label="
-              t(
-                menuOpen
-                  ? 'common.close'
-                  : isNext
-                    ? 'journal.nav.more'
-                    : 'journal.nav.openDirectory'
-              )
-            "
+            :aria-label="t(menuOpen ? 'common.close' : 'journal.nav.openDirectory')"
             @click="menuOpen = !menuOpen"
           >
             <JournalIcon :name="menuOpen ? 'x' : 'menu'" />
@@ -80,45 +73,48 @@
       </header>
       <Transition name="directory">
         <div
-          v-if="menuOpen"
+          v-if="!isNext && menuOpen"
           id="edition-mobile-menu"
           :ref="(element) => (directory = element as HTMLElement | null)"
           class="mobile-directory"
         >
-          <nav :aria-label="t(isNext ? 'journal.nav.more' : 'journal.nav.mobileNavigation')">
+          <nav :aria-label="t('journal.nav.mobileNavigation')">
             <RouterLink
               tabindex="0"
-              v-for="item in directoryNavigation"
+              v-for="item in navigation"
               :key="item.path"
               :to="item.path"
               :aria-current="isCurrent(item) ? 'page' : undefined"
               @click="menuOpen = false"
               ><JournalIcon :name="item.icon" class="directory-icon" /><span>{{
-                t(isNext ? item.archiveKey : item.mainKey)
+                t(item.mainKey)
               }}</span
               ><JournalIcon name="arrow-up-right"
             /></RouterLink>
           </nav>
           <div class="directory-footer">
-            <button
-              v-if="isNext"
-              class="directory-saved"
-              data-action="notifications"
-              @click="menuOpen = false"
-            >
-              <JournalIcon name="calendar" />{{ t('journal.nav.savedSchedule') }}
-            </button>
             <RouterLink to="/profile" @click="menuOpen = false"
               ><JournalIcon name="users" />{{
                 t(auth.isAuthenticated ? 'journal.nav.myAccount' : 'journal.nav.loginOrRegister')
               }}</RouterLink
             >
-            <a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
-              >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }} ↗</a
+            <a href="https://next.momichan.com" tabindex="0"
+              >{{ t('journal.nav.goToArchive') }} ↗</a
             >
           </div>
         </div>
       </Transition>
+      <ArchiveMobileNavigation
+        v-if="isNext"
+        v-model:open="menuOpen"
+        :items="mobileNavigation"
+        :additional-items="mobileExtras"
+        :current="isCurrent"
+        :authenticated="auth.isAuthenticated"
+        @menu-button="menuButton = $event"
+        @directory="directory = $event"
+        @appearance="openAppearance"
+      />
       <main
         id="main-content"
         tabindex="-1"
@@ -138,7 +134,7 @@
           MomiChan<span>®</span>
         </div>
         <div class="footer-bottom">
-          <span>© {{ new Date().getFullYear() }} MomiChan</span
+          <span v-if="!isNext">© {{ new Date().getFullYear() }} MomiChan</span
           ><a :href="isNext ? 'https://momichan.com' : 'https://next.momichan.com'" tabindex="0"
             >{{ t(isNext ? 'journal.nav.goToJournal' : 'journal.nav.goToArchive') }}
             <JournalIcon name="arrow-up-right" /></a
@@ -149,7 +145,7 @@
       </footer>
     </div>
     <nav
-      v-if="!isAuthRoute"
+      v-if="!isNext && !isAuthRoute"
       class="mobile-navigation"
       :class="{ 'liquid-surface': settingsStore.settings.appearancePreset === 'fluent-soft' }"
       :aria-label="t('journal.nav.mobileNavigation')"
@@ -160,9 +156,7 @@
         :to="item.path"
         :class="{ active: isCurrent(item) }"
         :aria-current="isCurrent(item) ? 'page' : undefined"
-        ><JournalIcon :name="item.icon" /><span>{{
-          t(isNext ? item.archiveKey : item.mainKey)
-        }}</span></RouterLink
+        ><JournalIcon :name="item.icon" /><span>{{ t(item.mainKey) }}</span></RouterLink
       >
     </nav>
     <JournalAppearanceDialog v-if="appearanceOpen" @close="appearanceOpen = false" />
@@ -174,7 +168,7 @@
       </div>
       <div id="dialog-content" />
     </dialog>
-    <div class="reading-progress" aria-hidden="true" />
+    <div v-if="!isNext" class="reading-progress" aria-hidden="true" />
     <button
       class="back-to-top icon-button"
       data-action="top"
@@ -211,12 +205,15 @@ import { useJournalDirectory } from './useJournalDirectory'
 import { installDisplayPreferences } from './displayPreferences'
 import JournalIcon from './JournalIcon.vue'
 import AccountNavigation from './AccountNavigation.vue'
+import ArchiveMobileNavigation from './editions/ArchiveMobileNavigation.vue'
 const JournalAppearanceDialog = defineAsyncComponent(() => import('./JournalAppearanceDialog.vue'))
 import { useI18n } from 'vue-i18n'
 import './styles/index.css'
 import './styles/theme-layouts.css'
 import './styles/idol-chrome.css'
 import './styles/idol-pages.css'
+import './styles/idol-details.css'
+import './styles/idol-motion.css'
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()
@@ -294,12 +291,8 @@ const authors = {
 }
 const mobileNavigation = isNext ? navigation.filter((item) => item.key !== 'favorites') : navigation
 const desktopNavigation = isNext ? mobileNavigation.toSpliced(2, 0, authors) : navigation
-const favoritesNavigation = navigation.filter((item) => item.key === 'favorites')
-const directoryNavigation = computed(() => {
-  if (!isNext) return navigation
-  return [...(isAuthRoute.value ? desktopNavigation : [authors]), ...favoritesNavigation]
-})
-const isCurrent = (item: (typeof navigation)[number]) =>
+const mobileExtras = [authors, navigation[4]!]
+const isCurrent = (item: { path: string; key: string }) =>
   pageName.value === item.key ||
   (item.key === 'authors' && (route.path === item.path || route.path.startsWith('/authors/')))
 const pageName = computed(() =>

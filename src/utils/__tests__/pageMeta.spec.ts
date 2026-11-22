@@ -37,9 +37,9 @@ describe('pageMeta', () => {
   })
 
   it('builds document titles with the site suffix only when needed', () => {
-    expect(buildDocumentTitle('Profile')).toBe('Profile · MomiChan')
+    expect(buildDocumentTitle('Profile')).toBe('Profile')
     expect(buildDocumentTitle('MomiChan')).toBe('MomiChan')
-    expect(buildDocumentTitle('   ')).toBe('MomiChan')
+    expect(buildDocumentTitle('   ')).toBe('Photos')
   })
 
   it('normalizes and truncates meta descriptions', () => {
@@ -61,7 +61,7 @@ describe('pageMeta', () => {
       structuredData: [{ '@context': 'https://schema.org', '@type': 'ProfilePage' }],
     })
 
-    expect(document.title).toBe('Notifications · MomiChan')
+    expect(document.title).toBe('Notifications')
     expect(document.documentElement.lang).toBe('zh-TW')
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe(
       'noindex, nofollow'
@@ -104,7 +104,7 @@ describe('pageMeta', () => {
 
         expect(observer.takeRecords()).toHaveLength(0)
         expect(document.documentElement.lang).toBe(locale)
-        expect(document.title).toBe('Upcoming events · MomiChan')
+        expect(document.title).toBe('Upcoming events')
         expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
           'The next live appearances'
         )
@@ -161,7 +161,7 @@ describe('pageMeta', () => {
   it('restores route defaults and removes stale JSON-LD during SPA navigation', () => {
     applyPageMeta({ canonicalPath: '/' })
 
-    expect(document.title).toBe('Home · MomiChan')
+    expect(document.title).toBe('Home')
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe(
       'index, follow'
     )
@@ -172,7 +172,7 @@ describe('pageMeta', () => {
     document.head.appendChild(duplicate)
     applyPageMeta({ canonicalPath: '/missing-page' })
 
-    expect(document.title).toBe('Page not found · MomiChan')
+    expect(document.title).toBe('Page not found')
     expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
       'https://momichan.com/missing-page'
     )

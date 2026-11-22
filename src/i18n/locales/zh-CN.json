@@ -15,7 +15,7 @@
     "actionFailed": "操作未完成，请重试。"
   },
   "app": {
-    "name": "MomiChan"
+    "name": "写真"
   },
   "nav": {
     "home": "首页",
@@ -1476,7 +1476,7 @@
     }
   },
   "about": {
-    "title": "关于 MomiChan",
+    "title": "链接",
     "subtitle": "动态、日程与讨论",
     "origin": {
       "title": "关于 Himeri",
@@ -1503,7 +1503,7 @@
       "aboutTitle": "简介"
     },
     "links": {
-      "title": "官方网站 & 社交媒体",
+      "title": "官方与社交",
       "official": "官方网站",
       "personal": "ひめり 个人社交",
       "groupSocial": "团体社交媒体",
@@ -1766,7 +1766,7 @@
       "collection": "我的收藏",
       "discussions": "讨论",
       "goToArchive": "浏览写真",
-      "more": "更多入口",
+      "more": "更多",
       "goToJournal": "阅读主站",
       "loginOrRegister": "登录 / 注册",
       "mobileNavigation": "移动导航",
@@ -1835,7 +1835,7 @@
       "wall": "照片墙"
     },
     "home": {
-      "latest": "最近更新",
+      "latest": "最近",
       "allPosts": "全部动态",
       "visitCommunity": "进入社区",
       "contents": "本期目录",
@@ -1863,8 +1863,8 @@
       "intro": "动态、图片、演出。\n在这里，接着看。",
       "browse": "探索动态",
       "view": "浏览方式",
-      "gallery": "写真与动态",
-      "index": "最新动态",
+      "gallery": "图集",
+      "index": "列表",
       "indexDensity": "列表密度"
     }
   }

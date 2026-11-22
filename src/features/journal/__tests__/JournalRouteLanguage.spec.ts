@@ -49,9 +49,9 @@ describe.each(['editorial', 'archive'] as const)('%s route language', (edition) 
     expect(wrapper.get('.journal-route-state').element).toBe(state.element)
     expect(wrapper.get('[role="status"]').element).toBe(status.element)
     expect(state.attributes('data-state')).toBe('loading')
-    expect(wrapper.get('.route-state-eyebrow').text()).toContain(
-      i18n.global.t(edition === 'archive' ? 'journal.nav.calendar' : 'nav.schedule')
-    )
+    expect(
+      wrapper.get(edition === 'archive' ? '.route-state-heading h1' : '.route-state-eyebrow').text()
+    ).toContain(i18n.global.t(edition === 'archive' ? 'journal.nav.calendar' : 'nav.schedule'))
     vi.advanceTimersByTime(1999)
     await nextTick()
     expect(state.attributes('data-state')).toBe('loading')

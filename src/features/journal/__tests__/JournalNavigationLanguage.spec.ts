@@ -42,6 +42,7 @@ let pinia: Pinia
 beforeEach(() => {
   pinia = createPinia()
   vi.clearAllMocks()
+  mocks.auth.isAuthenticated = true
   mocks.createRuntime.mockReturnValue({
     getMotion: () => 'full',
     setMotion: mocks.setMotion,
@@ -63,6 +64,7 @@ async function routerAt(path: string) {
     '/authors',
     '/about',
     '/contact',
+    '/login',
     '/schedule',
     '/community',
     '/profile',
@@ -74,7 +76,11 @@ async function routerAt(path: string) {
   ]
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: paths.map((path) => ({ path, name: path, component: { template: '<div />' } })),
+    routes: paths.map((path) => ({
+      path,
+      name: path === '/login' ? 'login' : path,
+      component: { template: '<div />' },
+    })),
   })
   await router.push(path)
   await router.isReady()
@@ -82,6 +88,27 @@ async function routerAt(path: string) {
 }
 
 describe.each(['editorial', 'archive'] as const)('%s public navigation language', (edition) => {
+  it('keeps the intended public destinations reachable from an auth entry', async () => {
+    mocks.edition = edition
+    mocks.auth.isAuthenticated = false
+    const router = await routerAt('/login')
+    const i18n = createJournalTestI18n('zh-CN')
+    const wrapper = mount(JournalShell, {
+      attachTo: document.body,
+      global: { plugins: [router, i18n, pinia], stubs: { JournalIcon: true } },
+    })
+    wrappers.push(wrapper)
+    expect(wrapper.findAll('.desktop-navigation a').map((link) => link.attributes('href'))).toEqual(
+      edition === 'archive' ? ['/', '/explore', '/authors', '/schedule', '/community'] : []
+    )
+    expect(wrapper.findAll('.idol-dock a').map((link) => link.attributes('href'))).toEqual(
+      edition === 'archive' ? ['/', '/explore', '/schedule', '/community'] : []
+    )
+    expect(wrapper.get('.account-link').text()).toBe(i18n.global.t('nav.login'))
+    expect(wrapper.find('.edition-footer').exists()).toBe(false)
+    expect(router.currentRoute.value.path).toBe('/login')
+  })
+
   it.each(['en', 'ja', 'zh-CN', 'zh-TW'] as const)(
     'uses %s labels and keeps stable routes',
     async (locale) => {
@@ -115,7 +142,13 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
       expect(wrapper.findAll('.favorites-trigger').map((link) => link.attributes('href'))).toEqual(
         edition === 'archive' ? ['/profile/favorites'] : []
       )
-      expect(wrapper.get('.edition-logo').attributes('aria-label')).toBe('MomiChan')
+      expect(wrapper.find('.edition-logo').exists()).toBe(edition === 'editorial')
+      expect(wrapper.find('.edition-brand-name').exists()).toBe(edition === 'editorial')
+      expect(wrapper.find('.footer-wordmark').exists()).toBe(edition === 'editorial')
+      expect(wrapper.find('.reading-progress').exists()).toBe(edition === 'editorial')
+      expect(wrapper.element.querySelector('.edition-logo')?.getAttribute('aria-label')).toBe(
+        edition === 'editorial' ? 'MomiChan' : undefined
+      )
       expect(wrapper.find('.edition-brand-name small').exists()).toBe(false)
       expect(router.currentRoute.value.path).toBe('/schedule')
       expect(mocks.refresh).toHaveBeenCalledOnce()
@@ -147,12 +180,13 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
     wrappers.push(wrapper)
     await wrapper.get('.mobile-menu-button').trigger('click')
     expect(wrapper.find('.motion-switch').exists()).toBe(false)
-    const menu = wrapper.get('.mobile-directory').element
+    const menuSelector = edition === 'archive' ? '.idol-menu' : '.mobile-directory'
+    const menu = wrapper.get(menuSelector).element
     i18n.global.locale.value = 'ja'
     await nextTick()
-    expect(wrapper.get('.mobile-directory').element).toBe(menu)
+    expect(wrapper.get(menuSelector).element).toBe(menu)
     expect(wrapper.get('.mobile-menu-button').attributes('aria-expanded')).toBe('true')
-    expect(wrapper.get('.appearance-trigger').attributes('aria-label')).toBe(
+    expect(wrapper.get('.header-actions .appearance-trigger').attributes('aria-label')).toBe(
       i18n.global.t('journal.appearance.title')
     )
     expect(mocks.setMotion).not.toHaveBeenCalled()

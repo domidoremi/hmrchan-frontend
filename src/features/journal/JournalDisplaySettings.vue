@@ -44,26 +44,6 @@
       <h3 class="display-preset-heading">{{ t('settings.appearancePreset') }}</h3>
       <AppearancePresetPicker />
     </section>
-    <div class="display-editions" :aria-label="t('journal.appearance.sites')">
-      <a
-        v-for="edition in editions"
-        :key="edition.id"
-        :href="edition.href"
-        class="display-edition"
-        :class="[edition.id, { selected: edition.id === designEdition }]"
-        :aria-current="edition.id === designEdition ? 'true' : undefined"
-      >
-        <span class="display-edition-art" aria-hidden="true"><i /><i /><i /><b>m.</b></span>
-        <span class="display-edition-label"
-          ><strong>{{ t(edition.labelKey) }}</strong
-          ><span>{{
-            edition.id === designEdition
-              ? t('journal.appearance.currentSite')
-              : `${t('journal.appearance.visit')} ↗`
-          }}</span></span
-        >
-      </a>
-    </div>
     <div class="display-motion-row">
       <div>
         <h3>{{ t('journal.appearance.motion') }}</h3>
@@ -164,14 +144,6 @@ const colorOptions: { value: Theme; labelKey: string }[] = [
   { value: 'auto', labelKey: 'settings.auto' },
   { value: 'dark', labelKey: 'settings.dark' },
 ]
-const editions = [
-  { id: 'editorial', labelKey: 'journal.appearance.journalEdition', href: 'https://momichan.com' },
-  {
-    id: 'archive',
-    labelKey: 'journal.appearance.archiveEdition',
-    href: 'https://next.momichan.com',
-  },
-]
 type MotionChoice = 'auto' | 'full' | 'reduced'
 const motionOptions: { value: MotionChoice; labelKey: string }[] = [
   { value: 'full', labelKey: 'settings.animationFull' },
@@ -229,101 +201,6 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 2rem;
 }
-.display-editions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-.display-edition {
-  display: grid;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  overflow: hidden;
-}
-.display-edition.selected {
-  border-color: var(--accent);
-}
-.display-edition-art {
-  position: relative;
-  display: grid;
-  place-items: center;
-  block-size: 11.25rem;
-  overflow: hidden;
-  perspective: 50rem;
-  background: #f0edf8;
-  color: #303044;
-}
-.display-edition-art i {
-  position: absolute;
-  inline-size: 6.75rem;
-  block-size: 8.75rem;
-  background: #ffffff;
-  border: 1px solid #e9e5f0;
-  border-radius: 0.65rem;
-  transform: rotateY(-20deg) rotateZ(-10deg);
-  transition: transform 0.6s;
-}
-.display-edition-art i:nth-child(1) {
-  transform: translate(1.75rem, -0.5rem) rotateY(-20deg) rotateZ(9deg);
-  background: #7960c5;
-}
-.display-edition-art i:nth-child(2) {
-  transform: translate(0.875rem, -0.25rem) rotateY(-20deg) rotateZ(0deg);
-  background: #d8c9f0;
-}
-.display-edition-art b {
-  position: relative;
-  font:
-    4rem Georgia,
-    serif;
-  transform: rotateY(-20deg) rotateZ(-10deg);
-}
-.display-edition.archive .display-edition-art {
-  background: linear-gradient(135deg, #e8e3ff, #e4f4f5);
-  color: #5c46e8;
-}
-.display-edition.archive .display-edition-art i {
-  background: #f8f7ff;
-  border-color: #beb9f0;
-  inline-size: 9.375rem;
-  block-size: 6rem;
-  transform: rotateX(40deg) rotateZ(-24deg);
-}
-.display-edition.archive .display-edition-art i:nth-child(1) {
-  transform: translateY(1.375rem) rotateX(40deg) rotateZ(-24deg);
-  background: #aca3f0;
-}
-.display-edition.archive .display-edition-art i:nth-child(2) {
-  transform: translateY(0.6875rem) rotateX(40deg) rotateZ(-24deg);
-  background: #d8d2ff;
-}
-.display-edition.archive .display-edition-art b {
-  transform: rotateX(40deg) rotateZ(-24deg);
-}
-.display-edition:hover .display-edition-art i:first-child {
-  transform: translate(2.25rem, -0.75rem) rotateY(-20deg) rotateZ(14deg);
-}
-.display-edition.archive:hover .display-edition-art i:first-child {
-  transform: translateY(2rem) rotateX(40deg) rotateZ(-24deg);
-}
-.display-edition-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  gap: 0.75rem;
-  font-size: 0.875rem;
-}
-.display-edition-label strong {
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-  font-weight: 500;
-}
-.display-edition-label > span {
-  color: var(--muted);
-  font-size: 0.75rem;
-}
 .display-motion-row {
   display: flex;
   flex-wrap: wrap;
@@ -337,10 +214,6 @@ onBeforeUnmount(() => {
   margin: 0 0 0.375rem;
   font-size: 1rem;
   font-weight: 500;
-}
-.display-motion-row > div > span {
-  font-size: 0.75rem;
-  color: var(--muted);
 }
 .display-motion-options {
   display: flex;
@@ -363,18 +236,6 @@ onBeforeUnmount(() => {
   background: var(--ink);
 }
 @media (max-width: 600px) {
-  .display-editions {
-    gap: 0.75rem;
-  }
-  .display-edition-art {
-    block-size: 8.75rem;
-  }
-  .display-edition-label {
-    flex-direction: column;
-    align-items: start;
-    gap: 0.375rem;
-    padding: 0.75rem;
-  }
   .display-motion-options button {
     padding: 0.75rem 1.25rem;
   }

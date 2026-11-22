@@ -66,7 +66,7 @@ function expectMetadata(
   locale = 'zh-CN',
   socialLocale = 'zh_CN'
 ) {
-  const documentTitle = `${title} · MomiChan`
+  const documentTitle = title
   expect(document.title).toBe(documentTitle)
   expect(document.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
     documentTitle

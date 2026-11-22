@@ -6,28 +6,18 @@
   >
     <div class="route-state-heading">
       <div>
-        <span class="route-state-eyebrow">MomiChan · {{ pageLabel }}</span>
+        <span v-if="!isArchive" class="route-state-eyebrow">{{ pageLabel }}</span>
         <h1>
           {{
-            t(
-              error
-                ? 'journal.states.pageFailed'
-                : isArchive
-                  ? 'journal.states.loadingRecords'
-                  : 'journal.states.loadingPage'
-            )
+            error
+              ? t('journal.states.pageFailed')
+              : isArchive
+                ? pageLabel
+                : t('journal.states.loadingPage')
           }}
         </h1>
         <p role="status" aria-live="polite">
-          {{
-            error
-              ? t('journal.states.checkNetwork')
-              : slow
-                ? t('common.loading')
-                : isArchive
-                  ? t('journal.states.archiveReadySoon')
-                  : t('journal.states.journalReadySoon')
-          }}
+          {{ error ? t('journal.states.checkNetwork') : t('common.loading') }}
         </p>
       </div>
       <div class="route-state-mark" aria-hidden="true" />
@@ -81,26 +71,26 @@ function reloadPage() {
 </script>
 <style scoped>
 .journal-route-state {
-  padding: 52px 48px;
-  min-height: min(720px, 80svh);
+  padding: 3.25rem 3rem;
+  min-block-size: min(45rem, 80svh);
   color: var(--ink);
 }
 .route-state-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 32px;
+  gap: 1.5rem;
+  margin-block-end: 2rem;
 }
 .route-state-eyebrow {
   color: var(--accent);
-  font: 10px/1.6 monospace;
+  font: 0.625rem/1.6 monospace;
   letter-spacing: 0.12em;
 }
 .route-state-heading h1 {
-  margin: 16px 0;
+  margin: 1rem 0;
   font:
-    400 clamp(28px, 4vw, 52px)/1.2 Georgia,
+    400 clamp(1.75rem, 4vw, 3.25rem)/1.2 Georgia,
     'Songti SC',
     serif;
 }
@@ -108,12 +98,12 @@ function reloadPage() {
 .route-state-recovery p {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.8;
 }
 .route-state-mark {
-  width: 52px;
-  height: 64px;
+  inline-size: 3.25rem;
+  block-size: 4rem;
   flex: none;
   border: 1px solid var(--line);
   border-top: 3px solid var(--accent);
@@ -121,17 +111,19 @@ function reloadPage() {
   transform: rotate(5deg);
 }
 .route-state-progress {
-  height: 2px;
-  margin-bottom: 36px;
+  block-size: 2px;
+  margin-block-end: 2.25rem;
   background: var(--line);
   overflow: hidden;
 }
 .route-state-progress::before {
   content: '';
   display: block;
-  height: 100%;
-  width: 24%;
+  block-size: 100%;
+  inline-size: 24%;
   background: var(--accent);
+}
+body[data-motion='full'] .route-state-progress::before {
   animation: route-state-progress 1.8s ease-in-out infinite;
 }
 @keyframes route-state-progress {
@@ -144,39 +136,39 @@ function reloadPage() {
 }
 .route-state-skeleton {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 64px;
-  min-height: 280px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 4rem;
+  min-block-size: 17.5rem;
 }
 .route-state-lines {
-  padding-top: 20px;
+  padding-block-start: 1.25rem;
 }
 .route-state-lines i {
   display: block;
-  height: 10px;
-  width: 100%;
-  margin-bottom: 22px;
+  block-size: 0.625rem;
+  inline-size: 100%;
+  margin-block-end: 1.375rem;
   background: var(--line);
   opacity: 0.55;
 }
 .route-state-lines i:first-child {
-  width: 42%;
+  inline-size: 42%;
 }
 .route-state-lines i:nth-child(2) {
-  height: 26px;
-  margin-block: 32px;
-  width: 85%;
+  block-size: 1.625rem;
+  margin-block: 2rem;
+  inline-size: 85%;
 }
 .route-state-lines i:nth-child(4) {
-  width: 68%;
+  inline-size: 68%;
 }
 .route-state-preview {
   position: relative;
-  min-height: 280px;
+  min-block-size: 17.5rem;
 }
 .route-state-preview i {
   position: absolute;
-  inset: 12px 12%;
+  inset: 0.75rem 12%;
   border: 1px solid var(--line);
   background: var(--paper);
   transform: rotate(-6deg);
@@ -186,109 +178,118 @@ function reloadPage() {
 }
 .route-state-preview i:last-child {
   transform: rotate(-1deg);
-  inset: 0 16% 22px;
+  inset: 0 16% 1.375rem;
 }
 .route-state-preview i:last-child::after {
   content: '';
   display: block;
-  height: 76%;
-  margin: 18px;
+  block-size: 76%;
+  margin: 1.125rem;
   background: var(--canvas);
 }
 .route-state-recovery {
-  padding-top: 26px;
+  padding-block-start: 1.625rem;
 }
 .route-state-recovery > div {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 0.75rem;
 }
 .route-state-recovery .button {
-  min-height: 44px;
+  min-block-size: 2.75rem;
 }
 .route-state-recovery p {
-  margin-bottom: 20px;
+  margin-block-end: 1.25rem;
 }
 .is-error .route-state-recovery {
   border-top: 1px solid var(--line);
 }
+.edition-archive .journal-route-state {
+  min-block-size: 0;
+  padding: clamp(1rem, 3vw, 2.5rem) 0;
+}
 .edition-archive .route-state-heading h1 {
-  font-family: inherit;
-  font-size: clamp(28px, 3vw, 38px);
+  font: var(--idol-heading-weight)
+    calc(clamp(1.75rem, 3vw, 2.75rem) * var(--journal-reading-scale)) / 1.2 var(--idol-display);
 }
 .edition-archive .route-state-mark {
-  height: 52px;
-  transform: none;
-  background: repeating-linear-gradient(0deg, var(--paper), var(--paper) 10px, var(--line) 11px);
-}
-.edition-archive .route-state-skeleton {
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 36px;
-}
-.edition-archive .route-state-lines {
-  padding: 0;
-  border-top: 1px solid var(--line);
-}
-.edition-archive .route-state-lines i {
-  height: 56px;
-  width: 100%;
-  margin: 0;
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(var(--line), var(--line)) left center / 65% 8px no-repeat;
-}
-.edition-archive .route-state-preview {
-  padding: 24px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-}
-.edition-archive .route-state-preview i {
   display: none;
 }
-.edition-archive .route-state-preview i:last-child {
+.edition-archive .route-state-skeleton {
   display: block;
-  inset: 24px;
+  min-block-size: 0;
+}
+.edition-archive .route-state-lines {
+  display: none;
+}
+.edition-archive .route-state-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+  min-block-size: 0;
+}
+.edition-archive .route-state-preview i {
+  position: static;
+  display: block;
+  min-inline-size: 0;
+  aspect-ratio: 0.95;
+  border: 1px solid var(--line);
+  border-radius: var(--idol-panel-radius);
+  background: linear-gradient(145deg, var(--idol-rose), var(--paper) 75%);
   transform: none;
-  border: none;
-  background: var(--canvas);
+}
+.edition-archive .route-state-preview i:nth-child(2) {
+  aspect-ratio: 0.75;
+}
+html[data-preset='minimal-editorial'] .edition-archive .route-state-preview {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+html[data-preset='minimal-editorial'] .edition-archive .route-state-preview i {
+  border-radius: 0;
+  border-width: 0.35rem;
+}
+html[data-preset='fluent-soft'] .edition-archive .route-state-preview {
+  max-inline-size: 52rem;
+  margin-inline: auto;
+}
+html[data-preset='fluent-soft'] .edition-archive .route-state-preview i {
+  border-radius: 2rem;
+}
+html[data-preset='organic-natural'] .edition-archive .route-state-preview {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) minmax(0, 1fr);
+  padding: 0.75rem;
+}
+html[data-preset='organic-natural'] .edition-archive .route-state-preview i:nth-child(2) {
+  margin-block-start: 1.5rem;
+  transform: rotate(3deg);
 }
 .edition-archive .route-state-preview i:last-child::after {
   display: none;
 }
 body[data-motion='reduced'] .route-state-progress::before {
-  animation: none;
-  width: 100%;
+  inline-size: 100%;
   opacity: 0.5;
-}
-@media (prefers-reduced-motion: reduce) {
-  .route-state-progress::before {
-    animation: none;
-    width: 100%;
-    opacity: 0.5;
-  }
 }
 @media (max-width: 760px) {
   .journal-route-state {
-    padding: 32px 18px;
+    padding: 2rem 1.125rem;
   }
   .route-state-heading {
     align-items: flex-start;
-    gap: 14px;
+    gap: 0.875rem;
   }
   .route-state-mark {
-    width: 32px;
-    height: 42px;
-    margin-top: 28px;
-  }
-  .edition-archive .route-state-mark {
-    height: 32px;
+    inline-size: 2rem;
+    block-size: 2.625rem;
+    margin-block-start: 1.75rem;
   }
   .route-state-heading h1 {
-    font-size: 28px;
+    font-size: 1.75rem;
   }
-  .route-state-skeleton,
-  .edition-archive .route-state-skeleton {
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .route-state-skeleton {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
   }
   .route-state-lines {
     padding: 0;
@@ -297,11 +298,13 @@ body[data-motion='reduced'] .route-state-progress::before {
     display: none;
   }
   .edition-editorial .route-state-lines i:nth-child(2) {
-    margin-block: 14px 22px;
+    margin-block: 0.875rem 1.375rem;
   }
-  .route-state-preview,
+  .route-state-preview {
+    min-block-size: 13.75rem;
+  }
   .edition-archive .route-state-preview {
-    min-height: 220px;
+    min-block-size: 0;
   }
 }
 </style>

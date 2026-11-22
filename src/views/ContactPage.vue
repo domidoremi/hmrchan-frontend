@@ -1,10 +1,6 @@
 <template>
   <div class="contact-page">
-    <PageHeroShell
-      class="contact-hero"
-      :title="$t('contact.title')"
-      :subtitle="$t('contact.subtitle')"
-    >
+    <PageHeroShell class="contact-hero" :title="$t('contact.title')">
       <template #actions
         ><RouterLink to="/community" class="page-inline-cta"
           >{{ $t('nav.community') }} ↗</RouterLink
@@ -80,10 +76,6 @@
       </fieldset>
     </form>
     <aside class="contact-private-note">
-      <div>
-        <h2>{{ $t('contact.privateTitle') }}</h2>
-        <p>{{ $t('contact.privateBody') }}</p>
-      </div>
       <a href="/.well-known/security.txt" class="page-inline-cta"
         >{{ $t('contact.privateAction') }} ↗</a
       >

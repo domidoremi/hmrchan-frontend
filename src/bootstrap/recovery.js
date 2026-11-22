@@ -15,7 +15,7 @@
       ],
       offline: ['Waiting for your connection', 'Reconnect to the internet, then reload this page.'],
       retry: 'Reload page',
-      about: 'About MomiChan',
+      about: 'Links',
       browse: 'Explore posts',
       authors: 'Authors',
       schedule: 'Schedule',
@@ -24,7 +24,7 @@
         'Photos, posts and upcoming encounters, ready to browse at your own pace.',
       ],
       archive: ['Photos and performances', 'Photos, posts and upcoming events.'],
-      navigation: 'Browse MomiChan',
+      navigation: 'Browse',
     },
     'zh-CN': {
       loading: ['正在打开这一页', '正在准备内容，请稍候。'],
@@ -32,7 +32,7 @@
       error: ['这一页暂时没有载入', '连接未能完成。重新加载后，可以继续浏览。'],
       offline: ['等待网络连接', '恢复网络后，点击重新加载继续浏览。'],
       retry: '重新加载',
-      about: '关于 MomiChan',
+      about: '链接',
       browse: '浏览动态',
       authors: '作者',
       schedule: '日程',
@@ -46,7 +46,7 @@
       error: ['這一頁暫時沒有載入', '連線未能完成。重新載入後，可以繼續瀏覽。'],
       offline: ['等待網路連線', '恢復網路後，點擊重新載入繼續瀏覽。'],
       retry: '重新載入',
-      about: '關於 MomiChan',
+      about: '連結',
       browse: '瀏覽動態',
       authors: '作者',
       schedule: '日程',
@@ -63,13 +63,13 @@
       ],
       offline: ['接続を待っています', 'インターネットに接続してから、再読み込みしてください。'],
       retry: '再読み込み',
-      about: 'MomiChan について',
+      about: 'リンク',
       browse: '投稿を見る',
       authors: '投稿者',
       schedule: 'スケジュール',
       editorial: ['好きな日常を、\n一ページずつ。', '写真、投稿、これからの出会いを、ゆっくりと。'],
       archive: ['写真とライブ', '写真、投稿、イベント情報。'],
-      navigation: 'MomiChan を見る',
+      navigation: '閲覧メニュー',
     },
   }
   let language = navigator.language || 'en'
@@ -190,10 +190,10 @@
     panel.dataset.reduced = String(reduced)
     panel.setAttribute('aria-label', copy.navigation)
     const top = element('header', 'boot-recovery__top')
-    top.append(link('MomiChan', '/', 'boot-recovery__brand'))
+    top.append(link(edition === 'archive' ? copy.browse : 'MomiChan', '/', 'boot-recovery__brand'))
     const main = element('div', 'boot-recovery__body')
     const intro = element('div', 'boot-recovery__intro')
-    intro.append(element('h1', '', copy[edition][0]), element('p', '', copy[edition][1]))
+    if (edition !== 'archive') intro.append(element('h1', '', copy[edition][0]))
     const status = element('div', 'boot-recovery__status')
     const live = element('div', 'boot-recovery__live')
     live.setAttribute('role', 'status')

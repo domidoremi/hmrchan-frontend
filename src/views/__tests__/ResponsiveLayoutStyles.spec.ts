@@ -202,17 +202,13 @@ describe('responsive layout contracts', () => {
     expect(stageLetterbookSource).toContain('max(2rem, calc(var(--mobile-nav-height, 0px) + 1rem))')
   })
 
-  it('keeps global navigation chrome out of auth entry layouts', () => {
+  it('keeps the public footer out of auth entry and recovery layouts', () => {
     const journalShellSource = readFileSync(
       resolve(process.cwd(), 'src/features/journal/JournalShell.vue'),
       'utf8'
     )
     expect(appShellSource).toContain('<JournalShell>')
-    for (const element of ['desktop-navigation', 'mobile-navigation', 'edition-footer']) {
-      expect(journalShellSource).toMatch(
-        new RegExp(`<[^>]+v-if="!isAuthRoute"[^>]+class="${element}"`)
-      )
-    }
+    expect(journalShellSource).toMatch(/<footer\s+v-if="!isAuthRoute"/)
     expect(journalShellSource).toContain("'passkey-recovery'")
     expect(journalShellSource).toContain("'passkey-recovery-detail'")
   })

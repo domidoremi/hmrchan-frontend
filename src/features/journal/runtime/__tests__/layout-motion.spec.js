@@ -58,6 +58,20 @@ describe('journal layout transitions', () => {
     expect(animations[1].keyframes[0].transform).toBe('translate(220px,-140px) scale(0.4,2.5)')
   })
 
+  it('keeps a selected record transition anchored to its list row when its preview shares the id', async () => {
+    const preview = document.createElement('article')
+    preview.className = 'preview-face'
+    preview.dataset.post = 'a'
+    vi.spyOn(preview, 'getBoundingClientRect').mockReturnValue(box(600, 0, 400, 600))
+    root.append(preview)
+    await motion.layout(root, () => {
+      boxes = [box(0, 0, 500, 120), box(0, 140, 500, 120)]
+    })
+    flush()
+    expect(animations.map((animation) => animation.element)).toEqual(cards)
+    expect(animations[0].keyframes[0].transform).toBe('translate(0px,0px) scale(0.4,2.5)')
+  })
+
   it('retargets from the currently displayed positions and cancels the previous transition', async () => {
     await motion.layout(root, () => {
       boxes = [box(0, 0, 500, 120), box(0, 140, 500, 120)]

@@ -55,14 +55,14 @@
               :data-day="day"
               :aria-pressed="selectedDay === String(day)"
               :aria-current="isToday(day) ? 'date' : undefined"
-              :aria-label="dayLabel(day)"
+              :aria-labelledby="`calendar-${month}-${day}-number calendar-${month}-${day}-events calendar-${month}-${day}-context`"
               @click="$emit('change', 'day', String(day))"
             >
-              <span
+              <span :id="`calendar-${month}-${day}-number`"
                 >{{ String(day).padStart(2, '0')
                 }}<small v-if="isToday(day)">{{ t('schedule.today') }}</small></span
               >
-              <div class="month-day-events">
+              <div :id="`calendar-${month}-${day}-events`" class="month-day-events">
                 <span
                   v-for="event in dayEvents(day).slice(0, 2)"
                   :key="event.id"
@@ -70,6 +70,9 @@
                   ><i /><span>{{ event.title }}</span></span
                 ><b v-if="dayEvents(day).length > 2">+{{ dayEvents(day).length - 2 }}</b>
               </div>
+              <span :id="`calendar-${month}-${day}-context`" class="sr-only month-day-context">{{
+                dayLabel(day)
+              }}</span>
             </button>
           </div></Transition
         >

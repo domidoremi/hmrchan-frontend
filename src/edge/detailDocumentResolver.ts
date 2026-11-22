@@ -17,6 +17,7 @@ import {
   type UpstreamRuntimeEnv,
 } from './upstream'
 import * as internalApiGateway from './internalApiGateway'
+import { buildTitle, SITE_NAME } from './documentTitle'
 
 export type EdgeRuntimeEnv = UpstreamRuntimeEnv & internalApiGateway.InternalApiGatewayRuntimeEnv
 
@@ -423,7 +424,6 @@ function buildPostMetaDescription(post: EdgePostDetail): string {
     author ? `Browse a public ${platform} post from ${author}` : `Browse a public ${platform} post`,
     primaryTag ? `tagged #${primaryTag}` : '',
     metrics,
-    'on MomiChan.',
   ]
 
   return truncate(pieces.filter(Boolean).join(' '), 160)
@@ -576,7 +576,7 @@ function buildPostStructuredData(
         : undefined,
       publisher: {
         '@type': 'Organization',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
         logo: {
           '@type': 'ImageObject',
@@ -586,7 +586,7 @@ function buildPostStructuredData(
       interactionStatistic: interactionStatistic.length ? interactionStatistic : undefined,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -608,10 +608,7 @@ function buildAuthorMetaDescription(author: EdgeAuthorDetail): string {
     .filter(Boolean)
     .join(' · ')
 
-  return truncate(
-    [name, `is a public ${platform} creator on MomiChan.`, stats].filter(Boolean).join(' '),
-    160
-  )
+  return truncate([name, `· ${platform}`, stats].filter(Boolean).join(' '), 160)
 }
 
 function buildAuthorShellBody(author: EdgeAuthorDetail, fallback: string): string {
@@ -722,7 +719,7 @@ function buildAuthorStructuredData(
     compactRecord({
       '@context': 'https://schema.org',
       '@type': 'ProfilePage',
-      name: `${name} · MomiChan`,
+      name: buildTitle(name),
       url: pageUrl,
       description: metaDescription,
       mainEntity: compactRecord({
@@ -733,7 +730,7 @@ function buildAuthorStructuredData(
       }),
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -913,7 +910,7 @@ function buildDiscussionStructuredData(
         : undefined,
       publisher: {
         '@type': 'Organization',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
         logo: {
           '@type': 'ImageObject',
@@ -933,7 +930,7 @@ function buildDiscussionStructuredData(
       commentCount: resolveDiscussionCommentCount(discussion) ?? undefined,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -974,12 +971,7 @@ function buildScheduleMetaDescription(schedule: EdgeScheduleDetail): string {
   }
 
   return truncate(
-    [
-      category,
-      scheduleWindow,
-      venue ? `Venue: ${venue}` : '',
-      'Public schedule detail on MomiChan.',
-    ]
+    [category, scheduleWindow, venue ? `Venue: ${venue}` : '', 'Public schedule detail.']
       .filter(Boolean)
       .join(' · '),
     160
@@ -1092,7 +1084,7 @@ function buildScheduleStructuredData(
       about: shellBody,
       isPartOf: {
         '@type': 'WebSite',
-        name: 'MomiChan',
+        name: SITE_NAME,
         url: SITE_ORIGIN,
       },
     }),
@@ -1120,7 +1112,7 @@ function buildDynamicPostDocument(path: string, post: EdgePostDetail): HtmlDocum
 
   return {
     ...fallback,
-    title: `${truncate(titleCandidate, 68)} · MomiChan`,
+    title: buildTitle(truncate(titleCandidate, 68)),
     description: metaDescription,
     canonicalPath: path,
     ogType: 'article',
@@ -1148,7 +1140,7 @@ function buildDynamicAuthorDocument(path: string, author: EdgeAuthorDetail): Htm
 
   return {
     ...fallback,
-    title: `${truncate(titleLabel, 68)} · MomiChan`,
+    title: buildTitle(truncate(titleLabel, 68)),
     description: metaDescription,
     canonicalPath: path,
     ogType: 'article',
@@ -1178,7 +1170,7 @@ function buildDynamicDiscussionDocument(
 
   return {
     ...fallback,
-    title: `${truncate(titleCandidate, 68)} · MomiChan`,
+    title: buildTitle(truncate(titleCandidate, 68)),
     description: metaDescription,
     canonicalPath,
     ogType: 'article',
@@ -1213,7 +1205,7 @@ function buildDynamicScheduleDocument(
 
   return {
     ...fallback,
-    title: `${truncate(titleCandidate, 68)} · MomiChan`,
+    title: buildTitle(truncate(titleCandidate, 68)),
     description: metaDescription,
     canonicalPath,
     ogType: 'article',

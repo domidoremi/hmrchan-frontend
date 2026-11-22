@@ -27,35 +27,37 @@
           </span>
         </h2>
       </div>
-      <div
-        class="next-view-toggle"
-        role="group"
-        data-indicator
-        :aria-label="t('journal.next.view')"
-      >
-        <button
-          type="button"
-          :class="{ active: view === 'grid' }"
-          :aria-pressed="view === 'grid'"
-          :aria-label="t('journal.next.gallery')"
-          :title="t('journal.next.gallery')"
-          @click="changeView('grid')"
+      <div class="next-collection-tools">
+        <slot name="search" />
+        <div
+          class="next-view-toggle"
+          role="group"
+          data-indicator
+          :aria-label="t('journal.next.view')"
         >
-          <JournalIcon name="grid" />
-        </button>
-        <button
-          type="button"
-          :class="{ active: view === 'list' }"
-          :aria-pressed="view === 'list'"
-          :aria-label="t('journal.next.index')"
-          :title="t('journal.next.index')"
-          @click="changeView('list')"
-        >
-          <JournalIcon name="list" />
-        </button>
+          <button
+            type="button"
+            :class="{ active: view === 'grid' }"
+            :aria-pressed="view === 'grid'"
+            :aria-label="t('journal.next.gallery')"
+            :title="t('journal.next.gallery')"
+            @click="changeView('grid')"
+          >
+            <JournalIcon name="grid" />
+          </button>
+          <button
+            type="button"
+            :class="{ active: view === 'list' }"
+            :aria-pressed="view === 'list'"
+            :aria-label="t('journal.next.index')"
+            :title="t('journal.next.index')"
+            @click="changeView('list')"
+          >
+            <JournalIcon name="list" />
+          </button>
+        </div>
       </div>
     </header>
-    <slot name="search" />
     <div class="next-collection-filters">
       <div
         class="stream-tabs chips"
@@ -124,7 +126,12 @@
         {{ filter.label }}<JournalIcon name="x" />
       </button>
     </div>
-    <div v-if="view === 'grid'" class="next-gallery" :aria-busy="readState === 'loading'">
+    <div
+      v-if="view === 'grid'"
+      ref="gallery"
+      class="next-gallery"
+      :aria-busy="readState === 'loading'"
+    >
       <article
         v-for="post in posts"
         :key="post.id"
@@ -134,6 +141,7 @@
       >
         <button
           class="next-gallery-media"
+          aria-haspopup="dialog"
           :data-open="post.id"
           :data-select-post="post.id"
           @focus="choosePost(post.id)"
@@ -148,7 +156,7 @@
             loading="lazy"
           />
           <span v-else class="next-gallery-quote"
-            ><span>{{ post.text || post.title }}</span></span
+            ><span>{{ post.title }}</span></span
           >
           <span class="next-gallery-caption">
             <small>
@@ -156,9 +164,9 @@
                 journalSourceLabel(post.platform, platforms[post.platform] || post.platform, t)
               }}</span>
               <span v-if="post.author">{{ post.author }}</span>
-              <time>{{ journalPostTimeLabel(post, t, locale) }}</time>
+              <time :datetime="post.publishedAt">{{ journalPostTimeLabel(post, t, locale) }}</time>
             </small>
-            <b>{{ post.title }}</b>
+            <b v-if="post.image">{{ post.title }}</b>
           </span>
         </button>
         <button
@@ -296,7 +304,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import {
+  computed,
+  inject,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { journalKey } from '../context'
 import { journalContentTypeLabel, journalSourceLabel } from '../controlLabels'
@@ -313,6 +331,7 @@ import ArchiveNavigationHint from './ArchiveNavigationHint.vue'
 import ArchiveSelectionDock from './ArchiveSelectionDock.vue'
 import { useArchiveNavigation } from './useArchiveNavigation'
 import { useCollectionScroll } from './useCollectionScroll'
+import { usePhotoMasonry } from './usePhotoMasonry'
 
 const props = withDefaults(
   defineProps<{
@@ -356,6 +375,7 @@ const emit = defineEmits<{
 const { locale, t } = useI18n({ useScope: 'global' })
 const runtime = inject(journalKey, shallowRef(null))
 const collection = ref<HTMLElement>()
+usePhotoMasonry(useTemplateRef<HTMLElement>('gallery'), () => props.posts)
 const view = ref(props.layout === 'list' ? 'list' : 'grid')
 const compact = ref(readDisplayPreference('density') === 'compact')
 const sources = computed(() => {

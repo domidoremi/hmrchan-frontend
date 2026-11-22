@@ -15,7 +15,7 @@
     "actionFailed": "The action could not be completed. Please try again."
   },
   "app": {
-    "name": "MomiChan"
+    "name": "Photos"
   },
   "nav": {
     "home": "Home",
@@ -116,7 +116,7 @@
     "loginTitle": "Welcome Back",
     "loginSubtitle": "Catch up on the latest stages, schedules, and stories shared by fans.",
     "loginMediaCaption": "Sign in to keep favorite posts and conversations close in your own collection.",
-    "registerTitle": "Join MomiChan",
+    "registerTitle": "Create account",
     "registerSubtitle": "Keep favorite stages, schedules, and fan conversations close in your own collection.",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
@@ -919,7 +919,7 @@
     }
   },
   "contact": {
-    "title": "Leave a note for MomiChan",
+    "title": "Contact",
     "subtitle": "Fan memories, thoughtful ideas, and kind messages are always welcome.",
     "name": "Your Name",
     "email": "Your Email",
@@ -952,7 +952,7 @@
     "topicGeneralHint": "Fan stories, greetings, collaboration notes, and anything you would enjoy sharing.",
     "topicIssue": "Something looks off",
     "topicIssueHint": "A page, image, translation, or interaction that did not work as expected.",
-    "topicSuggestion": "An idea for MomiChan",
+    "topicSuggestion": "Suggestion",
     "topicSuggestionHint": "A thoughtful addition or small improvement that could make the fan site lovelier.",
     "topicOther": "Another note",
     "topicOtherHint": "Anything with a different shape is welcome here.",
@@ -1476,7 +1476,7 @@
     }
   },
   "about": {
-    "title": "About MomiChan",
+    "title": "Links",
     "subtitle": "A fan-made home for moments shared by Momiyama Himeri and Takane no Nadeshiko",
     "origin": {
       "title": "About Himeri",
@@ -1503,7 +1503,7 @@
       "aboutTitle": "About"
     },
     "links": {
-      "title": "Official & Social Media",
+      "title": "Official & social",
       "official": "Official Websites",
       "personal": "Himeri's Social Media",
       "groupSocial": "Group Social Media",
@@ -1766,7 +1766,7 @@
       "collection": "My favorites",
       "discussions": "Discussions",
       "goToArchive": "Browse photographs",
-      "more": "More destinations",
+      "more": "More",
       "goToJournal": "Read the journal",
       "loginOrRegister": "Sign in / register",
       "mobileNavigation": "Mobile navigation",
@@ -1835,7 +1835,7 @@
       "wall": "Photo wall"
     },
     "home": {
-      "latest": "Latest updates",
+      "latest": "Recent",
       "allPosts": "All posts",
       "visitCommunity": "Visit community",
       "contents": "This issue",
@@ -1863,8 +1863,8 @@
       "intro": "Posts, photos, and performances.\nKeep up with them here.",
       "browse": "Explore posts",
       "view": "Browse view",
-      "gallery": "Photos & posts",
-      "index": "Latest posts",
+      "gallery": "Photos",
+      "index": "List",
       "indexDensity": "List density"
     }
   }

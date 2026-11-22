@@ -65,7 +65,7 @@ const content = defineComponent({
 describe('journal page module feedback', () => {
   it('shows a local waiting state after the outer Suspense has resolved and forwards view inputs', async () => {
     let resolve!: (value: typeof content) => void
-    const { wrapper, selected } = await mountView(
+    const { wrapper, selected, i18n } = await mountView(
       () =>
         new Promise((done) => {
           resolve = done
@@ -73,7 +73,7 @@ describe('journal page module feedback', () => {
     )
     expect(wrapper.find('.journal-route-state').exists()).toBe(false)
     await vi.advanceTimersByTimeAsync(250)
-    expect(wrapper.find('[role="status"]').text()).toMatch(/载入|即将就绪/)
+    expect(wrapper.find('[role="status"]').text()).toBe(i18n.global.t('common.loading'))
     expect(wrapper.text()).not.toContain('Global loading')
     resolve(content)
     await flushPromises()

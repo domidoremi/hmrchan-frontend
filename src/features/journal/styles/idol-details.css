@@ -1,0 +1,548 @@
+#app .edition-archive :is(.authors-page, .search-page, .about-page, .contact-page) {
+  min-inline-size: 0;
+}
+
+#app .edition-archive :is(.authors-hero, .search-hero) {
+  padding: clamp(1rem, 2.8vw, 2.5rem) 0;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+}
+
+#app .edition-archive :is(.authors-hero, .search-hero) .page-hero-shell__title {
+  font: var(--idol-heading-weight) calc(clamp(2rem, 4.5vw, 4.6rem) * var(--journal-reading-scale)) /
+    1.1 var(--idol-display);
+}
+
+#app .edition-archive .authors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: clamp(1rem, 2.8vw, 2.5rem);
+}
+
+#app .edition-archive .author-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.85rem, 2vw, 1.6rem);
+  min-inline-size: 0;
+  padding: clamp(1rem, 2.4vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: var(--idol-panel-radius);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+#app .edition-archive .author-card .author-avatar {
+  inline-size: clamp(4rem, 7vw, 6rem);
+  block-size: auto;
+  aspect-ratio: 1;
+  border-radius: var(--idol-panel-radius);
+  box-shadow: none;
+}
+
+#app .edition-archive .author-card :is(.author-info, .author-topline) {
+  min-inline-size: 0;
+}
+
+#app .edition-archive .author-card .author-topline {
+  flex-wrap: wrap;
+}
+
+#app .edition-archive .author-card .author-name {
+  font: var(--idol-heading-weight) calc(1.12rem * var(--journal-reading-scale)) / 1.35
+    var(--idol-display);
+  overflow-wrap: anywhere;
+}
+
+#app .edition-archive .author-card .author-description {
+  -webkit-line-clamp: 2;
+}
+
+#app .edition-archive .author-card__cta {
+  position: absolute;
+  inset: auto 0.8rem 0.8rem auto;
+  margin: 0;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  background: none;
+  color: var(--accent);
+}
+
+#app .edition-archive .author-card :is(.author-meta, .author-username, .author-description) {
+  color: var(--muted);
+}
+
+#app .edition-archive .search-page {
+  min-block-size: 0;
+}
+
+#app .edition-archive .search-page .search-header {
+  max-inline-size: none;
+  margin: 0;
+}
+
+#app .edition-archive .search-page :is(.search-content, .search-empty) {
+  min-inline-size: 0;
+  margin-block-start: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+#app .edition-archive .search-page .search-bar-main {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+#app .edition-archive .search-page .search-overview {
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  border-radius: 0;
+  padding-inline: 0;
+  box-shadow: none;
+  background: none;
+}
+
+#app .edition-archive .search-page .search-history-hint {
+  display: none;
+}
+
+#app .edition-archive .about-page {
+  --directory-columns: minmax(0, 1fr);
+  --directory-official-span: auto;
+  --directory-personal-span: auto;
+  --directory-group-span: 1 / -1;
+  --directory-personal-offset: 0rem;
+  gap: clamp(1.5rem, 3.5vw, 3rem);
+  padding-block: 1rem;
+}
+
+#app .edition-archive .about-page .about-masthead {
+  margin: 0;
+}
+
+#app .edition-archive .about-page .about-directory-group {
+  min-inline-size: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--idol-panel-radius);
+  background: var(--paper);
+  box-shadow: none;
+}
+
+#app .edition-archive .about-page .about-directory-group h2 {
+  margin: 0;
+  font: var(--idol-heading-weight) calc(1.2rem * var(--journal-reading-scale)) / 1.35
+    var(--idol-display);
+}
+
+#app .edition-archive .about-page .about-colophon {
+  padding-block: 0.7rem;
+}
+
+#app .edition-archive .about-page .about-colophon a {
+  min-block-size: 2.75rem;
+}
+
+#app .edition-archive :is(#app-dialog, .journal-appearance-dialog) {
+  max-block-size: calc(100dvh - 2rem);
+  border-radius: var(--idol-panel-radius);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1.5rem 5rem #0005;
+}
+
+#app .edition-archive #app-dialog {
+  inline-size: min(48rem, calc(100vw - 2rem));
+}
+
+#app .edition-archive #app-dialog.detail-dialog {
+  inline-size: min(72rem, calc(100vw - 2rem));
+}
+
+#app .edition-archive #app-dialog.detail-dialog--text {
+  inline-size: min(52rem, calc(100vw - 2rem));
+}
+
+#app .edition-archive #app-dialog.gallery-dialog {
+  inline-size: min(90rem, calc(100vw - 2rem));
+}
+
+#app .edition-archive #app-dialog .dialog-head {
+  block-size: auto;
+  min-block-size: 3.5rem;
+  padding: 0.4rem 0.8rem;
+}
+
+#app .edition-archive #app-dialog #dialog-content {
+  max-block-size: calc(100dvh - 6rem);
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+#app .edition-archive #app-dialog.detail-dialog #dialog-content {
+  padding: 0;
+}
+
+#app .edition-archive #app-dialog :is(#dialog-title, .detail-copy #dialog-title) {
+  font: var(--idol-heading-weight)
+    calc(clamp(1.4rem, 2.8vw, 2.5rem) * var(--journal-reading-scale)) / 1.3 var(--idol-display);
+}
+
+#app .edition-archive #app-dialog .post-detail {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+#app .edition-archive #app-dialog .detail-copy {
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+#app .edition-archive #app-dialog .detail-photo {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  max-block-size: 72dvh;
+  object-fit: contain;
+}
+
+#app .edition-archive #app-dialog .detail-copy .dialog-copy {
+  max-block-size: none;
+  overflow: visible;
+  font-size: calc(0.95rem * var(--journal-reading-scale));
+  line-height: 1.8;
+}
+
+#app .edition-archive #app-dialog .detail-author {
+  min-block-size: 2.75rem;
+  font-size: calc(0.85rem * var(--journal-reading-scale));
+}
+
+#app .edition-archive #app-dialog :is(.detail-actions .button, .detail-tags button) {
+  min-block-size: 2.75rem;
+  font-size: calc(0.85rem * var(--journal-reading-scale));
+}
+
+#app .edition-archive #app-dialog .detail-actions .button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+#app .edition-archive #app-dialog .detail-photo-open > span {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--idol-control-radius);
+  padding: 0.6rem;
+  font-size: calc(0.8rem * var(--journal-reading-scale));
+}
+
+#app .edition-archive .journal-display-settings :is(h3, legend) {
+  font: var(--idol-heading-weight) calc(1rem * var(--journal-reading-scale)) / 1.4
+    var(--idol-display);
+}
+
+#app .edition-archive .display-language-status:empty {
+  display: none;
+}
+
+html[data-preset='minimal-editorial'] #app .edition-archive .authors-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(1.5rem, 5vw, 5rem);
+  row-gap: 0;
+}
+
+html[data-preset='minimal-editorial'] #app .edition-archive .author-card {
+  padding-inline: 0;
+  padding-block: 1.5rem;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  background: none;
+}
+
+html[data-preset='minimal-editorial'] #app .edition-archive .author-card .author-avatar {
+  border-radius: 0;
+}
+
+html[data-preset='minimal-editorial'] #app .edition-archive .about-page {
+  grid-template-columns: minmax(0, 0.45fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+html[data-preset='minimal-editorial'] #app .edition-archive .about-page .about-masthead {
+  position: sticky;
+  inset-block-start: 6rem;
+  border: 0;
+}
+
+html[data-preset='minimal-editorial'] #app .edition-archive .about-directory-group {
+  grid-template-columns: minmax(0, 0.27fr) minmax(0, 1fr);
+  padding-inline: 0;
+  border: 0;
+  border-block-start: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+}
+
+html[data-preset='minimal-editorial'] #app .edition-archive .about-colophon {
+  grid-column: 2;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .authors-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .author-card:not(.author-card--compact) {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+  padding-block: 2rem;
+}
+
+html[data-preset='fluent-soft']
+  #app
+  .edition-archive
+  .author-card:not(.author-card--compact)
+  .author-topline,
+html[data-preset='fluent-soft']
+  #app
+  .edition-archive
+  .author-card:not(.author-card--compact)
+  .author-meta {
+  justify-content: center;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .author-card .author-avatar {
+  inline-size: clamp(5rem, 10vw, 9rem);
+  border-radius: 50%;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .search-page .search-header {
+  max-inline-size: 52rem;
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 4vw, 3.5rem);
+  border: 0;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .about-directory {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .about-page {
+  --directory-group-span: auto;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .about-directory-group {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.2rem;
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+html[data-preset='fluent-soft']
+  #app
+  .edition-archive
+  .about-directory-group[data-directory='group'] {
+  grid-column: auto;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive .about-directory-links {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive #app-dialog .post-detail {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive #app-dialog .detail-media {
+  padding: 0.65rem;
+}
+
+html[data-preset='fluent-soft'] #app .edition-archive #app-dialog .detail-photo {
+  border-radius: 1.5rem;
+}
+
+html[data-preset='organic-natural'] #app .edition-archive .authors-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  column-gap: clamp(1rem, 4vw, 4rem);
+}
+
+html[data-preset='organic-natural'] #app .edition-archive .author-card {
+  padding: 1.6rem;
+  border-block-end-width: 0.3rem;
+}
+
+html[data-preset='organic-natural'] #app .edition-archive .author-card .author-avatar {
+  aspect-ratio: 0.85;
+  rotate: -2deg;
+  border: 0.25rem solid var(--canvas);
+}
+
+html[data-preset='organic-natural'] #app .edition-archive .about-directory {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(1.25rem, 4vw, 3.5rem);
+}
+
+html[data-preset='organic-natural'] #app .edition-archive .about-directory-group {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  padding: clamp(1rem, 2.8vw, 2.5rem);
+  border-block-end-width: 0.3rem;
+}
+
+html[data-preset='organic-natural'] #app .edition-archive #app-dialog .detail-media {
+  padding: 1rem;
+  background: var(--idol-rose);
+}
+
+html[data-preset='organic-natural'] #app .edition-archive #app-dialog .detail-photo {
+  border: 0.35rem solid var(--paper);
+}
+
+html[data-preset='gradient-narrative'] #app .edition-archive .author-card {
+  grid-template-columns: minmax(0, 1fr);
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-card__head {
+  inline-size: 100%;
+}
+
+html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-avatar {
+  inline-size: 100%;
+  aspect-ratio: 1.3;
+  border-radius: 0.35rem;
+}
+
+html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-info {
+  padding: 0.15rem 0.4rem 0.8rem;
+}
+
+html[data-preset='gradient-narrative'] #app .edition-archive .about-directory {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+html[data-preset='gradient-narrative'] #app .edition-archive .about-directory-group {
+  grid-template-columns: minmax(0, 1fr);
+  border: 0;
+  border-block-start: 0.25rem solid var(--accent);
+}
+
+html[data-preset='gradient-narrative'] #app .edition-archive #app-dialog .detail-copy {
+  border-block-start: 0.25rem solid var(--accent);
+}
+
+#app .edition-archive #app-dialog .post-detail--text {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 960px) {
+  html[data-preset='minimal-editorial'] #app .edition-archive .search-page > .container,
+  html[data-preset='organic-natural'] #app .edition-archive .search-page > .container {
+    display: grid;
+    grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(1.5rem, 4vw, 4rem);
+  }
+
+  html[data-preset='minimal-editorial'] #app .edition-archive .search-page .search-header,
+  html[data-preset='organic-natural'] #app .edition-archive .search-page .search-header {
+    position: sticky;
+    inset-block-start: 6rem;
+  }
+
+  html[data-preset='organic-natural'] #app .edition-archive .authors-grid > :nth-child(even) {
+    margin-block-start: 2.5rem;
+  }
+
+  html[data-preset='minimal-editorial'] #app .edition-archive .auth-shell {
+    --idol-auth-columns: minmax(0, 1fr) minmax(0, 1fr);
+    --idol-auth-copy-column: 2;
+    --idol-auth-media-column: 1;
+    border: 0;
+    border-block: 1px solid var(--line);
+    background: var(--canvas);
+  }
+
+  html[data-preset='minimal-editorial'] #app .edition-archive .idol-auth-portrait {
+    grid-row: 1 / 4;
+    border: 0;
+    background: var(--paper);
+  }
+
+  html[data-preset='fluent-soft'] #app .edition-archive .auth-shell {
+    --idol-auth-columns: minmax(0, 1fr) minmax(0, 0.68fr);
+    border-radius: 2.5rem;
+  }
+
+  html[data-preset='fluent-soft'] #app .edition-archive .idol-auth-portrait {
+    border: 0;
+    background: var(--idol-rose);
+  }
+
+  html[data-preset='fluent-soft'] #app .edition-archive .idol-auth-portrait img {
+    border-radius: 3rem;
+    rotate: -3deg;
+  }
+
+  html[data-preset='organic-natural'] #app .edition-archive .auth-shell {
+    --idol-auth-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+    border-radius: 0.35rem 3rem;
+  }
+
+  html[data-preset='organic-natural'] #app .edition-archive .idol-auth-portrait {
+    padding: clamp(1rem, 3vw, 2.5rem);
+    border: 0;
+  }
+
+  html[data-preset='organic-natural'] #app .edition-archive .idol-auth-portrait img {
+    rotate: 3deg;
+    border-radius: 0.4rem;
+  }
+}
+
+@media (max-width: 959px) {
+  html[data-preset] #app .edition-archive .authors-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-preset] #app .edition-archive .about-page,
+  html[data-preset] #app .edition-archive .about-directory {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-preset] #app .edition-archive .about-page .about-masthead {
+    position: static;
+  }
+
+  html[data-preset] #app .edition-archive .about-colophon,
+  html[data-preset] #app .edition-archive .about-directory-group[data-directory='group'] {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  html[data-preset] #app .edition-archive .authors-grid,
+  html[data-preset] #app .edition-archive .about-directory-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-preset='gradient-narrative'] #app .edition-archive .author-card {
+    grid-template-columns: minmax(0, 0.6fr) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 1rem;
+  }
+
+  html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-avatar {
+    aspect-ratio: 0.9;
+  }
+}
+
+@media (max-width: 760px) {
+  html[data-preset] #app .edition-archive #app-dialog .post-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

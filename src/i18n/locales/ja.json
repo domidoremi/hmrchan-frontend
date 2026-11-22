@@ -15,7 +15,7 @@
     "actionFailed": "操作を完了できませんでした。もう一度お試しください。"
   },
   "app": {
-    "name": "MomiChan"
+    "name": "写真"
   },
   "nav": {
     "home": "ホーム",
@@ -116,7 +116,7 @@
     "loginTitle": "おかえりなさい",
     "loginSubtitle": "最近のステージや予定、みんなのシェアをゆっくり見ていきましょう。",
     "loginMediaCaption": "ログインすると、好きな投稿やコメントを自分のコレクションに残せます。",
-    "registerTitle": "MomiChan へようこそ",
+    "registerTitle": "アカウント作成",
     "registerSubtitle": "好きなステージや予定、ファンとのお話を、自分のコレクションに残せます。",
     "forgotPassword": "パスワードを忘れた場合",
     "noAccount": "アカウントをお持ちでない方",
@@ -919,7 +919,7 @@
     }
   },
   "contact": {
-    "title": "MomiChan へおたより",
+    "title": "お問い合わせ",
     "subtitle": "ファンの思い出、やさしいアイデア、あたたかなメッセージをお待ちしています。",
     "name": "お名前",
     "email": "メールアドレス",
@@ -952,7 +952,7 @@
     "topicGeneralHint": "ファンの思い出、ごあいさつ、連絡など、伝えたいことを自由にどうぞ。",
     "topicIssue": "気になるところ",
     "topicIssueHint": "ページ、画像、翻訳、操作などで、思ったように動かなかったところ。",
-    "topicSuggestion": "MomiChan へのアイデア",
+    "topicSuggestion": "ご提案",
     "topicSuggestionHint": "ファンサイトがもっと心地よくなる、小さな工夫や新しい楽しみ方。",
     "topicOther": "もうひとつのおたより",
     "topicOtherHint": "ほかとは少し違う内容も、こちらでお待ちしています。",
@@ -1476,7 +1476,7 @@
     }
   },
   "about": {
-    "title": "MomiChan について",
+    "title": "リンク",
     "subtitle": "籾山ひめりと高嶺のなでしこの瞬間を大切に綴る、ファンの居場所",
     "origin": {
       "title": "Himeri について",
@@ -1503,7 +1503,7 @@
       "aboutTitle": "紹介"
     },
     "links": {
-      "title": "公式サイト & SNS",
+      "title": "公式・SNS",
       "official": "公式サイト",
       "personal": "ひめり 個人SNS",
       "groupSocial": "グループSNS",
@@ -1766,7 +1766,7 @@
       "collection": "お気に入り",
       "discussions": "スレッド",
       "goToArchive": "写真を見る",
-      "more": "その他のメニュー",
+      "more": "その他",
       "goToJournal": "ジャーナルを読む",
       "loginOrRegister": "ログイン / 新規登録",
       "mobileNavigation": "モバイルナビゲーション",
@@ -1835,7 +1835,7 @@
       "wall": "写真ウォール"
     },
     "home": {
-      "latest": "最近の更新",
+      "latest": "更新",
       "allPosts": "すべての投稿",
       "visitCommunity": "コミュニティへ",
       "contents": "今号の目次",
@@ -1863,8 +1863,8 @@
       "intro": "投稿、写真、出演情報。\nここで、続きを見よう。",
       "browse": "投稿を探す",
       "view": "表示形式",
-      "gallery": "写真と投稿",
-      "index": "最新の投稿",
+      "gallery": "写真",
+      "index": "一覧",
       "indexDensity": "リストの密度"
     }
   }

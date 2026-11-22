@@ -59,8 +59,8 @@ export function handlePush(event: PushEventLike): void {
   // Notification actions are a browser extension to the base DOM options.
   const options: NotificationOptions & { actions: { action: string; title: string }[] } = {
     body: payload.body,
-    icon: '/icons/sitting-192.webp',
-    badge: '/icons/sitting-96.webp',
+    icon: '/icons/photo-192.png',
+    badge: '/icons/photo-badge-96.png',
     data: normalizePushActionUrl(payload.url),
     actions: [
       { action: 'open', title: '查看' },

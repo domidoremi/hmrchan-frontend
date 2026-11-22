@@ -1,8 +1,12 @@
 import { isContractResourceId } from './contractResourceId'
+import { designEdition } from '../config/designEdition'
 
-export const SITE_NAME = 'MomiChan'
+export const SITE_NAME = designEdition === 'archive' ? 'Photos' : 'MomiChan'
 export const SITE_ORIGIN = 'https://momichan.com'
-export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/icons/sitting-512.webp`
+export const DEFAULT_OG_IMAGE =
+  designEdition === 'archive'
+    ? 'https://next.momichan.com/journal/himeri-portrait.webp'
+    : `${SITE_ORIGIN}/icons/sitting-512.webp`
 const PRIVATE_ROUTE_PATHS = new Set([
   '/favorites',
   '/profile',
@@ -43,6 +47,7 @@ type PageMetaOverrides = Partial<
 >
 
 export function buildSiteTitle(pageTitle: string): string {
+  if (designEdition === 'archive') return pageTitle.trim() || SITE_NAME
   return pageTitle === SITE_NAME ? SITE_NAME : `${pageTitle} · ${SITE_NAME}`
 }
 
@@ -122,7 +127,7 @@ export function resolvePageMetaDefaults(pathOrUrl: string | URL): PageMetaDefaul
   const path = normalizePath(pathOrUrl instanceof URL ? pathOrUrl.pathname : pathOrUrl)
 
   if (path === '/') {
-    const description = 'MomiChan 首页集中显示公开内容、趋势作者、日程与社区入口。'
+    const description = '写真、动态与活动日程。'
     return createDefaults(path, 'Home', description, {
       structuredData: createHomeStructuredData(description),
     })
@@ -163,7 +168,7 @@ export function resolvePageMetaDefaults(pathOrUrl: string | URL): PageMetaDefaul
   }
 
   if (path === '/about') {
-    const description = '了解 MomiChan 的定位、内容组织方式以及多语言与性能优化设计。'
+    const description = '官方网站与社交媒体。'
     return createDefaults(path, 'About', description, {
       structuredData: [createWebPageStructuredData('AboutPage', path, 'About', description)],
     })

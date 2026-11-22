@@ -64,7 +64,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     expect(config.status).toBe(200)
-    expect(config.title).toBe('Himeri Spring Stage Performance · MomiChan')
+    expect(config.title).toBe('Himeri Spring Stage Performance')
     expect(config.description).toContain('Momiyama Himeri')
     expect(config.shellEyebrow).toBe('#stage · Momiyama Himeri')
     expect(config.shellBody).toContain('fan-call timing details')
@@ -125,7 +125,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     expect(config.status).toBe(200)
-    expect(config.title).toBe('MomiChan (@momichan) · MomiChan')
+    expect(config.title).toBe('MomiChan (@momichan)')
     expect(config.description).toContain('Public creator profile')
     expect(config.shellEyebrow).toContain('Verified creator')
     expect(config.shellBody).toContain('recent posts')
@@ -182,7 +182,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     expect(config.status).toBe(200)
-    expect(config.title).toBe('Should the homepage motion be reduced further? · MomiChan')
+    expect(config.title).toBe('Should the homepage motion be reduced further?')
     expect(config.canonicalPath).toBe(`/community/discussions/${SAMPLE_DISCUSSION_ID}`)
     expect(config.shellEyebrow).toBe('Pinned discussion · Feedback')
     expect(config.shellSummary.some((item) => item.includes('2.9K views'))).toBe(true)
@@ -236,7 +236,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     expect(config.status).toBe(200)
-    expect(config.title).toBe('Editorial live room · MomiChan')
+    expect(config.title).toBe('Editorial live room')
     expect(config.shellEyebrow).toContain('Live')
     expect(config.shellSummary.some((item) => item.includes('Ticket link'))).toBe(true)
     expect(config.shellLinks.some((link) => link.href === `/author/${SAMPLE_AUTHOR_ID}`)).toBe(true)
@@ -263,7 +263,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
 
     expect(config.status).toBe(404)
     expect(config.robots).toBe('noindex, nofollow')
-    expect(config.title).toBe('Page not found · MomiChan')
+    expect(config.title).toBe('Page not found')
   })
 
   it('falls back to static route semantics when upstream lookup fails', async () => {
@@ -275,7 +275,7 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
     )
 
     expect(config.status).toBe(200)
-    expect(config.title).toBe('Post detail · MomiChan')
+    expect(config.title).toBe('Post detail')
     expect(config.ogImage).toBeUndefined()
   })
 
@@ -335,6 +335,6 @@ describe('resolveHtmlDocumentWithEdgeData', () => {
       (gatewayFetch.mock.calls[0]?.[0] as Request).headers.get('X-MomiChan-Internal-Gateway-Token')
     ).toBe('gateway-test-secret')
     expect(publicFetch).not.toHaveBeenCalled()
-    expect(config.title).toBe('Gateway hydrated detail · MomiChan')
+    expect(config.title).toBe('Gateway hydrated detail')
   })
 })

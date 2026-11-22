@@ -39,8 +39,8 @@ export const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icons/sitting-32.webp',
-  '/icons/sitting-192.webp',
+  '/icons/photo.svg',
+  '/icons/photo-192.png',
   OFFLINE_FALLBACK,
 ]
 export const ESSENTIAL_STATIC_ASSETS = ['/', '/index.html', OFFLINE_FALLBACK]

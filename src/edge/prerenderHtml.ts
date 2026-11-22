@@ -156,13 +156,14 @@ export function applyPrerenderDocument(
   canonicalUrl = resolveCanonicalUrl(documentConfig)
 ): string {
   let nextHtml = html
+  const publicTitle = documentConfig.title
   const structuredDataScript = renderStructuredDataScript(documentConfig)
   const preloadImageLinks = renderPreloadImageLinks(documentConfig)
 
-  nextHtml = replaceTitle(nextHtml, documentConfig.title)
+  nextHtml = replaceTitle(nextHtml, publicTitle)
   nextHtml = replaceMetaByName(nextHtml, 'description', documentConfig.description)
   nextHtml = replaceMetaByName(nextHtml, 'robots', documentConfig.robots)
-  nextHtml = replaceMetaByName(nextHtml, 'twitter:title', documentConfig.title)
+  nextHtml = replaceMetaByName(nextHtml, 'twitter:title', publicTitle)
   nextHtml = replaceMetaByName(nextHtml, 'twitter:description', documentConfig.description)
   nextHtml = replaceMetaByName(nextHtml, 'twitter:url', canonicalUrl)
   nextHtml = replaceMetaByName(
@@ -172,7 +173,7 @@ export function applyPrerenderDocument(
   )
   nextHtml = replaceMetaByProperty(nextHtml, 'og:type', documentConfig.ogType)
   nextHtml = replaceMetaByProperty(nextHtml, 'og:url', canonicalUrl)
-  nextHtml = replaceMetaByProperty(nextHtml, 'og:title', documentConfig.title)
+  nextHtml = replaceMetaByProperty(nextHtml, 'og:title', publicTitle)
   nextHtml = replaceMetaByProperty(nextHtml, 'og:description', documentConfig.description)
   nextHtml = replaceMetaByProperty(nextHtml, 'og:image', documentConfig.ogImage || DEFAULT_OG_IMAGE)
   nextHtml = replaceCanonicalLink(nextHtml, canonicalUrl)

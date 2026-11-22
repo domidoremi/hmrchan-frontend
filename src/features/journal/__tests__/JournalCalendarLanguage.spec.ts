@@ -41,7 +41,7 @@ afterEach(() => {
 describe.each([
   ['Journal', EditorialSchedule],
   ['Archive', ArchiveSchedule],
-] as const)('%s calendar language', (_, component) => {
+] as const)('%s calendar language', (edition, component) => {
   it('updates four languages in place without changing the date, reminder, author content or focus', async () => {
     const i18n = createJournalTestI18n('en')
     const wrapper = mount(component, {
@@ -65,12 +65,21 @@ describe.each([
       )
       expect(wrapper.get('[data-day="14"]').element).toBe(day.element)
       expect(day.attributes('aria-pressed')).toBe('true')
-      expect(day.attributes('aria-label')).toBe(
-        i18n.global.t('journal.calendar.dayLabel', {
-          date: journalDateLabel(event.date, language),
-          count: 1,
-        })
-      )
+      const dateContext = i18n.global.t('journal.calendar.dayLabel', {
+        date: journalDateLabel(event.date, language),
+        count: 1,
+      })
+      const accessibleDate =
+        edition === 'Archive'
+          ? {
+              context: day.get('.month-day-context').text(),
+              includesEvents: day
+                .attributes('aria-labelledby')
+                ?.split(' ')
+                .includes(day.get('.month-day-events').attributes('id')!),
+            }
+          : { context: day.attributes('aria-label'), includesEvents: true }
+      expect(accessibleDate).toEqual({ context: dateContext, includesEvents: true })
       expect(reminder.attributes('aria-pressed')).toBe('true')
       expect(reminder.attributes('aria-label')).toBe(
         i18n.global.t('journal.actions.removeReminderNamed', { title: event.title })
@@ -91,9 +100,12 @@ describe.each([
     })
     wrappers.push(wrapper)
     expect(wrapper.findAll('[data-day]')).toHaveLength(29)
-    expect(wrapper.get('[data-day="29"]').attributes('aria-label')).toContain(
-      journalDateLabel('2024-02-29', 'ja')
-    )
+    const leapDay = wrapper.get('[data-day="29"]')
+    expect(
+      edition === 'Archive'
+        ? leapDay.get('.month-day-context').text()
+        : leapDay.attributes('aria-label')
+    ).toContain(journalDateLabel('2024-02-29', 'ja'))
     await wrapper.get('.journal-month-prev').trigger('click')
     await wrapper.get('.journal-month-next').trigger('click')
     expect(wrapper.emitted('change')).toEqual([

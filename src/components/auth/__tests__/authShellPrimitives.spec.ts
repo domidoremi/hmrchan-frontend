@@ -1,6 +1,13 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
+const mocks = vi.hoisted(() => ({ edition: 'archive' as 'archive' | 'editorial' }))
+vi.mock('@/config/designEdition', () => ({
+  get designEdition() {
+    return mocks.edition
+  },
+}))
+
 vi.mock('@/components/ui/Button.vue', async () => {
   const { defineComponent } = await import('vue')
   return {
@@ -81,50 +88,57 @@ describe('auth shell primitives', () => {
     expect(links[1]?.attributes('aria-current')).toBe('page')
   })
 
-  it('renders AuthEntryShell copy, back action, tabs, footer, and layout modifiers', async () => {
-    const wrapper = mount(AuthEntryShell, {
-      props: {
-        title: 'Welcome back',
-        subtitle: 'Sign in to continue',
-        activeTab: 'login',
-        redirectTo: '/profile',
-        tabAriaLabel: 'Primary auth tabs',
-        wide: true,
-        split: true,
-      },
-      slots: {
-        eyebrow: '<span class="eyebrow">Member area</span>',
-        default: '<form class="body-form">Body</form>',
-        footer: '<div class="footer-slot">Footer</div>',
-      },
-      global: {
-        mocks: {
-          $t: (key: string) => key,
+  it.each(['editorial', 'archive'] as const)(
+    'keeps %s auth actions and shows only the relevant entry copy',
+    async (edition) => {
+      mocks.edition = edition
+      const wrapper = mount(AuthEntryShell, {
+        props: {
+          title: 'Welcome back',
+          subtitle: 'Sign in to continue',
+          activeTab: 'login',
+          redirectTo: '/profile',
+          tabAriaLabel: 'Primary auth tabs',
+          wide: true,
+          split: true,
         },
-        stubs: {
-          ArrowLeft: { template: '<span data-testid="arrow-left" />' },
-          AuthTabNav: {
-            props: ['activeTab', 'redirectTo', 'ariaLabel'],
-            template:
-              '<div class="tab-nav-stub" :data-active-tab="activeTab" :data-redirect-to="redirectTo" :data-aria-label="ariaLabel" />',
+        slots: {
+          eyebrow: '<span class="eyebrow">Member area</span>',
+          default: '<form class="body-form">Body</form>',
+          footer: '<div class="footer-slot">Footer</div>',
+        },
+        global: {
+          mocks: {
+            $t: (key: string) => key,
+          },
+          stubs: {
+            ArrowLeft: { template: '<span data-testid="arrow-left" />' },
+            AuthTabNav: {
+              props: ['activeTab', 'redirectTo', 'ariaLabel'],
+              template:
+                '<div class="tab-nav-stub" :data-active-tab="activeTab" :data-redirect-to="redirectTo" :data-aria-label="ariaLabel" />',
+            },
           },
         },
-      },
-    })
+      })
 
-    expect(wrapper.classes()).toEqual(
-      expect.arrayContaining(['auth-shell', 'auth-shell--wide', 'auth-shell--split'])
-    )
-    expect(wrapper.find('.eyebrow').text()).toBe('Member area')
-    expect(wrapper.find('.auth-title').text()).toBe('Welcome back')
-    expect(wrapper.find('.auth-subtitle').text()).toBe('Sign in to continue')
-    expect(wrapper.get('.tab-nav-stub').attributes('data-active-tab')).toBe('login')
-    expect(wrapper.get('.tab-nav-stub').attributes('data-redirect-to')).toBe('/profile')
-    expect(wrapper.get('.tab-nav-stub').attributes('data-aria-label')).toBe('Primary auth tabs')
-    expect(wrapper.find('.body-form').exists()).toBe(true)
-    expect(wrapper.find('.footer-slot').exists()).toBe(true)
+      expect(wrapper.classes()).toEqual(
+        expect.arrayContaining(['auth-shell', 'auth-shell--wide', 'auth-shell--split'])
+      )
+      expect(wrapper.find('.eyebrow').text()).toBe('Member area')
+      expect(wrapper.find('.auth-title').text()).toBe('Welcome back')
+      expect(wrapper.find('.auth-subtitle').exists()).toBe(edition === 'editorial')
+      expect(wrapper.element.querySelector('.auth-subtitle')?.textContent).toBe(
+        edition === 'editorial' ? 'Sign in to continue' : undefined
+      )
+      expect(wrapper.get('.tab-nav-stub').attributes('data-active-tab')).toBe('login')
+      expect(wrapper.get('.tab-nav-stub').attributes('data-redirect-to')).toBe('/profile')
+      expect(wrapper.get('.tab-nav-stub').attributes('data-aria-label')).toBe('Primary auth tabs')
+      expect(wrapper.find('.body-form').exists()).toBe(true)
+      expect(wrapper.find('.footer-slot').exists()).toBe(true)
 
-    await wrapper.get('.auth-shell__back').trigger('click')
-    expect(wrapper.emitted('back')).toHaveLength(1)
-  })
+      await wrapper.get('.auth-shell__back').trigger('click')
+      expect(wrapper.emitted('back')).toHaveLength(1)
+    }
+  )
 })

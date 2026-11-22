@@ -220,23 +220,29 @@ body.site-body.journal-auth #app .auth-subtitle {
   }
 }
 body.site-body.next-body.journal-auth #app .auth-shell {
-  width: min(100%, 1000px);
-  inline-size: min(100%, 1000px);
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  width: min(100%, 62.5rem);
+  inline-size: min(100%, 62.5rem);
+  grid-template-columns: var(--idol-auth-columns);
+  border-radius: var(--idol-panel-radius);
 }
 body.site-body.next-body.journal-auth #app .auth-shell__header,
 body.site-body.next-body.journal-auth #app .auth-shell__body,
 body.site-body.next-body.journal-auth #app .auth-shell__footer {
-  grid-column: 1;
+  grid-column: var(--idol-auth-copy-column);
 }
 body.site-body.next-body.journal-auth #app .auth-title {
-  font-family: inherit;
-  font-size: 28px;
-  font-weight: 600;
+  font: var(--idol-heading-weight)
+    calc(clamp(1.75rem, 3vw, 2.5rem) * var(--journal-reading-scale)) / 1.3 var(--idol-display);
+}
+body.site-body.next-body.journal-auth
+  #app
+  :is(.form-label, .ui-input, .btn, .auth-provider-button) {
+  font-size: calc(0.95rem * var(--journal-reading-scale));
+  border-radius: var(--idol-control-radius);
 }
 .site-body.next-body .edition-auth-art {
   --auth-art-paper: #10211b;
-  grid-column: 2;
+  grid-column: var(--idol-auth-media-column);
   background: #10211b;
   color: #bbf7d0;
   border-right: 0;
