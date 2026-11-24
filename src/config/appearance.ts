@@ -5,28 +5,36 @@ export interface AppearancePresetSpec {
   preset: AppearancePreset
   sourceDoc: string
   galleryTitle: string
+  browseLayout: 'grid' | 'list'
 }
 
 const APPEARANCE_PRESETS = [
-  'minimal-editorial',
-  'fluent-soft',
-  'organic-natural',
-  'gradient-narrative',
+  'apple-native',
+  'material-expressive',
+  'fluent-workspace',
+  'carbon-index',
 ] as const satisfies readonly AppearancePreset[]
 
-const titles: Record<AppearancePreset, string> = {
-  'minimal-editorial': 'Paper',
-  'fluent-soft': 'Glass',
-  'organic-natural': 'Nature',
-  'gradient-narrative': 'Spectrum',
+const presetDesigns: Record<
+  AppearancePreset,
+  Pick<AppearancePresetSpec, 'galleryTitle' | 'browseLayout'>
+> = {
+  'apple-native': { galleryTitle: 'Native Minimal', browseLayout: 'grid' },
+  'material-expressive': { galleryTitle: 'Material 3', browseLayout: 'grid' },
+  'fluent-workspace': { galleryTitle: 'Fluent 2', browseLayout: 'list' },
+  'carbon-index': { galleryTitle: 'Carbon', browseLayout: 'list' },
 }
 
-// Keep stored preferences useful when retiring an older theme.
+// Translate old saved choices to the closest current design system.
 const LEGACY_PRESETS: Readonly<Record<string, AppearancePreset>> = {
-  'material-calm': 'fluent-soft',
-  'biophilic-serene': 'organic-natural',
-  'clay-playful': 'fluent-soft',
-  'sketch-doodle': 'minimal-editorial',
+  'minimal-editorial': 'apple-native',
+  'fluent-soft': 'fluent-workspace',
+  'organic-natural': 'material-expressive',
+  'gradient-narrative': 'carbon-index',
+  'material-calm': 'material-expressive',
+  'biophilic-serene': 'material-expressive',
+  'clay-playful': 'material-expressive',
+  'sketch-doodle': 'apple-native',
 }
 
 const NARRATIVE_ROUTE_NAMES = new Set(['home', 'about', 'contact'])
@@ -56,17 +64,19 @@ const IMMERSIVE_ROUTE_NAMES = new Set([
 ])
 
 export const DEFAULT_APPEARANCE_PRESET: AppearancePreset =
-  designEdition === 'archive' ? 'gradient-narrative' : 'minimal-editorial'
+  designEdition === 'archive' ? 'material-expressive' : 'apple-native'
 
 export function isAppearancePreset(value: string | null | undefined): value is AppearancePreset {
   return typeof value === 'string' && APPEARANCE_PRESETS.includes(value as AppearancePreset)
 }
 
-export function normalizeAppearancePreset(value: string | null | undefined): AppearancePreset {
+export function normalizeAppearancePreset(
+  value: string | null | undefined,
+  fallback = DEFAULT_APPEARANCE_PRESET
+): AppearancePreset {
   if (isAppearancePreset(value)) return value
   return (
-    (value && Object.hasOwn(LEGACY_PRESETS, value) ? LEGACY_PRESETS[value] : undefined) ??
-    DEFAULT_APPEARANCE_PRESET
+    (value && Object.hasOwn(LEGACY_PRESETS, value) ? LEGACY_PRESETS[value] : undefined) ?? fallback
   )
 }
 
@@ -75,7 +85,7 @@ export function getAppearancePresets(): readonly AppearancePreset[] {
 }
 
 export function getAppearancePresetSpec(preset: AppearancePreset): AppearancePresetSpec {
-  return { preset, sourceDoc: 'docs/en/appearance-presets.md', galleryTitle: titles[preset] }
+  return { preset, sourceDoc: 'docs/en/appearance-presets.md', ...presetDesigns[preset] }
 }
 
 export function getAppearancePresetSpecs(): readonly AppearancePresetSpec[] {

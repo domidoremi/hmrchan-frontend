@@ -12,7 +12,9 @@ export function installReaderMotion({ animate, fullMotion, listen }) {
       ?.closest('.post-card, .film-frame, .cover-sheet, .search-result')
       ?.querySelector('img') ||
     opener?.closest('.spatial-cover')?.querySelector('.cover-sheet.is-current img') ||
-    opener?.closest('.idol-feature')?.querySelector('.idol-photo-lead img') ||
+    opener
+      ?.closest('.idol-feature')
+      ?.querySelector('.idol-photo-take:not([inert]) .idol-photo-subject img') ||
     opener?.closest('.archive-inspector')?.querySelector('.preview-media img')
   function capture(event) {
     const opener = event.target.closest?.(

@@ -12,17 +12,22 @@
       @click="selectPreset(spec.preset)"
     >
       <span class="appearance-preset-card__preview" aria-hidden="true">
-        <span class="preset-preview-header"><i /><i /><i /></span>
-        <span class="preset-preview-layout"
-          ><i /><span><b /><b /><b /></span
-        ></span>
-        <span class="preset-preview-cards"><i /><i /><i /></span>
+        <span v-if="spec.preset === 'apple-native'" class="preview-apple">
+          <i /><b /><b /><span><i /><i /></span>
+        </span>
+        <span v-else-if="spec.preset === 'material-expressive'" class="preview-material">
+          <i /><b /><b /><em />
+        </span>
+        <span v-else-if="spec.preset === 'fluent-workspace'" class="preview-fluent">
+          <i /><span><b /><b /><b /></span><em />
+        </span>
+        <span v-else class="preview-carbon"> <i /><b /><b /><b /><b /> </span>
       </span>
       <span class="appearance-preset-card__footer">
         <span class="appearance-preset-card__title">{{
           t(`settings.presets.${spec.preset}`)
         }}</span>
-        <Check v-if="settings.appearancePreset === spec.preset" :size="16" />
+        <Check v-if="settings.appearancePreset === spec.preset" aria-hidden="true" />
       </span>
     </button>
   </div>
@@ -99,114 +104,140 @@ function selectPreset(preset: AppearancePreset) {
   justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.appearance-preset-card__footer > svg {
+  inline-size: 1em;
+  block-size: 1em;
+  flex: none;
 }
 .appearance-preset-card__preview {
-  --preview-bg: #f6f3eb;
-  --preview-ink: #45483b;
-  --preview-accent: #a13c30;
-  --preview-radius: 0.125rem;
   display: grid;
-  gap: 0.625rem;
-  padding: 0.875rem;
-  aspect-ratio: 1.65;
   overflow: hidden;
-  border-radius: 0.5rem;
-  background: var(--preview-bg);
-  color: var(--preview-ink);
-  border: 1px solid color-mix(in srgb, var(--preview-ink) 20%, transparent);
+  aspect-ratio: 1.8;
+  min-inline-size: 0;
+  border: 1px solid var(--appearance-border);
+  border-radius: var(--appearance-radius-md);
 }
-.preset-preview-header {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  border-block-end: 1px solid currentColor;
-  padding-block-end: 0.5rem;
-}
-.preset-preview-header i {
-  block-size: 0.1875rem;
-  inline-size: 0.5rem;
-  background: currentColor;
-}
-.preset-preview-header i:first-child {
-  inline-size: 2rem;
-  margin-inline-end: auto;
-  background: var(--preview-accent);
-}
-.preset-preview-layout {
+.appearance-preset-card__preview > span {
   display: grid;
-  grid-template-columns: 1fr 0.8fr;
-  gap: 0.5rem;
+  gap: 0.3rem;
+  min-inline-size: 0;
+  padding: 0.55rem;
 }
-.preset-preview-layout > i {
-  border-radius: var(--preview-radius);
-  background: var(--preview-accent);
-  min-block-size: 2rem;
+.preview-apple {
+  grid-template-rows: 0.35fr 1.5fr 0.15fr 0.65fr;
+  justify-items: center;
+  background: #f5f5f7;
 }
-.preset-preview-layout > span {
-  display: grid;
-  align-content: center;
-  gap: 0.375rem;
+.preview-apple > i {
+  inline-size: 28%;
+  align-self: center;
+  block-size: 2px;
+  background: #1d1d1f;
 }
-.preset-preview-layout b {
-  block-size: 0.1875rem;
-  background: currentColor;
-  opacity: 0.65;
+.preview-apple > b:nth-child(2) {
+  inline-size: 100%;
+  border-radius: 0.25rem;
+  background: #a7c8e5;
 }
-.preset-preview-layout b:last-child {
-  inline-size: 65%;
-}
-.preset-preview-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
-}
-.preset-preview-cards i {
-  min-block-size: 0.75rem;
-  border: 1px solid currentColor;
-  border-radius: var(--preview-radius);
-  opacity: 0.6;
-}
-.appearance-preset-card[data-preset='fluent-soft'] .appearance-preset-card__preview {
-  --preview-bg: #f0ebf6;
-  --preview-ink: #4b365a;
-  --preview-accent: #9273ba;
-  --preview-radius: 0.5rem;
-  background: radial-gradient(at 100% 0, #dccce9, transparent 70%), var(--preview-bg);
-}
-.appearance-preset-card[data-preset='fluent-soft'] .preset-preview-header {
-  padding: 0.25rem;
-  border: 1px solid #fff;
+.preview-apple > b:nth-child(3) {
+  inline-size: 45%;
+  background: #005ab6;
   border-radius: 1rem;
 }
-.appearance-preset-card[data-preset='fluent-soft'] .preset-preview-layout {
-  grid-template-columns: 1fr;
+.preview-apple > span {
+  display: grid;
+  inline-size: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
 }
-.appearance-preset-card[data-preset='fluent-soft'] .preset-preview-layout > span {
-  display: none;
+.preview-apple > span i {
+  background: #e4e4e8;
+  border-radius: 0.25rem;
 }
-.appearance-preset-card[data-preset='organic-natural'] .appearance-preset-card__preview {
-  --preview-bg: #edf0e4;
-  --preview-ink: #3b5137;
-  --preview-accent: #496e4e;
-  --preview-radius: 0.75rem 0.25rem;
+.preview-material {
+  grid-template-columns: 0.7fr 1fr 0.65fr;
+  grid-template-rows: 0.45fr 1fr 1fr;
+  background: #f9f5ff;
 }
-.appearance-preset-card[data-preset='organic-natural'] .preset-preview-layout {
-  grid-template-columns: 0.7fr 1fr;
+.preview-material > i {
+  inline-size: 77%;
+  grid-column: 1 / -1;
+  background: #eaddff;
+  border-radius: 1rem;
 }
-.appearance-preset-card[data-preset='organic-natural'] .preset-preview-cards {
-  grid-template-columns: 1fr 1.5fr 1fr;
+.preview-material > b:nth-child(2) {
+  grid-area: 2 / 1 / 4 / 3;
+  background: #6e50a4;
+  border-radius: 0.75rem 0.75rem 0.3rem 0.3rem;
 }
-.appearance-preset-card[data-preset='gradient-narrative'] .appearance-preset-card__preview {
-  --preview-bg: #2a1e29;
-  --preview-ink: #f5d5df;
-  --preview-accent: #d6879b;
-  --preview-radius: 0.25rem 0.75rem;
-  background: radial-gradient(at 100% 0, #70435a, transparent 75%), var(--preview-bg);
+.preview-material > b:nth-child(3) {
+  background: #efab89;
+  border-radius: 0.7rem;
 }
-.appearance-preset-card[data-preset='gradient-narrative'] .preset-preview-layout {
-  grid-template-columns: 1.4fr 0.7fr;
+.preview-material > em {
+  background: #eaddff;
+  border-radius: 0.3rem 0.3rem 0.65rem 0.65rem;
 }
-.appearance-preset-card[data-preset='gradient-narrative'] .preset-preview-layout > i {
-  background: linear-gradient(140deg, #e3abc0, #b77c69);
+.preview-fluent {
+  grid-template-columns: 0.75fr 1fr;
+  grid-template-rows: 0.4fr 1.5fr;
+  background: #eaf0f5;
+}
+.preview-fluent > i {
+  grid-column: 1 / -1;
+  background: #d1deea;
+  border-block-end: 1px solid #005a91;
+}
+.preview-fluent > span {
+  display: grid;
+  gap: 0.16rem;
+  padding: 0.25rem;
+  background: #fff;
+  border-radius: 0.2rem;
+}
+.preview-fluent > span b {
+  background: #d8e2eb;
+}
+.preview-fluent > span b:nth-child(2) {
+  border-inline-start: 2px solid #005a91;
+  background: #dcecff;
+}
+.preview-fluent > em {
+  border-block-start: 2px solid #005a91;
+  border-radius: 0.2rem;
+  background: #b1c9e0;
+}
+.appearance-preset-card__preview > .preview-carbon {
+  grid-template-rows: 0.55fr repeat(4, 1fr);
+  gap: 1px;
+  background: #f4f4f4;
+}
+.preview-carbon > i {
+  background: #161616;
+}
+.preview-carbon > b {
+  background: #fff;
+  border-block-end: 1px solid #a8a8a8;
+  background-image: linear-gradient(90deg, #6f6f6f 27%, transparent 27%);
+  background-size: 55% 2px;
+  background-position: 0.25rem center;
+  background-repeat: no-repeat;
+}
+.preview-carbon > b:nth-child(odd) {
+  background-color: #e8e8e8;
+}
+.preview-carbon > b:nth-child(4) {
+  border-inline-start: 2px solid #0043ce;
+  background-color: #dde7ff;
+}
+@media (max-width: 25rem) {
+  .appearance-preset-picker {
+    gap: 0.5rem;
+  }
+  .appearance-preset-card {
+    padding: 0.5rem;
+  }
 }
 </style>

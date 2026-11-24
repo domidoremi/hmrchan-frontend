@@ -3,12 +3,12 @@
     :ref="setCollection"
     class="next-collection"
     :class="{ 'is-index': view === 'list', compact }"
+    :aria-labelledby="headingId"
     tabindex="-1"
-    @keydown="browseByKey"
   >
     <header class="next-collection-heading">
       <div>
-        <h2>
+        <h2 :id="headingId">
           {{
             heading ||
             t(
@@ -19,10 +19,7 @@
                   : 'journal.next.gallery'
             )
           }}
-          <span
-            class="meta-count"
-            :aria-label="countUnknown ? t('journal.browse.countUnknown') : undefined"
-          >
+          <span class="meta-count" aria-hidden="true">
             {{ countUnknown ? '—' : posts.length }}
           </span>
         </h2>
@@ -58,6 +55,16 @@
         </div>
       </div>
     </header>
+    <p
+      class="collection-count sr-only"
+      :role="readState === 'ready' && posts.length ? 'status' : undefined"
+    >
+      {{
+        countUnknown
+          ? t('journal.browse.countUnknown')
+          : t('journal.browse.count', { count: posts.length })
+      }}
+    </p>
     <div class="next-collection-filters">
       <div
         class="stream-tabs chips"
@@ -136,6 +143,7 @@
         v-for="post in posts"
         :key="post.id"
         class="post-card next-gallery-card"
+        data-reveal
         :class="{ 'next-gallery-text': !post.image }"
         :data-post="post.id"
       >
@@ -187,7 +195,7 @@
         </button>
       </article>
     </div>
-    <div v-else class="next-index-browser">
+    <div v-else class="next-index-browser" @keydown="browseByKey">
       <section class="archive-results">
         <ArchiveNavigationHint
           v-if="posts.length"
@@ -312,6 +320,7 @@ import {
   onMounted,
   ref,
   shallowRef,
+  useId,
   useTemplateRef,
   watch,
 } from 'vue'
@@ -373,6 +382,7 @@ const emit = defineEmits<{
   save: [post: JournalPost, event: MouseEvent]
 }>()
 const { locale, t } = useI18n({ useScope: 'global' })
+const headingId = useId()
 const runtime = inject(journalKey, shallowRef(null))
 const collection = ref<HTMLElement>()
 usePhotoMasonry(useTemplateRef<HTMLElement>('gallery'), () => props.posts)

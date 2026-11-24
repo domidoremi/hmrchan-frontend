@@ -85,17 +85,14 @@ function retireVisualRuntimeSettings(target: SettingsHydrationSnapshot): void {
 }
 
 function resolvePresetFromLegacyUiStyle(style: LegacyUiStyleSnapshot): AppearancePreset {
-  return style === 'material' ? 'fluent-soft' : DEFAULT_APPEARANCE_PRESET
+  return style === 'material' ? 'material-expressive' : 'apple-native'
 }
 
 function normalizeAppearanceSettings(target: SettingsHydrationSnapshot): void {
-  const normalizedPreset = normalizeAppearancePreset(target.appearancePreset)
-  const legacyUiStyle = target.uiStyle
-
-  target.appearancePreset =
-    legacyUiStyle && normalizedPreset === DEFAULT_APPEARANCE_PRESET
-      ? resolvePresetFromLegacyUiStyle(legacyUiStyle)
-      : normalizedPreset
+  target.appearancePreset = normalizeAppearancePreset(
+    target.appearancePreset,
+    target.uiStyle ? resolvePresetFromLegacyUiStyle(target.uiStyle) : DEFAULT_APPEARANCE_PRESET
+  )
 
   if ('uiStyle' in target) {
     delete target.uiStyle
@@ -120,8 +117,6 @@ export const useSettingsStore = defineStore(
       if (!settings.value.animationIntensity) {
         settings.value.animationIntensity = defaultSettings.animationIntensity
       }
-      if (!settings.value.appearancePreset)
-        settings.value.appearancePreset = DEFAULT_APPEARANCE_PRESET
       if (settings.value.cookieConsent === undefined) settings.value.cookieConsent = null
       if (settings.value.analyticsEnabled === undefined) settings.value.analyticsEnabled = false
       if (settings.value.functionalCookiesEnabled === undefined) {

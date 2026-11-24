@@ -400,10 +400,10 @@
     "preferencesReplaced": "雲端偏好設定已覆蓋",
     "appearanceRuntimeFailed": "無法載入該預設，目前預設保持不變。",
     "presets": {
-      "minimal-editorial": "紙頁",
-      "fluent-soft": "玻璃",
-      "organic-natural": "自然",
-      "gradient-narrative": "光譜"
+      "apple-native": "原生簡約",
+      "material-expressive": "Material 3",
+      "fluent-workspace": "Fluent 2",
+      "carbon-index": "Carbon"
     },
     "preferencesLoadFailed": "偏好同步失敗",
     "preferencesSaveFailed": "偏好儲存失敗",

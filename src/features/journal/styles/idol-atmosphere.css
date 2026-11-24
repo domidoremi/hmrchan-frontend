@@ -1,0 +1,162 @@
+#app .edition-archive .edition-workspace {
+  position: relative;
+  isolation: isolate;
+}
+
+.idol-atmosphere {
+  --ambient-ink: color-mix(in srgb, var(--accent) 13%, transparent);
+  --ambient-second: color-mix(in srgb, var(--accent) 6%, transparent);
+  --ambient-rule: color-mix(in srgb, var(--accent) 18%, transparent);
+  --ambient-travel-x: -9%;
+  --ambient-travel-y: -12%;
+  --ambient-drift: var(--theme-ambient-duration);
+  --scene-progress: 0;
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+  view-timeline: --idol-journey block;
+}
+
+.idol-atmosphere-field {
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 100svh;
+  overflow: clip;
+  contain: paint;
+  background: var(--canvas);
+}
+
+.idol-atmosphere-plane {
+  position: absolute;
+  inset: -15%;
+}
+
+.idol-atmosphere-drawing {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+  opacity: 0.22;
+}
+
+.idol-atmosphere-drawing .ambient-filled {
+  fill: var(--accent);
+  fill-opacity: 0.16;
+}
+
+.idol-atmosphere-drawing .ambient-companion {
+  fill: var(--theme-companion);
+  fill-opacity: 0.5;
+  stroke: none;
+}
+
+.idol-atmosphere-drawing .ambient-track {
+  stroke-width: 3;
+}
+
+.idol-atmosphere-wash,
+.idol-atmosphere-beam,
+.idol-atmosphere-edge {
+  position: absolute;
+  pointer-events: none;
+}
+
+.idol-atmosphere-wash {
+  inset: 24% 0 52%;
+  background: var(--ambient-second);
+}
+
+.idol-atmosphere-beam {
+  inset: 22% auto auto 20%;
+  inline-size: 26%;
+  block-size: 2px;
+  background: var(--ambient-rule);
+}
+
+.idol-atmosphere-edge {
+  inset: 0 15% 0 auto;
+  border-inline-start: 1px solid var(--ambient-rule);
+}
+
+[data-scene='apple-native'].idol-atmosphere {
+  --ambient-travel-x: 0%;
+  --ambient-travel-y: -8%;
+}
+
+[data-scene='material-expressive'].idol-atmosphere {
+  --ambient-travel-x: -6%;
+  --ambient-travel-y: 10%;
+  --ambient-second: var(--theme-tone);
+}
+
+[data-scene='material-expressive'] .idol-atmosphere-wash {
+  inset: 10% 0 auto 0;
+  block-size: 16%;
+  opacity: 0.48;
+}
+
+[data-scene='fluent-workspace'].idol-atmosphere {
+  --ambient-travel-x: 7%;
+  --ambient-travel-y: -5%;
+}
+
+[data-scene='fluent-workspace'] .idol-atmosphere-wash {
+  inset: 0 0 0 75%;
+}
+
+[data-scene='carbon-index'].idol-atmosphere {
+  --ambient-travel-x: 9%;
+  --ambient-travel-y: 0%;
+}
+
+[data-scene='carbon-index'] .idol-atmosphere-wash {
+  inset: 0 0 0 85%;
+}
+
+.site-body[data-motion='full'] .idol-atmosphere-beam {
+  animation: idol-ambient-drift var(--ambient-drift) ease-in-out infinite alternate both;
+}
+
+.site-body:is(.journal-suspended, .journal-appearance-open, :has(dialog[open]))
+  .idol-atmosphere-beam,
+.idol-atmosphere[data-scene-away] .idol-atmosphere-beam {
+  animation-play-state: paused;
+}
+
+@supports (animation-timeline: view()) and (animation-range: contain) {
+  .site-body[data-motion='full'] .idol-atmosphere-plane {
+    animation: idol-ambient-journey linear both;
+    animation-timeline: --idol-journey;
+    animation-range: contain;
+  }
+}
+
+.site-body[data-motion='full'] .idol-atmosphere[data-scene-fallback] .idol-atmosphere-plane {
+  transform: translate3d(
+    calc(var(--ambient-travel-x) * var(--scene-progress)),
+    calc(var(--ambient-travel-y) * var(--scene-progress)),
+    0
+  );
+}
+
+@keyframes idol-ambient-journey {
+  to {
+    transform: translate3d(var(--ambient-travel-x), var(--ambient-travel-y), 0);
+  }
+}
+
+@keyframes idol-ambient-drift {
+  from {
+    transform: translate3d(-12%, -4%, 0);
+    opacity: 0.5;
+  }
+  to {
+    transform: translate3d(56%, 9%, 0);
+    opacity: 1;
+  }
+}

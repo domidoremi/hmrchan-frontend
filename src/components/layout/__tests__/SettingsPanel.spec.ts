@@ -42,7 +42,7 @@ const themeStoreState = reactive({
 
 const settingsStoreState = reactive({
   settings: reactive({
-    appearancePreset: 'minimal-editorial',
+    appearancePreset: 'apple-native',
     showHeroSection: true,
     enableAnimations: true,
     enableSwipeNavigation: true,
@@ -87,10 +87,10 @@ vi.mock('@/i18n', () => ({
 vi.mock('@/config/appearance', () => ({
   getAppearancePresetSpecs: () => [
     {
-      preset: 'minimal-editorial',
+      preset: 'apple-native',
     },
     {
-      preset: 'fluent-soft',
+      preset: 'fluent-workspace',
     },
   ],
 }))
@@ -209,7 +209,7 @@ describe('SettingsPanel', () => {
     themeStoreState.resolvedTheme = 'dark'
 
     Object.assign(settingsStoreState.settings, {
-      appearancePreset: 'minimal-editorial',
+      appearancePreset: 'apple-native',
       showHeroSection: true,
       enableAnimations: true,
       enableSwipeNavigation: true,
@@ -335,10 +335,10 @@ describe('SettingsPanel', () => {
       allowedCategories: ['appearance'],
     })
 
-    await findButtonByText(wrapper, 'settings.presets.fluent-soft').trigger('click')
+    await findButtonByText(wrapper, 'settings.presets.fluent-workspace').trigger('click')
     await flushPromises()
 
-    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('fluent-soft')
+    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('fluent-workspace')
   })
 
   it('removes deprecated style and visual runtime controls', () => {

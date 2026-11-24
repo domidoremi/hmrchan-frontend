@@ -1,0 +1,87 @@
+.site-body {
+  --material-paint: none;
+  --material-rule: 1px solid var(--line);
+  --material-shadow: var(--theme-shadow);
+  --material-radius: var(--theme-radius);
+  --material-heading: var(--line);
+  --material-panel: var(--paper);
+}
+
+:root[data-preset='apple-native'] .site-body {
+  --material-heading: transparent;
+}
+
+:root[data-preset='material-expressive'] .site-body {
+  --material-rule: 0 solid transparent;
+  --material-heading: var(--theme-tone);
+  --material-panel: var(--appearance-surface-2);
+}
+
+:root[data-preset='fluent-workspace'] .site-body {
+  --material-heading: var(--accent);
+}
+
+:root[data-preset='carbon-index'] .site-body {
+  --material-heading: var(--ink);
+}
+
+.site-body
+  .journal-shell
+  :is(.editorial-page-heading, .archive-page-title, .authors-hero, .search-hero, .about-masthead) {
+  border-block-end-color: var(--material-heading);
+}
+
+.site-body
+  .journal-shell
+  :is(.editorial-page-heading, .archive-page-title, .authors-hero, .search-hero, .about-masthead)
+  h1 {
+  font-family: var(--theme-title-font);
+  font-weight: var(--theme-heading-weight);
+  letter-spacing: 0;
+}
+
+.site-body
+  .journal-shell
+  :is(.post-meta, .detail-author, .reading-author, .archive-calendar-toolbar, .section-number) {
+  font-family: var(--theme-meta-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.site-body
+  .journal-shell
+  :is(
+    .post-card,
+    .author-card,
+    .archive-month,
+    .archive-calendar-inspector,
+    .forum-preview,
+    .contact-panel,
+    .journal-resource-state
+  ) {
+  background-color: var(--material-panel);
+  box-shadow: var(--material-shadow);
+}
+
+.site-body .journal-shell :is(.post-card, .author-card, .next-gallery-card):focus-within {
+  border-color: var(--accent);
+}
+
+.site-body :is(#app-dialog, .journal-appearance-dialog) {
+  border-radius: var(--theme-radius);
+  box-shadow: var(--appearance-shadow-strong);
+}
+
+.site-body :is(.dialog-head, .journal-appearance-heading) {
+  border-block-end: 1px solid var(--line);
+  background-color: var(--paper);
+}
+
+.site-body .journal-shell :is(.chip.active, .density-toggle .active, .next-view-toggle .active) {
+  color: var(--theme-on-tone);
+}
+
+.site-body[data-motion='full']
+  .journal-shell
+  :is(.chip, .button, .icon-button):active:not(:disabled) {
+  scale: var(--theme-press-scale, 1);
+}

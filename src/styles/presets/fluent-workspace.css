@@ -1,0 +1,49 @@
+:is(:root, #app)[data-preset='fluent-workspace'] {
+  --appearance-canvas: #eaf0f5;
+  --appearance-surface-1: #ffffff;
+  --appearance-surface-2: #e6edf3;
+  --appearance-text-primary: #1b272f;
+  --appearance-text-secondary: #435866;
+  --appearance-border: #afbeca;
+  --appearance-accent: #005a91;
+  --appearance-accent-rgb: 0, 90, 145;
+  --appearance-on-accent: #ffffff;
+  --theme-ui-font: 'Segoe UI Variable Text', 'Segoe UI', var(--font-family, system-ui), sans-serif;
+  --theme-title-font: 'Segoe UI Variable Display', var(--theme-ui-font);
+  --theme-heading-weight: 650;
+  --theme-radius: 0.5rem;
+  --theme-control-radius: 0.375rem;
+  --theme-photo-radius: 0.5rem;
+  --theme-gap: 1rem;
+  --theme-duration: 480ms;
+  --theme-ease: cubic-bezier(0.16, 0.75, 0.25, 1);
+  --theme-shadow: 0 2px 6px rgb(25 44 60 / 0.09);
+  --theme-float-x: 0.5rem;
+  --theme-float-y: 0.1rem;
+  --theme-float-angle: 0deg;
+  --theme-ambient-duration: 13s;
+  --theme-film: #233241;
+  --theme-tone: #dcecff;
+  --theme-on-tone: #15416b;
+  --theme-reveal-distance: 1rem;
+  --theme-reveal-from: translateX(var(--theme-reveal-distance));
+  --theme-press-scale: 0.98;
+  --theme-cover-columns: 1fr 1.13fr;
+  --theme-index-columns: 0.85fr 1.15fr;
+  --theme-reading-size: 68ch;
+  --theme-backdrop: blur(0.65rem);
+}
+
+:is(:root, #app)[data-preset='fluent-workspace'][data-color-mode='dark'] {
+  --appearance-canvas: #181f27;
+  --appearance-surface-1: #232c35;
+  --appearance-surface-2: #303e4b;
+  --appearance-text-primary: #f4f7fa;
+  --appearance-text-secondary: #c1cfd9;
+  --appearance-border: #5d7383;
+  --appearance-accent: #92ceff;
+  --appearance-accent-rgb: 146, 206, 255;
+  --appearance-on-accent: #0f2f4c;
+  --theme-tone: #283f57;
+  --theme-on-tone: #c9e5ff;
+}

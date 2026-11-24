@@ -33,6 +33,8 @@
 }
 .site-body .journal-shell .next-collection {
   min-inline-size: 0;
+}
+.site-body .journal-shell .next-collection:not([id='next-index']) {
   scroll-margin-block-start: 7rem;
 }
 .site-body .journal-shell .next-collection-heading {

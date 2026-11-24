@@ -9,25 +9,28 @@ import {
 
 describe('appearance config', () => {
   it('normalizes invalid preset values', () => {
-    expect(normalizeAppearancePreset('fluent-soft')).toBe('fluent-soft')
+    expect(normalizeAppearancePreset('material-expressive')).toBe('material-expressive')
+    expect(normalizeAppearancePreset('minimal-editorial')).toBe('apple-native')
+    expect(normalizeAppearancePreset('fluent-soft')).toBe('fluent-workspace')
     expect(normalizeAppearancePreset('unknown-preset')).toBe(DEFAULT_APPEARANCE_PRESET)
   })
 
   it('migrates every retired preset without exposing extra theme options', () => {
-    expect(normalizeAppearancePreset('material-calm')).toBe('fluent-soft')
-    expect(normalizeAppearancePreset('clay-playful')).toBe('fluent-soft')
-    expect(normalizeAppearancePreset('biophilic-serene')).toBe('organic-natural')
-    expect(normalizeAppearancePreset('sketch-doodle')).toBe('minimal-editorial')
+    expect(normalizeAppearancePreset('material-calm')).toBe('material-expressive')
+    expect(normalizeAppearancePreset('clay-playful')).toBe('material-expressive')
+    expect(normalizeAppearancePreset('biophilic-serene')).toBe('material-expressive')
+    expect(normalizeAppearancePreset('sketch-doodle')).toBe('apple-native')
     expect(normalizeAppearancePreset('__proto__')).toBe(DEFAULT_APPEARANCE_PRESET)
     expect(normalizeAppearancePreset('constructor')).toBe(DEFAULT_APPEARANCE_PRESET)
     const specs = getAppearancePresetSpecs()
     expect(specs.map((spec) => spec.preset)).toEqual([
-      'minimal-editorial',
-      'fluent-soft',
-      'organic-natural',
-      'gradient-narrative',
+      'apple-native',
+      'material-expressive',
+      'fluent-workspace',
+      'carbon-index',
     ])
-    expect(getAppearancePresetSpec('gradient-narrative').galleryTitle).toBe('Spectrum')
+    expect(getAppearancePresetSpec('apple-native').galleryTitle).toBe('Native Minimal')
+    expect(getAppearancePresetSpec('carbon-index').galleryTitle).toBe('Carbon')
   })
 
   it('resolves scene roles from routes', () => {

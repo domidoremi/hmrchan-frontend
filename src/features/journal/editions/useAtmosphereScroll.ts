@@ -1,29 +1,50 @@
 import { onBeforeUnmount, onMounted, type Ref } from 'vue'
 import { createResizeObserver, createVisibilityObserver } from '@/utils/modernAPIs'
+import { cancelHomeFrame, queueHomeFrame } from './homeFrame'
 
 export function useAtmosphereScroll(host: Ref<HTMLElement | null>) {
   const lifetime = new AbortController()
   let size: ResizeObserver | null = null
   let visibility: IntersectionObserver | undefined
-  let frame = 0
+  let pending = false
   let start = 0
   let range = 1
   let last = -1
   let visible = true
 
   function update() {
-    frame = 0
+    pending = false
     if (!host.value || !visible || document.hidden || document.body.dataset['motion'] !== 'full')
       return
     const progress = Math.round(Math.min(1, Math.max(0, (scrollY - start) / range)) * 1000) / 1000
     if (progress === last) return
-    last = progress
-    host.value.style.setProperty('--scene-progress', String(progress))
+    const target = host.value
+    return () => {
+      last = progress
+      target.style.setProperty('--scene-progress', String(progress))
+    }
   }
 
   function schedule() {
-    if (!frame && visible && !document.hidden && document.body.dataset['motion'] === 'full')
-      frame = requestAnimationFrame(update)
+    if (!pending && visible && !document.hidden && document.body.dataset['motion'] === 'full') {
+      pending = true
+      queueHomeFrame(update)
+    }
+  }
+
+  function cancel() {
+    cancelHomeFrame(update)
+    pending = false
+  }
+
+  function syncEnvironment() {
+    if (document.hidden || document.body.dataset['motion'] !== 'full') {
+      cancel()
+      if (document.body.dataset['motion'] !== 'full') {
+        host.value?.style.removeProperty('--scene-progress')
+        last = -1
+      }
+    } else schedule()
   }
 
   function measure() {
@@ -42,7 +63,8 @@ export function useAtmosphereScroll(host: Ref<HTMLElement | null>) {
       visibility = createVisibilityObserver(([entry]) => {
         visible = Boolean(entry?.isIntersecting)
         target.toggleAttribute('data-scene-away', !visible)
-        schedule()
+        if (visible) schedule()
+        else cancel()
       })
       visibility.observe(target)
     }
@@ -59,14 +81,14 @@ export function useAtmosphereScroll(host: Ref<HTMLElement | null>) {
     measure()
     window.addEventListener('scroll', schedule, options)
     window.addEventListener('resize', measure, options)
-    document.addEventListener('journalmotionchange', schedule, options)
-    document.addEventListener('visibilitychange', schedule, options)
+    document.addEventListener('journalmotionchange', syncEnvironment, options)
+    document.addEventListener('visibilitychange', syncEnvironment, options)
   })
 
   onBeforeUnmount(() => {
     lifetime.abort()
     size?.disconnect()
     visibility?.disconnect()
-    cancelAnimationFrame(frame)
+    cancel()
   })
 }

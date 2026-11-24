@@ -111,14 +111,14 @@ export function useCoverPlayback(
     const point = event.changedTouches[0]
     if (point) touch = { x: point.clientX, y: point.clientY, at: performance.now() }
   }
-  function touchEnd(event: TouchEvent) {
+  function touchEnd(event: TouchEvent, move = step) {
     const point = event.changedTouches[0],
       start = touch
     touch = undefined
     if (!point || !start || performance.now() - start.at > 1200) return
     const dx = point.clientX - start.x,
       dy = point.clientY - start.y
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) step(dx < 0 ? 1 : -1)
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) move(dx < 0 ? 1 : -1)
   }
   function touchCancel() {
     touch = undefined

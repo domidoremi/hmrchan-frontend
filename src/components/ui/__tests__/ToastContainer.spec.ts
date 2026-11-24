@@ -7,7 +7,7 @@ vi.mock('@/stores', async () => ({
   useToastStore: (await import('@/stores/toast')).useToastStore,
   useThemeStore: () => ({ resolvedTheme: { value: 'light', __v_isRef: true } }),
   useSettingsStore: () => ({
-    settings: { value: { appearancePreset: 'minimal-editorial' }, __v_isRef: true },
+    settings: { value: { appearancePreset: 'apple-native' }, __v_isRef: true },
     motionMode: { value: 'full', __v_isRef: true },
   }),
 }))

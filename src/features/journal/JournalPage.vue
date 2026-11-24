@@ -94,6 +94,8 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { useAuthStore, useFavoritesStore } from '@/stores'
+import { useSettingsStore } from '@/stores/settings'
+import { getAppearancePresetSpec } from '@/config/appearance'
 import { ensureAuthStoreLoaded } from '@/services/authSurface'
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 import type { Discussion } from '@/api/discussionService'
@@ -136,6 +138,7 @@ const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore(),
   favorites = useFavoritesStore()
+const settings = useSettingsStore()
 const dialogs = inject(journalDialogsKey)!
 const eventDialogs = inject(journalEventsKey)!
 const runtime = useJournal(),
@@ -181,10 +184,12 @@ const param = (key: string, fallback = '') =>
 const query = computed(() => param('q')),
   platform = computed(() => param('platform', 'all')),
   sort = computed(() => param('sort', 'latest'))
-const defaultLayout = 'grid'
+const defaultLayout = computed(
+  () => getAppearancePresetSpec(settings.settings.appearancePreset).browseLayout
+)
 const contentType = computed(() => param('type', '全部')),
   layout = computed(() =>
-    ['grid', 'list', 'wall'].includes(param('view')) ? param('view') : defaultLayout
+    ['grid', 'list', 'wall'].includes(param('view')) ? param('view') : defaultLayout.value
   )
 const visiblePosts = computed(() => {
   const values = posts.value.filter(
@@ -255,11 +260,7 @@ watch(
 )
 function change(key: string, value: string) {
   const next: LocationQueryRaw = { ...route.query }
-  if (
-    !value ||
-    (key === 'view' ? value === defaultLayout : ['all', 'latest', '全部', 'week'].includes(value))
-  )
-    delete next[key]
+  if (!value || ['all', 'latest', '全部', 'week'].includes(value)) delete next[key]
   else next[key] = value
   if (key === 'month') delete next['day']
   void router.replace({ path: route.path, query: next })

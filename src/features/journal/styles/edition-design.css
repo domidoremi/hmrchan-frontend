@@ -1,12 +1,7 @@
 body.site-body {
-  --journal-round: 1.5rem;
+  --journal-round: var(--theme-radius);
   --journal-reading-scale: 1;
-  font:
-    0.9375rem/1.65 'Inter',
-    'Microsoft YaHei',
-    'PingFang SC',
-    system-ui,
-    sans-serif;
+  font: 0.9375rem/1.65 var(--appearance-font-family);
 }
 body.site-body[data-text-size='large'] {
   --journal-reading-scale: 1.15;

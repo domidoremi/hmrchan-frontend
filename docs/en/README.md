@@ -16,7 +16,7 @@ HmrChan Frontend is the site's Vue application. It covers public content, commun
 
 ### Application
 
-[![Vue 3.6.0-rc.14](https://img.shields.io/badge/Vue-3.6.0--rc.14-42B883?logo=vuedotjs&logoColor=white)](https://vuejs.org/guide/)
+[![Vue 3.6.0-rc.16](https://img.shields.io/badge/Vue-3.6.0--rc.16-42B883?logo=vuedotjs&logoColor=white)](https://vuejs.org/guide/)
 [![TypeScript 6.0.3](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
 [![Vite 8.3.7](https://img.shields.io/badge/Vite-8.3.7-646CFF?logo=vite&logoColor=white)](https://vite.dev/guide/)
 [![Pinia 4.1.0](https://img.shields.io/badge/Pinia-4.1.0-FFD859?logo=pinia&logoColor=111827)](https://pinia.vuejs.org/)

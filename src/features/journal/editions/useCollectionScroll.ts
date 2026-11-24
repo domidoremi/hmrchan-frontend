@@ -61,7 +61,9 @@ export function useCollectionScroll(
     const top = Math.max(100, box.top)
     const bottom = Math.min(innerHeight - 40, box.bottom)
     if (x < box.left || x > box.right || y < top || y > bottom) return undefined
-    const focused = document.activeElement?.closest('.archive-inspector')
+    const focused = document.activeElement?.closest(
+      '.archive-inspector, .archive-result-row:focus-visible'
+    )
     if (focused && root.value?.contains(focused)) return undefined
     const closest = findRow(list, y, top, bottom)
     return closest !== undefined && closest !== index.value

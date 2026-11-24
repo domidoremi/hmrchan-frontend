@@ -1,10 +1,10 @@
 /* Each preset changes composition, material and motion together. */
-html[data-preset='minimal-editorial'] .journal-shell .immersive-home {
+html[data-preset='apple-native'] .journal-shell .immersive-home {
   --composition-curve: 0.6rem;
   --composition-distance: 2rem;
   --composition-paper: 96%;
 }
-html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-home .spatial-cover {
+html[data-preset='apple-native'] .site-body .journal-shell .immersive-home .spatial-cover {
   border: 0;
   border-block: 1px solid var(--line);
   border-radius: 0;
@@ -12,28 +12,24 @@ html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-home 
   box-shadow: none;
   padding-inline: 0;
 }
-html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-home .cover-copy {
+html[data-preset='apple-native'] .site-body .journal-shell .immersive-home .cover-copy {
   border-inline-end: 1px solid var(--line);
   padding-inline-end: var(--composition-gap);
 }
-html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-home .next-collection {
+html[data-preset='apple-native'] .site-body .journal-shell .immersive-home .next-collection {
   border-block-start: 2px solid var(--ink);
 }
-html[data-preset='minimal-editorial']
-  .site-body
-  .journal-shell
-  .immersive-home
-  .archive-result-row {
+html[data-preset='apple-native'] .site-body .journal-shell .immersive-home .archive-result-row {
   border-radius: 0.25rem;
   border-block-end: 1px solid var(--line);
 }
-html[data-preset='fluent-soft'] .journal-shell .immersive-home {
+html[data-preset='fluent-workspace'] .journal-shell .immersive-home {
   --composition-curve: 2.5rem;
   --composition-distance: 4rem;
   --composition-paper: 88%;
   --composition-gap: clamp(1.25rem, 2vw, 2rem);
 }
-html[data-preset='fluent-soft']
+html[data-preset='fluent-workspace']
   .site-body
   .journal-shell
   .immersive-home
@@ -42,35 +38,39 @@ html[data-preset='fluent-soft']
     inset 0 1px color-mix(in srgb, var(--paper) 80%, transparent),
     var(--theme-shadow);
 }
-html[data-preset='fluent-soft'] .site-body .journal-shell .immersive-home .cover-copy {
+html[data-preset='fluent-workspace'] .site-body .journal-shell .immersive-home .cover-copy {
   padding: 1.25rem;
 }
-html[data-preset='fluent-soft'] .site-body .journal-shell .immersive-home .section-heading {
+html[data-preset='fluent-workspace'] .site-body .journal-shell .immersive-home .section-heading {
   padding: 1rem 1.5rem;
   border: 1px solid var(--line);
   border-radius: 2rem;
   background: var(--paper);
 }
-html[data-preset='fluent-soft'] .site-body .journal-shell .immersive-home .editorial-discussion {
+html[data-preset='fluent-workspace']
+  .site-body
+  .journal-shell
+  .immersive-home
+  .editorial-discussion {
   margin-block: 0.75rem;
   padding: 1.5rem;
   border: 1px solid var(--line);
   border-radius: 1.5rem;
   background: var(--paper);
 }
-html[data-preset='organic-natural'] .journal-shell .immersive-home {
+html[data-preset='material-expressive'] .journal-shell .immersive-home {
   --composition-curve: 2.5rem 0.75rem 2.5rem 0.75rem;
   --composition-distance: 3rem;
   --composition-paper: 94%;
   --composition-gap: clamp(1.5rem, 4vw, 4rem);
 }
-html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .cover-controls {
+html[data-preset='material-expressive'] .site-body .journal-shell .immersive-home .cover-controls {
   border: 0;
   border-radius: 2rem;
   background: var(--accent-soft);
   padding: 0.25rem 0.65rem;
 }
-html[data-preset='organic-natural']
+html[data-preset='material-expressive']
   .site-body
   .journal-shell
   .immersive-home
@@ -79,39 +79,44 @@ html[data-preset='organic-natural']
   padding-block: 2rem;
   border-block-end-style: dashed;
 }
-html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .section-heading h2 {
+html[data-preset='material-expressive']
+  .site-body
+  .journal-shell
+  .immersive-home
+  .section-heading
+  h2 {
   font-weight: 400;
   letter-spacing: 0.02em;
 }
-html[data-preset='gradient-narrative'] .journal-shell .immersive-home {
+html[data-preset='carbon-index'] .journal-shell .immersive-home {
   --composition-curve: 1.75rem;
   --composition-distance: 5rem;
   --composition-paper: 92%;
 }
-html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home .cover-copy {
+html[data-preset='carbon-index'] .site-body .journal-shell .immersive-home .cover-copy {
   border-inline-start: 2px solid var(--accent);
   padding-inline-start: clamp(1rem, 2vw, 2rem);
 }
-html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home .section-heading {
+html[data-preset='carbon-index'] .site-body .journal-shell .immersive-home .section-heading {
   border-block-end: 0;
   border-inline-start: 2px solid var(--accent);
   padding-inline-start: 1.5rem;
   padding-block: 0.5rem;
 }
-html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home .archive-panel {
+html[data-preset='carbon-index'] .site-body .journal-shell .immersive-home .archive-panel {
   background: var(--theme-wash), var(--paper);
   box-shadow:
     inset 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
     var(--theme-shadow);
 }
 @media (min-width: 960px) {
-  html[data-preset='minimal-editorial'] .site-body .journal-shell .immersive-home .spatial-cover {
+  html[data-preset='apple-native'] .site-body .journal-shell .immersive-home .spatial-cover {
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   }
-  html[data-preset='fluent-soft'] .site-body .journal-shell .immersive-home .spatial-cover {
+  html[data-preset='fluent-workspace'] .site-body .journal-shell .immersive-home .spatial-cover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  html[data-preset='fluent-soft']
+  html[data-preset='fluent-workspace']
     .site-body
     .journal-shell
     .immersive-home
@@ -120,13 +125,17 @@ html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home
     display: flex;
     grid-column: auto;
   }
-  html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .spatial-cover {
+  html[data-preset='material-expressive'] .site-body .journal-shell .immersive-home .spatial-cover {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   }
-  html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .home-reading-grid {
+  html[data-preset='material-expressive']
+    .site-body
+    .journal-shell
+    .immersive-home
+    .home-reading-grid {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   }
-  html[data-preset='organic-natural']
+  html[data-preset='material-expressive']
     .site-body
     .journal-shell
     .immersive-home
@@ -134,10 +143,10 @@ html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home
     .post-card:nth-child(3n) {
     margin-block-start: 2rem;
   }
-  html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home .spatial-cover {
+  html[data-preset='carbon-index'] .site-body .journal-shell .immersive-home .spatial-cover {
     grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
   }
-  html[data-preset='gradient-narrative']
+  html[data-preset='carbon-index']
     .site-body
     .journal-shell
     .immersive-home
@@ -145,7 +154,7 @@ html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home
     .post-card:first-child {
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   }
-  html[data-preset='gradient-narrative']
+  html[data-preset='carbon-index']
     .site-body
     .journal-shell
     .immersive-home
@@ -165,7 +174,7 @@ html[data-preset='gradient-narrative'] .site-body .journal-shell .immersive-home
     border-block-end: 1px solid var(--line);
     border-radius: 0;
   }
-  html[data-preset='organic-natural'] .site-body .journal-shell .immersive-home .spatial-cover {
+  html[data-preset='material-expressive'] .site-body .journal-shell .immersive-home .spatial-cover {
     border-radius: 1.5rem 0.5rem;
   }
 }

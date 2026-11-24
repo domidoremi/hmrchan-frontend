@@ -400,10 +400,10 @@
     "preferencesReplaced": "Cloud preferences replaced",
     "appearanceRuntimeFailed": "Couldn't load that preset. The current preset remains active.",
     "presets": {
-      "minimal-editorial": "Paper",
-      "fluent-soft": "Glass",
-      "organic-natural": "Nature",
-      "gradient-narrative": "Spectrum"
+      "apple-native": "Native Minimal",
+      "material-expressive": "Material 3",
+      "fluent-workspace": "Fluent 2",
+      "carbon-index": "Carbon"
     },
     "preferencesLoadFailed": "Preference sync failed",
     "preferencesSaveFailed": "Preference save failed",

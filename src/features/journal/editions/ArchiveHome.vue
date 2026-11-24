@@ -1,9 +1,10 @@
 <template>
   <div class="archive-page archive-home idol-home">
     <NextStage v-if="showFeature" :posts="featuredPosts" />
-    <div id="next-index" class="idol-home-feed">
+    <div class="idol-home-feed">
       <h1 v-if="!showFeature" class="idol-search-title">{{ t('journal.nav.posts') }}</h1>
       <NextCollection
+        id="next-index"
         :posts="posts"
         :all-posts="allPosts"
         :saved-posts="savedPosts"

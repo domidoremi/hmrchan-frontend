@@ -33,9 +33,9 @@
   padding: clamp(1rem, 2.4vw, 2rem);
   border: 1px solid var(--line);
   border-radius: var(--idol-panel-radius);
-  background: var(--paper);
+  background: var(--idol-panel-paint), var(--idol-surface);
   color: var(--ink);
-  box-shadow: none;
+  box-shadow: var(--idol-panel-shadow);
 }
 
 #app .edition-archive .author-card .author-avatar {
@@ -128,8 +128,8 @@
   min-inline-size: 0;
   border: 1px solid var(--line);
   border-radius: var(--idol-panel-radius);
-  background: var(--paper);
-  box-shadow: none;
+  background: var(--idol-panel-paint), var(--idol-surface);
+  box-shadow: var(--idol-panel-shadow);
 }
 
 #app .edition-archive .about-page .about-directory-group h2 {
@@ -149,7 +149,7 @@
 #app .edition-archive :is(#app-dialog, .journal-appearance-dialog) {
   max-block-size: calc(100dvh - 2rem);
   border-radius: var(--idol-panel-radius);
-  background: var(--paper);
+  background: var(--idol-panel-paint), var(--idol-surface);
   color: var(--ink);
   box-shadow: 0 1.5rem 5rem #0005;
 }
@@ -247,261 +247,48 @@
   display: none;
 }
 
-html[data-preset='minimal-editorial'] #app .edition-archive .authors-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(1.5rem, 5vw, 5rem);
-  row-gap: 0;
-}
-
-html[data-preset='minimal-editorial'] #app .edition-archive .author-card {
+:root[data-preset='apple-native'] #app .edition-archive .author-card {
   padding-inline: 0;
-  padding-block: 1.5rem;
   border: 0;
   border-block-end: 1px solid var(--line);
-  background: none;
+  background: transparent;
+  box-shadow: none;
 }
 
-html[data-preset='minimal-editorial'] #app .edition-archive .author-card .author-avatar {
-  border-radius: 0;
-}
-
-html[data-preset='minimal-editorial'] #app .edition-archive .about-page {
-  grid-template-columns: minmax(0, 0.45fr) minmax(0, 1fr);
-  align-items: start;
-}
-
-html[data-preset='minimal-editorial'] #app .edition-archive .about-page .about-masthead {
-  position: sticky;
-  inset-block-start: 6rem;
+:root[data-preset='material-expressive'] #app .edition-archive .author-card {
   border: 0;
+  background: var(--theme-tone);
 }
 
-html[data-preset='minimal-editorial'] #app .edition-archive .about-directory-group {
-  grid-template-columns: minmax(0, 0.27fr) minmax(0, 1fr);
-  padding-inline: 0;
-  border: 0;
-  border-block-start: 1px solid var(--line);
-  border-radius: 0;
-  background: none;
+:root[data-preset='material-expressive'] #app .edition-archive .author-card:nth-child(even) {
+  background: var(--theme-companion);
 }
 
-html[data-preset='minimal-editorial'] #app .edition-archive .about-colophon {
-  grid-column: 2;
+:root[data-preset='material-expressive'] #app .edition-archive .author-card .author-avatar {
+  border-radius: var(--theme-photo-radius);
 }
 
-html[data-preset='fluent-soft'] #app .edition-archive .authors-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive .author-card:not(.author-card--compact) {
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
-  text-align: center;
-  padding-block: 2rem;
-}
-
-html[data-preset='fluent-soft']
-  #app
-  .edition-archive
-  .author-card:not(.author-card--compact)
-  .author-topline,
-html[data-preset='fluent-soft']
-  #app
-  .edition-archive
-  .author-card:not(.author-card--compact)
-  .author-meta {
-  justify-content: center;
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive .author-card .author-avatar {
-  inline-size: clamp(5rem, 10vw, 9rem);
-  border-radius: 50%;
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive .search-page .search-header {
-  max-inline-size: 52rem;
-  margin-inline: auto;
-  padding-block: clamp(1.5rem, 4vw, 3.5rem);
-  border: 0;
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive .about-directory {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive .about-page {
-  --directory-group-span: auto;
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive .about-directory-group {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.2rem;
-  padding: clamp(1rem, 2.5vw, 2rem);
-}
-
-html[data-preset='fluent-soft']
-  #app
-  .edition-archive
-  .about-directory-group[data-directory='group'] {
-  grid-column: auto;
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive .about-directory-links {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive #app-dialog .post-detail {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive #app-dialog .detail-media {
-  padding: 0.65rem;
-}
-
-html[data-preset='fluent-soft'] #app .edition-archive #app-dialog .detail-photo {
-  border-radius: 1.5rem;
-}
-
-html[data-preset='organic-natural'] #app .edition-archive .authors-grid {
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  column-gap: clamp(1rem, 4vw, 4rem);
-}
-
-html[data-preset='organic-natural'] #app .edition-archive .author-card {
-  padding: 1.6rem;
-  border-block-end-width: 0.3rem;
-}
-
-html[data-preset='organic-natural'] #app .edition-archive .author-card .author-avatar {
-  aspect-ratio: 0.85;
-  rotate: -2deg;
-  border: 0.25rem solid var(--canvas);
-}
-
-html[data-preset='organic-natural'] #app .edition-archive .about-directory {
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  gap: clamp(1.25rem, 4vw, 3.5rem);
-}
-
-html[data-preset='organic-natural'] #app .edition-archive .about-directory-group {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-  padding: clamp(1rem, 2.8vw, 2.5rem);
-  border-block-end-width: 0.3rem;
-}
-
-html[data-preset='organic-natural'] #app .edition-archive #app-dialog .detail-media {
-  padding: 1rem;
-  background: var(--idol-rose);
-}
-
-html[data-preset='organic-natural'] #app .edition-archive #app-dialog .detail-photo {
-  border: 0.35rem solid var(--paper);
-}
-
-html[data-preset='gradient-narrative'] #app .edition-archive .author-card {
-  grid-template-columns: minmax(0, 1fr);
-  border: 0;
-  padding: 0;
-  background: none;
-}
-
-html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-card__head {
-  inline-size: 100%;
-}
-
-html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-avatar {
-  inline-size: 100%;
-  aspect-ratio: 1.3;
-  border-radius: 0.35rem;
-}
-
-html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-info {
-  padding: 0.15rem 0.4rem 0.8rem;
-}
-
-html[data-preset='gradient-narrative'] #app .edition-archive .about-directory {
+:root[data-preset='fluent-workspace'] #app .edition-archive .authors-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-html[data-preset='gradient-narrative'] #app .edition-archive .about-directory-group {
-  grid-template-columns: minmax(0, 1fr);
-  border: 0;
-  border-block-start: 0.25rem solid var(--accent);
+:root[data-preset='fluent-workspace'] #app .edition-archive #app-dialog .detail-media {
+  background: var(--appearance-surface-2);
 }
 
-html[data-preset='gradient-narrative'] #app .edition-archive #app-dialog .detail-copy {
-  border-block-start: 0.25rem solid var(--accent);
+:root[data-preset='carbon-index'] #app .edition-archive .author-card {
+  border-inline: 0;
+  border-block-start: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-preset='carbon-index'] #app .edition-archive .author-card .author-avatar {
+  border-radius: 0;
 }
 
 #app .edition-archive #app-dialog .post-detail--text {
   grid-template-columns: minmax(0, 1fr);
-}
-
-@media (min-width: 960px) {
-  html[data-preset='minimal-editorial'] #app .edition-archive .search-page > .container,
-  html[data-preset='organic-natural'] #app .edition-archive .search-page > .container {
-    display: grid;
-    grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
-    align-items: start;
-    gap: clamp(1.5rem, 4vw, 4rem);
-  }
-
-  html[data-preset='minimal-editorial'] #app .edition-archive .search-page .search-header,
-  html[data-preset='organic-natural'] #app .edition-archive .search-page .search-header {
-    position: sticky;
-    inset-block-start: 6rem;
-  }
-
-  html[data-preset='organic-natural'] #app .edition-archive .authors-grid > :nth-child(even) {
-    margin-block-start: 2.5rem;
-  }
-
-  html[data-preset='minimal-editorial'] #app .edition-archive .auth-shell {
-    --idol-auth-columns: minmax(0, 1fr) minmax(0, 1fr);
-    --idol-auth-copy-column: 2;
-    --idol-auth-media-column: 1;
-    border: 0;
-    border-block: 1px solid var(--line);
-    background: var(--canvas);
-  }
-
-  html[data-preset='minimal-editorial'] #app .edition-archive .idol-auth-portrait {
-    grid-row: 1 / 4;
-    border: 0;
-    background: var(--paper);
-  }
-
-  html[data-preset='fluent-soft'] #app .edition-archive .auth-shell {
-    --idol-auth-columns: minmax(0, 1fr) minmax(0, 0.68fr);
-    border-radius: 2.5rem;
-  }
-
-  html[data-preset='fluent-soft'] #app .edition-archive .idol-auth-portrait {
-    border: 0;
-    background: var(--idol-rose);
-  }
-
-  html[data-preset='fluent-soft'] #app .edition-archive .idol-auth-portrait img {
-    border-radius: 3rem;
-    rotate: -3deg;
-  }
-
-  html[data-preset='organic-natural'] #app .edition-archive .auth-shell {
-    --idol-auth-columns: minmax(0, 1fr) minmax(0, 0.9fr);
-    border-radius: 0.35rem 3rem;
-  }
-
-  html[data-preset='organic-natural'] #app .edition-archive .idol-auth-portrait {
-    padding: clamp(1rem, 3vw, 2.5rem);
-    border: 0;
-  }
-
-  html[data-preset='organic-natural'] #app .edition-archive .idol-auth-portrait img {
-    rotate: 3deg;
-    border-radius: 0.4rem;
-  }
 }
 
 @media (max-width: 959px) {
@@ -528,16 +315,6 @@ html[data-preset='gradient-narrative'] #app .edition-archive #app-dialog .detail
   html[data-preset] #app .edition-archive .authors-grid,
   html[data-preset] #app .edition-archive .about-directory-group {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  html[data-preset='gradient-narrative'] #app .edition-archive .author-card {
-    grid-template-columns: minmax(0, 0.6fr) minmax(0, 1fr);
-    align-items: center;
-    column-gap: 1rem;
-  }
-
-  html[data-preset='gradient-narrative'] #app .edition-archive .author-card .author-avatar {
-    aspect-ratio: 0.9;
   }
 }
 

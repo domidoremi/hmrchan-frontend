@@ -83,282 +83,6 @@
   max-inline-size: 100%;
 }
 
-/* Paper: ruled spreads and a quiet book-like reading index. */
-html[data-preset='minimal-editorial'] .site-body .journal-shell {
-  --composition-surface: var(--paper);
-  --composition-gutter: clamp(1.25rem, 8vw, 8rem);
-}
-
-html[data-preset='minimal-editorial']
-  .site-body
-  .journal-shell
-  :is(.edition-header, .mobile-navigation) {
-  backdrop-filter: none;
-  box-shadow: none;
-}
-
-html[data-preset='minimal-editorial']
-  .site-body
-  .journal-shell
-  :is(.editorial-page-heading, .section-heading, .conversation-heading, .panel-heading) {
-  border-block-end: 1px solid var(--line);
-  padding-block-end: 0.85rem;
-}
-
-html[data-preset='minimal-editorial']
-  .site-body
-  .journal-shell
-  :is(
-    .editorial-calendar,
-    .schedule-ledger,
-    .editorial-discussion-list,
-    .archive-results,
-    .forum-threads
-  ) {
-  border-block-start: 2px solid var(--ink);
-}
-
-html[data-preset='minimal-editorial']
-  .site-body
-  .journal-shell
-  :is(
-    .archive-result-row,
-    .editorial-discussion,
-    .ledger-event,
-    .archive-agenda article,
-    .chip,
-    .button,
-    .next-view-toggle
-  ) {
-  border-radius: 0.2rem;
-}
-
-html[data-preset='minimal-editorial'] .site-body .journal-shell .editorial-page-heading h1 {
-  font-family: Georgia, 'Songti SC', serif;
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-/* Fluid glass: translucent instrument layers with refracted, living light. */
-html[data-preset='fluent-soft'] .site-body .journal-shell {
-  --composition-surface: color-mix(in srgb, var(--paper) 68%, transparent);
-  --composition-gutter: clamp(1rem, 4vw, 4rem);
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .edition-header {
-  isolation: isolate;
-  overflow: clip;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .liquid-glass {
-  position: absolute;
-  inset: 0 -7%;
-  z-index: 0;
-  inline-size: 114%;
-  block-size: 100%;
-  overflow: visible;
-  pointer-events: none;
-  opacity: 0.9;
-  transform: translateX(var(--lens-shift, 0));
-  transition: transform 900ms var(--composition-motion);
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .liquid-glass__edge {
-  fill: none;
-  stroke: color-mix(in srgb, var(--appearance-accent) 34%, transparent);
-  stroke-width: 0.7;
-}
-
-.site-body[data-motion='full'] .liquid-glass__flow {
-  animation: glass-river 11s ease-in-out infinite alternate;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .edition-header > :not(.liquid-glass) {
-  position: relative;
-  z-index: 1;
-}
-
-html[data-preset='fluent-soft']
-  .site-body
-  .journal-shell
-  :is(
-    .edition-header,
-    .mobile-navigation,
-    .next-searchbar,
-    .archive-inspector,
-    .forum-preview,
-    .community-welcome,
-    .reading-author-panel
-  ) {
-  border-color: color-mix(in srgb, var(--paper) 60%, var(--line));
-  background-color: color-mix(in srgb, var(--paper) 92%, transparent);
-  backdrop-filter: none;
-  box-shadow:
-    inset 0 1px color-mix(in srgb, var(--paper) 78%, transparent),
-    0 1.4rem 3.5rem -2rem color-mix(in srgb, var(--appearance-accent) 32%, transparent);
-}
-
-html[data-preset='fluent-soft']
-  .site-body
-  .journal-shell
-  :is(
-    .archive-result-row,
-    .author-card,
-    .schedule-book-cover,
-    .month-poster,
-    .archive-panel,
-    .editorial-discussion,
-    .community-cover
-  ) {
-  background:
-    radial-gradient(
-      ellipse at 80% 0%,
-      color-mix(in srgb, var(--appearance-accent) 13%, transparent),
-      transparent 64%
-    ),
-    var(--composition-surface);
-  backdrop-filter: none;
-  transition:
-    border-color 650ms var(--composition-motion),
-    transform 650ms var(--composition-motion);
-}
-
-html[data-preset='fluent-soft']
-  .site-body
-  .journal-shell
-  :is(.next-view-toggle, .chip, .button, .account-link, .mobile-navigation) {
-  border: 1px solid color-mix(in srgb, var(--paper) 48%, var(--line));
-  backdrop-filter: none;
-}
-
-html[data-preset='fluent-soft']
-  .site-body
-  .journal-shell
-  :is(
-    .archive-result-row.selected,
-    .chip.active,
-    .desktop-navigation a.active,
-    .mobile-navigation a.active
-  ) {
-  background: color-mix(in srgb, var(--accent) 17%, var(--paper));
-  box-shadow:
-    inset 0 1px color-mix(in srgb, var(--paper) 85%, transparent),
-    0 0.65rem 1.8rem -1.2rem var(--accent);
-}
-
-html[data-preset='fluent-soft'] .site-body :is(#app-dialog, .journal-appearance-dialog) {
-  background: color-mix(in srgb, var(--paper) 97%, transparent);
-  backdrop-filter: none;
-}
-
-@keyframes glass-river {
-  0% {
-    transform: translate3d(-2%, 3%, 0) scaleY(0.86);
-  }
-  100% {
-    transform: translate3d(4%, -4%, 0) scaleY(1.12);
-  }
-}
-
-/* Nature: staggered print-like surfaces and asymmetric photograph frames. */
-html[data-preset='organic-natural'] .site-body .journal-shell {
-  --composition-surface: var(--paper);
-  --composition-gutter: clamp(1.4rem, 7vw, 7rem);
-}
-
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  :is(.editorial-calendar, .editorial-conversation, .archive-panel, .reading-schedule-panel) {
-  border-radius: 2.5rem 0.8rem 2.7rem 1rem;
-}
-
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  :is(.home-reading-grid, .next-gallery, .authors-grid, .archive-bottom-grid) {
-  align-items: start;
-  grid-auto-rows: minmax(min-content, auto);
-}
-
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  :is(.editorial-discussion, .archive-result-row, .ledger-event, .forum-thread) {
-  padding-inline: clamp(0.9rem, 2.2vw, 1.8rem);
-  border-inline-start: 2px solid color-mix(in srgb, var(--accent) 42%, transparent);
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .mobile-navigation {
-  inset-inline: 6%;
-  border-radius: 2rem 0.7rem 2rem 0.7rem;
-}
-
-/* Spectrum: asymmetric instrument panels and an orbital selection language. */
-html[data-preset='gradient-narrative'] .site-body .journal-shell {
-  --composition-surface: color-mix(in srgb, var(--paper) 87%, transparent);
-  --composition-gutter: clamp(1rem, 3.4vw, 3.5rem);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .next-index-browser {
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
-  gap: clamp(1rem, 2.8vw, 3rem);
-}
-
-html[data-preset='gradient-narrative']
-  .site-body
-  .journal-shell
-  :is(.section-heading, .conversation-heading, .panel-heading, .archive-page-title) {
-  position: relative;
-  padding-inline-start: clamp(1rem, 2.2vw, 2rem);
-  border-inline-start: 2px solid var(--accent);
-}
-
-html[data-preset='gradient-narrative']
-  .site-body
-  .journal-shell
-  :is(
-    .archive-result-row.selected,
-    .editorial-date-strip button.active,
-    .forum-categories button.active,
-    .chip.active
-  ) {
-  box-shadow:
-    inset 3px 0 var(--accent),
-    0 0.7rem 2rem -1.4rem var(--accent);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .next-view-toggle {
-  padding: 0.3rem;
-  border: 1px solid var(--line);
-  border-radius: 1rem 2rem;
-  background: var(--composition-surface);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .next-view-toggle button.active {
-  color: var(--appearance-on-accent);
-  background: var(--accent);
-  box-shadow: 0 0 1.5rem color-mix(in srgb, var(--accent) 24%, transparent);
-}
-
-@media (min-width: 1000px) {
-  html[data-preset='organic-natural']
-    .site-body
-    .journal-shell
-    .home-reading-grid
-    .post-card:nth-child(3n + 2),
-  html[data-preset='organic-natural']
-    .site-body
-    .journal-shell
-    .next-gallery-card:nth-child(3n + 2) {
-    margin-block-start: 2.5rem;
-  }
-
-  html[data-preset='gradient-narrative'] .site-body .journal-shell .archive-forum {
-    grid-template-columns: minmax(8rem, 0.55fr) minmax(0, 1.25fr) minmax(0, 1fr);
-  }
-}
-
 @media (max-width: 760px) {
   .site-body .journal-shell {
     --composition-gutter: 1rem;
@@ -402,61 +126,29 @@ html[data-preset='gradient-narrative'] .site-body .journal-shell .next-view-togg
   .site-body .journal-shell :is(.preview-actions, .profile-stats, .footer-bottom) {
     flex-wrap: wrap;
   }
-
-  html[data-preset='organic-natural'] .site-body .journal-shell .mobile-navigation {
-    inset-inline: 0.75rem;
-  }
 }
 
-html[data-preset='fluent-soft']
-  .site-body[data-motion='reduced']
-  .journal-shell
-  .edition-header::after {
-  animation: none;
-}
-
-/* Directory composition uses inherited tracks so mobile does not inherit desktop spans. */
 .site-body .journal-shell .about-page {
   --directory-columns: repeat(2, minmax(0, 1fr));
-  --directory-official-span: auto;
-  --directory-personal-span: auto;
-  --directory-group-span: 1 / -1;
-  --directory-personal-offset: 0rem;
   --directory-masthead-columns: minmax(0, 1fr) minmax(0, 1.15fr);
 }
 
-.site-body .journal-shell .about-page .about-masthead {
+.site-body .journal-shell .about-masthead {
   grid-template-columns: var(--directory-masthead-columns);
 }
 
-.site-body .journal-shell .about-page .about-directory {
+.site-body .journal-shell .about-directory {
   grid-template-columns: var(--directory-columns);
 }
 
-.site-body .journal-shell .about-page .about-directory-group {
+.site-body .journal-shell .about-directory-group {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
+  border-radius: var(--theme-radius);
 }
 
-.site-body .journal-shell .about-page .about-directory-group[data-directory='official'] {
-  grid-column: var(--directory-official-span);
-}
-
-.site-body .journal-shell .about-page .about-directory-group[data-directory='personal'] {
-  grid-column: var(--directory-personal-span);
-  margin-block-start: var(--directory-personal-offset);
-}
-
-.site-body .journal-shell .about-page .about-directory-group[data-directory='group'] {
-  grid-column: var(--directory-group-span);
-}
-
-.site-body .journal-shell .about-page :is(.about-directory-links a, .about-index a) {
-  transition:
-    background-color 500ms var(--theme-ease),
-    border-color 500ms var(--theme-ease),
-    color 500ms var(--theme-ease),
-    transform 500ms var(--theme-ease);
+.site-body .journal-shell .about-directory-group[data-directory='group'] {
+  grid-column: 1 / -1;
 }
 
 .site-body .journal-shell .about-page :is(.about-directory-links a, .about-index a):focus-visible {
@@ -464,317 +156,54 @@ html[data-preset='fluent-soft']
   outline-offset: 3px;
 }
 
-html[data-preset='minimal-editorial'] .site-body .journal-shell .about-page {
-  --directory-columns: minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 1.55fr);
-  --directory-group-span: auto;
-  --directory-masthead-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+:root[data-preset='apple-native'] .site-body .journal-shell .about-page {
+  --directory-columns: minmax(0, 1fr);
+  --directory-masthead-columns: minmax(0, 1fr);
+  max-inline-size: 66rem;
 }
 
-html[data-preset='minimal-editorial'] .site-body .journal-shell .about-masthead {
-  border-block-end: 3px double var(--line);
+:root[data-preset='apple-native'] .site-body .journal-shell .about-directory-group {
+  border-inline: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
-html[data-preset='minimal-editorial'] .site-body .journal-shell .about-masthead h1 {
-  font-family: Georgia, 'Songti SC', serif;
-  font-size: clamp(3.5rem, 7vi, 6.75rem);
-  font-weight: 400;
-  letter-spacing: 0;
+:root[data-preset='material-expressive'] .site-body .journal-shell .about-directory-group {
+  background: var(--theme-tone);
+  color: var(--theme-on-tone);
+  border-color: transparent;
 }
 
-html[data-preset='minimal-editorial'] .site-body .journal-shell .about-directory-group {
-  padding-inline: 0;
-  border-block-start: 2px solid var(--ink);
-}
-
-html[data-preset='minimal-editorial'] .site-body .journal-shell .about-directory-group h2 {
-  font-size: calc(1.2rem * var(--journal-reading-scale, 1));
-  font-weight: 400;
-}
-
-html[data-preset='minimal-editorial'] .site-body .journal-shell.edition-archive .about-page {
-  --directory-columns: repeat(2, minmax(0, 1fr));
-  --directory-group-span: 1 / -1;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-page {
-  --directory-columns: repeat(12, minmax(0, 1fr));
-  --directory-official-span: span 3;
-  --directory-personal-span: span 3;
-  --directory-group-span: span 6;
-  background: var(--theme-wash);
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-masthead h1 {
-  font-size: clamp(3rem, 8vi, 7rem);
-  font-weight: 650;
-  letter-spacing: 0;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-index a {
-  min-block-size: 3.25rem;
-  border-color: color-mix(in srgb, var(--paper) 62%, var(--line));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 58%, transparent);
-  backdrop-filter: none;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group {
-  position: relative;
-  isolation: isolate;
-  border: 1px solid color-mix(in srgb, var(--paper) 58%, var(--line));
-  border-radius: 1.5rem 2.6rem 1.8rem 2.2rem;
-  background: color-mix(in srgb, var(--paper) 74%, transparent);
-  box-shadow:
-    inset 0 1px color-mix(in srgb, var(--paper) 78%, transparent),
-    0 1.5rem 4rem -2.5rem color-mix(in srgb, var(--accent) 35%, transparent);
-  overflow: clip;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background:
-    radial-gradient(
-      ellipse at 76% 8%,
-      color-mix(in srgb, var(--accent) 24%, transparent),
-      transparent 58%
-    ),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, #75c9d2 12%, transparent),
-      transparent 46%,
-      color-mix(in srgb, #efafc8 13%, transparent)
-    );
-  opacity: 0.75;
-  pointer-events: none;
-  animation: directory-tide 17s ease-in-out infinite alternate;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-group > * {
-  position: relative;
-  z-index: 1;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-links {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .about-directory-links a {
-  min-block-size: 2.9rem;
-  border: 1px solid color-mix(in srgb, var(--paper) 45%, var(--line));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 62%, transparent);
-}
-
-html[data-preset='fluent-soft']
+:root[data-preset='material-expressive']
   .site-body
   .journal-shell
-  :is(.about-directory-links a, .about-index a):is(:hover, :focus-visible) {
-  transform: translateY(-0.15rem);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-  background: color-mix(in srgb, var(--accent) 16%, var(--paper));
-  box-shadow: 0 0.8rem 1.7rem -1.1rem var(--accent);
+  .about-directory-group[data-directory='personal'] {
+  background: var(--theme-companion);
+  color: var(--theme-on-companion);
 }
 
-html[data-preset='fluent-soft'] .site-body .journal-shell.edition-archive .about-page {
-  --directory-official-span: span 6;
-  --directory-personal-span: span 6;
-  --directory-group-span: 1 / -1;
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .about-page {
-  --directory-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  --directory-personal-offset: clamp(1.5rem, 4vi, 3rem);
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .about-masthead h1 {
-  font-size: clamp(2.8rem, 7vi, 6.5rem);
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .about-directory-group {
-  border-block-start: 2px solid color-mix(in srgb, var(--accent) 54%, var(--line));
-  border-radius: 2rem 0.6rem 2.2rem 0.8rem;
-  background: color-mix(in srgb, var(--paper) 86%, transparent);
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .about-directory-links {
-  padding-inline-end: 0.9rem;
-}
-
-html[data-preset='organic-natural'] .site-body .journal-shell .about-directory-links li {
-  border-inline-start: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
-}
-
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  .about-directory-links
-  li:nth-child(even) {
-  margin-inline-start: 0.6rem;
-}
-
-html[data-preset='organic-natural']
-  .site-body
-  .journal-shell
-  .about-directory-links
-  a:is(:hover, :focus-visible) {
-  background: color-mix(in srgb, var(--accent-soft) 58%, transparent);
-  transform: translateX(0.2rem);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .about-page {
-  --directory-columns: repeat(12, minmax(0, 1fr));
-  --directory-official-span: span 4;
-  --directory-personal-span: span 3;
-  --directory-group-span: span 5;
-  --directory-masthead-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .about-masthead h1 {
-  font-size: clamp(3rem, 8vi, 7rem);
-  font-weight: 750;
-  letter-spacing: 0;
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .about-index {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.2rem;
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .about-index a {
-  border-inline-start: 2px solid var(--accent);
-  border-radius: 0 1.2rem 1.2rem 0;
-  background: linear-gradient(100deg, var(--accent-soft), transparent 80%);
-}
-
-html[data-preset='gradient-narrative'] .site-body .journal-shell .about-directory-group {
-  border-block-start: 0;
-  border-inline-start: 2px solid var(--accent);
-  border-radius: 0.65rem 1.4rem 0.65rem 0.65rem;
-  background:
-    linear-gradient(150deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 65%),
-    var(--paper);
+:root[data-preset='fluent-workspace'] .site-body .journal-shell .about-directory-group {
   box-shadow: var(--theme-shadow);
-  transition:
-    transform 700ms var(--theme-ease),
-    box-shadow 700ms var(--theme-ease);
 }
 
-html[data-preset='gradient-narrative']
-  .site-body
-  .journal-shell
-  .about-directory-group:is(:hover, :focus-within) {
-  transform: translateY(-0.2rem);
-  box-shadow: 0 1.2rem 2.5rem -1.5rem var(--accent);
+:root[data-preset='carbon-index'] .site-body .journal-shell .about-page {
+  --directory-columns: minmax(0, 1fr);
 }
 
-html[data-preset='gradient-narrative'] .site-body .journal-shell.edition-archive .about-page {
-  --directory-official-span: span 7;
-  --directory-personal-span: span 5;
-  --directory-group-span: 1 / -1;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .liquid-surface {
-  isolation: isolate;
-}
-
-html[data-preset='fluent-soft']
-  .site-body
-  .journal-shell
-  .liquid-surface:not(.about-directory-group)::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background:
-    radial-gradient(
-      ellipse at 76% 8%,
-      color-mix(in srgb, var(--accent) 16%, transparent),
-      transparent 64%
-    ),
-    linear-gradient(
-      125deg,
-      color-mix(in srgb, #75c9d2 9%, transparent),
-      transparent 42%,
-      color-mix(in srgb, #efafc8 9%, transparent)
-    );
-  opacity: 0.72;
-  pointer-events: none;
-}
-
-html[data-preset='fluent-soft'] .site-body .journal-shell .edition-header.liquid-surface::before {
-  display: none;
-}
-
-.site-body .journal-shell :is(.month-turn-face > i, .month-poster > i) {
-  inline-size: min(23.75rem, 100%);
-  block-size: auto;
-  max-block-size: 100%;
-  aspect-ratio: 1;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  inset-inline-end: auto;
-  transform: translate(-50%, -50%);
-}
-
-.site-body .journal-shell .next-collection {
-  min-inline-size: 0;
-  max-inline-size: 100%;
-}
-
-@keyframes directory-tide {
-  0% {
-    transform: scale(0.97, 0.99);
-  }
-  50% {
-    transform: scale(1, 0.98);
-  }
-  100% {
-    transform: scale(0.98, 1);
-  }
-}
-
-.site-body[data-motion='reduced'] .journal-shell .about-directory-group::before {
-  animation: none;
-}
-
-.site-body[data-motion='reduced']
-  .journal-shell
-  :is(.about-directory-group, .about-directory-links a, .about-index a) {
-  transition-duration: 0.01ms;
-}
-
-@media (min-width: 761px) and (max-width: 1199px) {
-  html[data-preset='fluent-soft'] .site-body .journal-shell .about-page {
-    --directory-official-span: span 6;
-    --directory-personal-span: span 6;
-    --directory-group-span: 1 / -1;
-  }
+:root[data-preset='carbon-index'] .site-body .journal-shell .about-directory-group {
+  grid-template-columns: minmax(0, 0.32fr) minmax(0, 1fr);
+  border: 0;
+  border-block-start: 1px solid var(--line);
 }
 
 @media (max-width: 760px) {
-  html[data-preset] .site-body .journal-shell .about-page,
-  html[data-preset] .site-body .journal-shell.edition-archive .about-page {
+  :root[data-preset] .site-body .journal-shell .about-page {
     --directory-columns: minmax(0, 1fr);
-    --directory-official-span: 1 / -1;
-    --directory-personal-span: 1 / -1;
-    --directory-group-span: 1 / -1;
-    --directory-personal-offset: 0rem;
     --directory-masthead-columns: minmax(0, 1fr);
   }
 
-  html[data-preset] .site-body .journal-shell .next-collection .next-index-browser {
+  :root[data-preset='carbon-index'] .site-body .journal-shell .about-directory-group {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .site-body .journal-shell .month-turn-face > i {
-    inline-size: min(18.75rem, 100%);
   }
 }
 

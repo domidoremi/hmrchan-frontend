@@ -1,6 +1,7 @@
 <template>
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <div class="edition-workspace">
+      <NextAtmosphere v-if="isNext" />
       <header class="edition-header" :class="isNext ? 'idol-header' : 'liquid-surface'">
         <RouterLink v-if="!isNext" class="edition-logo" to="/" tabindex="0" aria-label="MomiChan">
           <img :src="'/journal/mascot.webp'" alt="" width="40" height="40" />
@@ -147,7 +148,7 @@
     <nav
       v-if="!isNext && !isAuthRoute"
       class="mobile-navigation"
-      :class="{ 'liquid-surface': settingsStore.settings.appearancePreset === 'fluent-soft' }"
+      :class="{ 'liquid-surface': settingsStore.settings.appearancePreset === 'fluent-workspace' }"
       :aria-label="t('journal.nav.mobileNavigation')"
     >
       <RouterLink
@@ -214,6 +215,7 @@ import './styles/idol-chrome.css'
 import './styles/idol-pages.css'
 import './styles/idol-details.css'
 import './styles/idol-motion.css'
+import NextAtmosphere from './editions/NextAtmosphere.vue'
 const route = useRoute(),
   router = useRouter(),
   auth = useAuthStore()

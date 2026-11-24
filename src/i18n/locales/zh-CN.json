@@ -400,10 +400,10 @@
     "preferencesReplaced": "云端偏好设置已覆盖",
     "appearanceRuntimeFailed": "无法加载该预设，当前预设保持不变。",
     "presets": {
-      "minimal-editorial": "纸页",
-      "fluent-soft": "玻璃",
-      "organic-natural": "自然",
-      "gradient-narrative": "光谱"
+      "apple-native": "原生简约",
+      "material-expressive": "Material 3",
+      "fluent-workspace": "Fluent 2",
+      "carbon-index": "Carbon"
     },
     "preferencesLoadFailed": "偏好同步失败",
     "preferencesSaveFailed": "偏好保存失败",

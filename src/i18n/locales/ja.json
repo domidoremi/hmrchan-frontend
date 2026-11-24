@@ -400,10 +400,10 @@
     "preferencesReplaced": "クラウド設定を上書きしました",
     "appearanceRuntimeFailed": "プリセットを読み込めませんでした。現在の設定を維持します。",
     "presets": {
-      "minimal-editorial": "ペーパー",
-      "fluent-soft": "ガラス",
-      "organic-natural": "ナチュラル",
-      "gradient-narrative": "スペクトラム"
+      "apple-native": "ネイティブミニマル",
+      "material-expressive": "Material 3",
+      "fluent-workspace": "Fluent 2",
+      "carbon-index": "Carbon"
     },
     "preferencesLoadFailed": "設定を同期できませんでした",
     "preferencesSaveFailed": "設定を保存できませんでした",

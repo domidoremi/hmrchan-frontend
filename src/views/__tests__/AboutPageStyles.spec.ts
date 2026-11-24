@@ -32,24 +32,24 @@ describe('AboutPage styles', () => {
 
   it('composes each retained theme into a distinct directory layout', () => {
     for (const preset of [
-      'minimal-editorial',
-      'fluent-soft',
-      'organic-natural',
-      'gradient-narrative',
+      'apple-native',
+      'fluent-workspace',
+      'material-expressive',
+      'carbon-index',
     ]) {
       expect(themeComposition).toContain(`data-preset='${preset}'`)
     }
-    expect(themeComposition).toContain("about-directory-group[data-directory='official']")
     expect(themeComposition).toContain("about-directory-group[data-directory='personal']")
     expect(themeComposition).toContain("about-directory-group[data-directory='group']")
-    expect(themeComposition).toContain('--directory-columns: repeat(12, minmax(0, 1fr))')
-    expect(themeComposition).toContain('--directory-official-span: 1 / -1')
-    expect(themeComposition).toContain('--directory-personal-span: 1 / -1')
+    expect(themeComposition).toContain('background: var(--theme-companion)')
+    expect(themeComposition).toContain('grid-template-columns: minmax(0, 0.32fr) minmax(0, 1fr)')
+    expect(themeComposition).toContain('@media (max-width: 760px)')
   })
 
-  it('keeps the directory light inside its surface and respects reduced motion', () => {
-    expect(themeComposition).toContain('@keyframes directory-tide')
-    expect(themeComposition).toContain(".site-body[data-motion='reduced']")
-    expect(themeComposition).toMatch(/\.about-directory-group::before \{[^}]*inset: 0;/s)
+  it('gives index and directory links a visible keyboard focus state', () => {
+    expect(themeComposition).toContain(
+      ':is(.about-directory-links a, .about-index a):focus-visible'
+    )
+    expect(themeComposition).toContain('outline: 2px solid var(--accent)')
   })
 })

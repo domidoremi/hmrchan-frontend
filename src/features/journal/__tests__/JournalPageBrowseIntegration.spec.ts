@@ -54,6 +54,9 @@ vi.mock('@/stores', () => ({
   useAuthStore: () => mocks.auth,
   useFavoritesStore: () => mocks.favorites,
 }))
+vi.mock('@/stores/settings', () => ({
+  useSettingsStore: () => ({ settings: { appearancePreset: 'material-expressive' } }),
+}))
 vi.mock('@/services/authSurface', () => ({ ensureAuthStoreLoaded: vi.fn() }))
 vi.mock('@/utils/modernAPIs', () => ({
   createResizeObserver: () => null,
@@ -209,6 +212,16 @@ function expectCount(
         ? '—'
         : String(count).padStart(2, '0')
   expect(element.text()).toBe(expected)
+  if (edition === 'archive') {
+    expect(element.attributes('aria-hidden')).toBe('true')
+    const countMessage = wrapper.get('.collection-count')
+    expect(countMessage.text()).toBe(
+      count === null
+        ? i18n.global.t('journal.browse.countUnknown')
+        : i18n.global.t('journal.browse.count', { count })
+    )
+    return
+  }
   if (count === null)
     expect(element.attributes('aria-label')).toBe(i18n.global.t('journal.browse.countUnknown'))
 }
@@ -307,10 +320,20 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
       expect(wrapper.find('.next-index-browser').exists()).toBe(true)
       await modes[0]!.trigger('click')
       await flushPromises()
-      expect(mocks.route.query['view']).toBeUndefined()
+      expect(mocks.route.query['view']).toBe('grid')
       expect(wrapper.find('.next-gallery').exists()).toBe(true)
     }
   )
+  it.runIf(edition === 'archive')('leaves gallery arrow keys to the browser', async () => {
+    const data = controlledData()
+    data.posts.value = [post('first'), post('second')]
+    finishRequest(data, 'ready')
+    const { wrapper } = await renderPage(edition, '/', data)
+    const card = wrapper.get('.next-gallery [data-select-post="first"]').element
+    const key = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })
+    card.dispatchEvent(key)
+    expect(key.defaultPrevented).toBe(false)
+  })
   it.each(routes)('passes %s idle/loading/error before confirming empty', async (path, page) => {
     const data = controlledData()
     const { wrapper, i18n } = await renderPage(edition, path, data)

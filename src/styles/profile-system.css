@@ -72,34 +72,6 @@
   --appearance-page-surface-shadow: var(--profile-surface-shadow);
 }
 
-[data-preset='gradient-narrative'][data-color-mode='light'] {
-  --profile-surface-bg: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.96),
-    rgba(239, 246, 255, 0.9)
-  );
-  --profile-surface-bg-soft: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.92),
-    rgba(240, 249, 255, 0.82)
-  );
-  --profile-surface-border: rgba(59, 130, 246, 0.16);
-  --profile-surface-border-strong: rgba(59, 130, 246, 0.22);
-  --profile-surface-shadow: 0 1.4rem 3rem -2rem rgba(37, 99, 235, 0.14);
-  --profile-surface-shadow-hover: 0 1.8rem 3.4rem -2rem rgba(37, 99, 235, 0.2);
-  --profile-muted-bg: rgba(255, 255, 255, 0.84);
-  --profile-muted-bg-strong: rgba(239, 246, 255, 0.96);
-  --profile-muted-border: rgba(59, 130, 246, 0.14);
-  --profile-muted-border-strong: rgba(59, 130, 246, 0.22);
-  --profile-chip-bg: rgba(255, 255, 255, 0.88);
-  --profile-chip-border: rgba(59, 130, 246, 0.14);
-  --profile-chip-text: var(--color-text-secondary);
-  --profile-action-bg: rgba(255, 255, 255, 0.8);
-  --profile-action-bg-hover: rgba(239, 246, 255, 0.94);
-  --profile-action-border: rgba(59, 130, 246, 0.14);
-  --profile-action-border-strong: rgba(59, 130, 246, 0.22);
-}
-
 :where(.profile-item-count, .profile-stat-pill, .profile-filter-pill) {
   display: inline-flex;
   align-items: center;
