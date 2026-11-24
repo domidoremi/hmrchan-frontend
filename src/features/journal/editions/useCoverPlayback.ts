@@ -1,6 +1,5 @@
 import {
   computed,
-  inject,
   onActivated,
   onBeforeUnmount,
   onDeactivated,
@@ -12,11 +11,13 @@ import {
 import { createVisibilityObserver } from '@/utils/modernAPIs'
 import { usePostSelection } from '../presentation'
 import { createWheelRegion } from './wheelRegion'
-import { chapterKey } from './chapterContext'
+import type { ChapterContext } from './chapterContext'
 import type { JournalPost } from '../models'
 
-export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
-  const chapter = inject(chapterKey, null)
+export function useCoverPlayback(
+  posts: Readonly<Ref<JournalPost[]>>,
+  chapter: ChapterContext | null = null
+) {
   const items = computed(() => posts.value.slice(0, 6))
   const selection = usePostSelection(items)
   const root = ref<HTMLElement>()
@@ -31,13 +32,14 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     documentVisible = ref(!document.hidden)
   const lifetime = new AbortController()
   const cursor = ref(0)
-  const scrubbing = computed(() => Boolean(chapter?.enabled.value))
+  const wide = ref(Boolean(chapter) && window.innerWidth > 800)
+  const scrubbing = computed(() => Boolean(chapter?.enabled.value && wide.value))
   let timer: ReturnType<typeof setTimeout> | undefined
   let observer: IntersectionObserver | undefined
   let dialogObserver: MutationObserver | undefined
   let touch: { x: number; y: number; at: number } | undefined
   let wheelElement: HTMLElement | null = null
-  let wheelHandler: ((event: WheelEvent) => void) | undefined
+  let wheelBinding: AbortController | undefined
 
   const playing = computed(
     () =>
@@ -49,7 +51,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
       !hovered.value &&
       !focused.value &&
       !paused.value &&
-      !chapter?.enabled.value &&
+      !scrubbing.value &&
       items.value.length > 1
   )
   function clearTimer() {
@@ -65,6 +67,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
       }, 6500)
   })
   function syncEnvironment() {
+    if (chapter) wide.value = window.innerWidth > 800
     documentVisible.value = !document.hidden
     fullMotion.value = document.body.dataset['motion'] === 'full'
     blocked.value =
@@ -94,7 +97,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
   function selectSheet(id: string) {
     if (id === selection.selectedId.value) return
     selection.selectedId.value = id
-    if (chapter?.enabled.value) {
+    if (scrubbing.value && chapter) {
       if (paused.value) cursor.value = selection.index.value
       chapter.seek(selection.index.value / Math.max(1, items.value.length - 1), true)
     }
@@ -124,24 +127,36 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     root.value = element instanceof HTMLElement ? element : undefined
   }
   function bindWheel() {
+    const coverChapter = root.value?.closest<HTMLElement>('[data-cover-wheel]')
     const element =
-      root.value?.querySelector<HTMLElement>('.cover-scene, .next-stage-scene') ?? null
+      coverChapter ||
+      root.value?.querySelector<HTMLElement>('.cover-scene, .next-stage-scene') ||
+      null
     if (element === wheelElement) return
-    if (wheelElement && wheelHandler) wheelElement.removeEventListener('wheel', wheelHandler)
+    wheelBinding?.abort()
     wheelElement = element
     if (!element) return
-    wheelHandler = createWheelRegion({
+    wheelBinding = new AbortController()
+    const { signal } = wheelBinding
+    if (coverChapter) {
+      hovered.value = coverChapter.matches(':hover')
+      coverChapter.addEventListener('pointerenter', () => (hovered.value = true), { signal })
+      coverChapter.addEventListener('pointerleave', () => (hovered.value = false), { signal })
+    }
+    const wheelHandler = createWheelRegion({
       element,
       position: () => selection.index.value,
       maximum: () => items.value.length - 1,
       stepped: true,
-      enabled: () => active.value && !blocked.value && !chapter?.enabled.value,
+      wholeRegion: Boolean(coverChapter),
+      enabled: () =>
+        active.value && !blocked.value && !scrubbing.value && (!coverChapter || scrollY <= 2),
       move: (index) => {
         const post = items.value[index]
         if (post) selectSheet(post.id)
       },
     })
-    element.addEventListener('wheel', wheelHandler, { passive: false, signal: lifetime.signal })
+    element.addEventListener('wheel', wheelHandler, { passive: false, signal })
   }
   watch([root, () => items.value.length], bindWheel, { flush: 'post' })
   onMounted(() => {
@@ -165,6 +180,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     if (dialog) dialogObserver.observe(dialog, { attributes: true, attributeFilter: ['open'] })
     document.addEventListener('journalmotionchange', syncEnvironment, { signal: lifetime.signal })
     document.addEventListener('visibilitychange', syncEnvironment, { signal: lifetime.signal })
+    if (chapter) window.addEventListener('resize', syncEnvironment, { signal: lifetime.signal })
     window.addEventListener(
       'pagehide',
       () => {
@@ -196,19 +212,20 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
   })
   onBeforeUnmount(() => {
     lifetime.abort()
+    wheelBinding?.abort()
     clearTimer()
     observer?.disconnect()
     dialogObserver?.disconnect()
   })
   if (chapter) {
     watch(
-      [chapter.height, () => items.value.length],
-      ([height, count]) => {
-        chapter.travel.value = Math.max(0, count - 1) * height * 0.6
+      [chapter.height, () => items.value.length, wide],
+      ([height, count, roomy]) => {
+        chapter.travel.value = roomy ? Math.min(1, Math.max(0, count - 1) * 0.3) * height : 0
       },
       { immediate: true }
     )
-    watch([chapter.progress, chapter.enabled, active, blocked, paused], ([value, enabled]) => {
+    watch([chapter.progress, scrubbing, active, blocked, paused], ([value, enabled]) => {
       if (!enabled || !active.value || blocked.value || paused.value) return
       cursor.value = value * Math.max(0, items.value.length - 1)
       const item = items.value[Math.round(cursor.value)]
@@ -225,6 +242,7 @@ export function useCoverPlayback(posts: Readonly<Ref<JournalPost[]>>) {
     focused,
     paused,
     playing,
+    fullMotion,
     hasEntered,
     position,
     copyStyle,

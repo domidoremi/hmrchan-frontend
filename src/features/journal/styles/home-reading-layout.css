@@ -1,3 +1,17 @@
+.site-body .journal-shell .immersive-home .journal-masthead {
+  /* The animated masthead must remain above the following photograph stack. */
+  position: relative;
+  z-index: 2;
+}
+
+.site-body .journal-shell .immersive-chapter:has(.home-contents-menu[open]) {
+  z-index: 2;
+}
+
+.site-body .journal-shell .chapter-surface:has(.home-contents-menu[open]) {
+  overflow: visible;
+}
+
 .site-body .journal-shell .journal-masthead .masthead-tools {
   display: flex;
   align-items: center;
@@ -17,7 +31,6 @@
 
 .site-body .journal-shell .home-contents-menu {
   position: relative;
-  z-index: 30;
   margin-inline-start: auto;
   color: var(--ink);
   font-size: calc(0.8rem * var(--journal-reading-scale));
@@ -54,9 +67,9 @@
   inset-block-start: calc(100% + 0.5rem);
   inset-inline-end: 0;
   inline-size: min(19rem, calc(100vw - 3rem));
-  max-block-size: min(65svh, 30rem);
+  max-block-size: min(var(--contents-room, 65svh), 30rem);
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
   padding: 0.4rem;
   border: 1px solid var(--line);
   border-radius: var(--theme-radius);
@@ -65,29 +78,67 @@
 }
 
 .site-body .journal-shell .home-contents-menu a {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
   gap: 0.8rem;
   min-block-size: 2.75rem;
   padding: 0.65rem 0.8rem;
-  border-radius: var(--theme-radius);
+  border-radius: var(--theme-control-radius);
   overflow-wrap: anywhere;
 }
 
 .site-body .journal-shell .home-contents-menu a:is(:hover, [aria-current]) {
-  background: var(--accent-soft);
+  background: var(--theme-tone);
+  color: var(--theme-on-tone);
+}
+
+.site-body .journal-shell .home-contents-menu a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.site-body .journal-shell .cover-next-chapter {
+  display: inline-grid;
+  place-items: center;
+  justify-self: center;
+  inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--theme-control-radius);
   color: var(--accent);
+  background: var(--paper);
 }
 
-.site-body .journal-shell .home-contents-menu a > :is(span, small) {
-  font:
-    0.75em ui-monospace,
-    monospace;
+.site-body .journal-shell .cover-next-chapter .icon {
+  inline-size: 1.25em;
+  block-size: 1.25em;
 }
 
-.site-body .journal-shell .home-contents-menu a > b {
-  font-weight: 550;
+.site-body .journal-shell .cover-next-chapter:is(:hover, :focus-visible) {
+  color: var(--theme-on-tone);
+  background: var(--theme-tone);
+}
+
+.site-body[data-motion='full'] .journal-shell .cover-next-chapter .icon {
+  transition: translate var(--journal-duration-control) var(--journal-ease);
+}
+
+.site-body[data-motion='full'] .journal-shell .cover-next-chapter:hover .icon {
+  translate: 0 0.15em;
+}
+
+.site-body .journal-shell .cover-next-chapter-compact {
+  display: none;
+}
+
+@media (max-width: 959px), (max-height: 760px) {
+  .site-body .journal-shell .cover-next-chapter-end {
+    display: none;
+  }
+
+  .site-body .journal-shell .cover-next-chapter-compact {
+    display: inline-grid;
+  }
 }
 
 .site-body .journal-shell .editorial-reading-aside[data-reading-sticky='true'] {
@@ -103,7 +154,17 @@
   }
 
   .site-body .journal-shell .journal-masthead .masthead-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     inline-size: 100%;
-    justify-content: space-between;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .site-body .journal-shell .masthead-tools > time {
+    grid-column: 1 / -1;
+  }
+
+  .site-body .journal-shell .cover-next-chapter-compact {
+    justify-self: start;
   }
 }

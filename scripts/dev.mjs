@@ -12,12 +12,7 @@ import {
 import { LocalApiBridgeManager } from './lib/preview-shell.js'
 
 const LOCAL_API_BRIDGE_TIMEOUT_MS = 20_000
-const LOCAL_API_ENV_FILES = [
-  '.env',
-  '.env.local',
-  '.env.development',
-  '.env.development.local',
-]
+const LOCAL_API_ENV_FILES = ['.env', '.env.local', '.env.development', '.env.development.local']
 
 function readEnvFileValue(filePath, key) {
   if (!existsSync(filePath)) return null

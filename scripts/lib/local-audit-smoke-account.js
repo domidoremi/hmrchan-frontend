@@ -61,8 +61,8 @@ export function resolveLocalAuditSmokeAccount(login) {
 export function shouldEnsureLocalAuditSmokeAccount(baseUrl, credentials) {
   return Boolean(
     isLocalAuditOrigin(baseUrl) &&
-      isNonEmptyString(credentials?.login) &&
-      isNonEmptyString(credentials?.password)
+    isNonEmptyString(credentials?.login) &&
+    isNonEmptyString(credentials?.password)
   )
 }
 
@@ -161,17 +161,7 @@ ON CONFLICT (user_id) DO NOTHING;
 
   const result = spawn(
     'docker',
-    [
-      'exec',
-      postgresContainer,
-      'psql',
-      '-U',
-      postgresUser,
-      '-d',
-      postgresDb,
-      '-c',
-      sql,
-    ],
+    ['exec', postgresContainer, 'psql', '-U', postgresUser, '-d', postgresDb, '-c', sql],
     {
       encoding: 'utf8',
       env,

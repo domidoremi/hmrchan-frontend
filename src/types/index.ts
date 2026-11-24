@@ -3,7 +3,7 @@ export type ColorMode = 'light' | 'dark' | 'auto'
 export type Theme = ColorMode
 
 export type AppearancePreset =
-  'minimal-editorial' | 'fluent-soft' | 'organic-natural' | 'gradient-narrative'
+  'apple-native' | 'material-expressive' | 'fluent-workspace' | 'carbon-index'
 
 export type MotionMode = 'none' | 'reduced' | 'standard' | 'expressive'
 

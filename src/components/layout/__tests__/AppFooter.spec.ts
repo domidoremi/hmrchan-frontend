@@ -27,7 +27,7 @@ const themeStoreState = reactive({
 
 const settingsStoreState = reactive({
   settings: {
-    appearancePreset: 'minimal-editorial',
+    appearancePreset: 'apple-native',
   },
 })
 

@@ -30,7 +30,7 @@ for (const file of getTrackedMarkdownFiles()) {
 
   const content = readFileSync(absolutePath, 'utf8')
 
-  for (const issue of findMarkdownSanitizationIssues(content)) {
+  for (const issue of findMarkdownSanitizationIssues(content, file)) {
     issues.push({ file, ...issue })
   }
 }

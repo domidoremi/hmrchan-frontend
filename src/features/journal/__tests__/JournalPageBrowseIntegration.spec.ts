@@ -54,6 +54,9 @@ vi.mock('@/stores', () => ({
   useAuthStore: () => mocks.auth,
   useFavoritesStore: () => mocks.favorites,
 }))
+vi.mock('@/stores/settings', () => ({
+  useSettingsStore: () => ({ settings: { appearancePreset: 'fluent-workspace' } }),
+}))
 vi.mock('@/services/authSurface', () => ({ ensureAuthStoreLoaded: vi.fn() }))
 vi.mock('@/utils/modernAPIs', () => ({
   createResizeObserver: () => null,
@@ -261,15 +264,29 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
       { ...post('first'), likes: 20 },
       { ...post('second'), likes: 300 },
       { ...post('third'), likes: 80 },
+      { ...post('fourth'), likes: 35 },
+      { ...post('fifth'), likes: 150 },
+      { ...post('sixth'), likes: 10 },
+      { ...post('seventh'), likes: 7 },
     ]
     finishRequest(data, 'ready')
-    const { wrapper } = await renderPage(edition, '/', data)
+    const { wrapper, i18n } = await renderPage(edition, '/', data)
     const grid = edition === 'archive' ? '.archive-result-list' : '.home-reading-grid'
-    const sort =
-      edition === 'archive' ? '.next-filter-selects select' : '.editorial-source-bar select'
+    const sort = wrapper.get<HTMLSelectElement>(
+      edition === 'archive' ? '.next-filter-selects select' : '.editorial-sort'
+    )
+    const sortName =
+      sort.attributes('aria-label') ??
+      sort.element.labels?.[0]?.querySelector('.sr-only')?.textContent
+    expect(sortName).toBe(i18n.global.t('explore.sortBy'))
+    expect([...sort.element.options].map((option) => option.text)).toEqual([
+      i18n.global.t('explore.newest'),
+      i18n.global.t('journal.filters.mostLiked'),
+    ])
     const original = wrapper.findAll(`${grid} > [data-post]`).map((item) => item.element)
+    expect(original).toHaveLength(edition === 'archive' ? 7 : 6)
     mocks.router.replace.mockClear()
-    await wrapper.get(sort).setValue('popular')
+    await sort.setValue('popular')
     await flushPromises()
     expect(mocks.router.replace).toHaveBeenCalledTimes(1)
     expect(mocks.router.replace).toHaveBeenCalledWith({
@@ -277,13 +294,17 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
       query: { sort: 'popular' },
     })
     expect(mocks.route.query['sort']).toBe('popular')
-    expect(
-      wrapper.findAll(`${grid} > [data-post]`).map((item) => item.attributes('data-post'))
-    ).toEqual(['second', 'third', 'first'])
-    expect(wrapper.findAll(`${grid} > [data-post]`).map((item) => item.element)).toEqual([
+    expect(sort.element.value).toBe('popular')
+    const visible = wrapper.findAll(`${grid} > [data-post]`)
+    expect(visible.map((item) => item.attributes('data-post'))).toEqual(
+      edition === 'archive'
+        ? ['second', 'fifth', 'third', 'fourth', 'first', 'sixth', 'seventh']
+        : ['second', 'fifth', 'third', 'fourth', 'first', 'sixth']
+    )
+    expect([visible[0]?.element, visible[2]?.element, visible[3]?.element]).toEqual([
       original[1],
       original[2],
-      original[0],
+      original[3],
     ])
     expect(
       wrapper.getComponent(edition === 'archive' ? ArchiveHome : EditorialHome).props('allPosts')
@@ -307,7 +328,7 @@ describe.each(['editorial', 'archive'] as const)('JournalPage → %s Browse', (e
       expect(wrapper.find('.next-gallery').exists()).toBe(true)
       await modes[1]!.trigger('click')
       await flushPromises()
-      expect(mocks.route.query['view']).toBeUndefined()
+      expect(mocks.route.query['view']).toBe('list')
       expect(wrapper.find('.next-index-browser').exists()).toBe(true)
     }
   )

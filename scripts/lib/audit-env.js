@@ -4,15 +4,10 @@ import path from 'node:path'
 export const LOCAL_AUDIT_ENV_FILE = '.env.smoke.local'
 export const LOCAL_AUDIT_CONTRACT_VERSION = 'local-audit-contract'
 export const LOCAL_AUDIT_PREVIEW_PORTS = Object.freeze([4173, 5173, 3000])
-const BACKEND_AUDIT_ENV_FILE_CANDIDATES = Object.freeze([
-  ['..', 'hmrchan-backend', '.env'],
-])
+const BACKEND_AUDIT_ENV_FILE_CANDIDATES = Object.freeze([['..', 'hmrchan-backend', '.env']])
 const BACKEND_ENV_FALLBACK_KEYS = Object.freeze({
   REHEARSAL_TURNSTILE_BYPASS_TOKEN: ['REHEARSAL_TURNSTILE_BYPASS_TOKEN'],
-  VITE_CLIENT_CONTRACT_VERSION: [
-    'VITE_CLIENT_CONTRACT_VERSION',
-    'CLIENT_CONTRACT_VERSION',
-  ],
+  VITE_CLIENT_CONTRACT_VERSION: ['VITE_CLIENT_CONTRACT_VERSION', 'CLIENT_CONTRACT_VERSION'],
   BACKEND_INTERNAL_AUTH_SHARED_SECRET: [
     'BACKEND_INTERNAL_AUTH_SHARED_SECRET',
     'INTERNAL_API_SHARED_SECRET',
@@ -40,10 +35,7 @@ const BACKEND_ENV_FALLBACK_KEYS = Object.freeze({
     'VITE_IDENTITY_API_BASE_URL',
     'INTERNAL_IDENTITY_API_BASE_URL',
   ],
-  VPC_COMMUNITY_API_ORIGIN: [
-    'VPC_COMMUNITY_API_ORIGIN',
-    'VITE_COMMUNITY_API_BASE_URL',
-  ],
+  VPC_COMMUNITY_API_ORIGIN: ['VPC_COMMUNITY_API_ORIGIN', 'VITE_COMMUNITY_API_BASE_URL'],
   VPC_CONTENT_API_ORIGIN: ['VPC_CONTENT_API_ORIGIN', 'VITE_CONTENT_API_BASE_URL'],
 })
 
@@ -97,10 +89,7 @@ export function parseAuditEnvFile(content) {
   return values
 }
 
-export function readLocalAuditEnv({
-  cwd = process.cwd(),
-  fileName = LOCAL_AUDIT_ENV_FILE,
-} = {}) {
+export function readLocalAuditEnv({ cwd = process.cwd(), fileName = LOCAL_AUDIT_ENV_FILE } = {}) {
   const filePath = path.resolve(cwd, fileName)
   if (!fs.existsSync(filePath)) {
     return {
@@ -196,10 +185,7 @@ export function createLocalAuditEnv(
   Object.assign(mergedEnv, overrides)
   applyBackendAuditFallbacks(mergedEnv, { cwd })
 
-  if (
-    includeContractFallback &&
-    !hasTrimmedValue(mergedEnv.VITE_CLIENT_CONTRACT_VERSION)
-  ) {
+  if (includeContractFallback && !hasTrimmedValue(mergedEnv.VITE_CLIENT_CONTRACT_VERSION)) {
     mergedEnv.VITE_CLIENT_CONTRACT_VERSION = LOCAL_AUDIT_CONTRACT_VERSION
   }
 

@@ -240,7 +240,7 @@
   animation: journal-letter-arrive 650ms var(--journal-ease) backwards;
   animation-delay: calc(var(--letter-index, 0) * 25ms);
 }
-.site-body[data-motion='full'] .journal-shell .journal-masthead > strong {
+.site-body[data-motion='full'] .journal-shell .journal-masthead > .journal-name {
   animation: journal-masthead-arrive 1100ms cubic-bezier(0.16, 0.8, 0.23, 1) backwards;
 }
 .site-body[data-motion='full'] .journal-shell .next-stage:not(.has-entered) .motion-letter {

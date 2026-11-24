@@ -41,6 +41,7 @@ export function useHomeScroll() {
         prevent: (node) =>
           Boolean(node.closest('dialog, input, textarea, select, [data-lenis-prevent]')),
         virtualScroll: ({ event, deltaX, deltaY }) =>
+          !event.defaultPrevented &&
           !event.ctrlKey &&
           !event.shiftKey &&
           !event.altKey &&

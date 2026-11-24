@@ -55,3 +55,15 @@ Node 官方索引在本次查询确认 26.13.1；Bun owner API 仍返回 403，�
 本次官方 npm 快照完整取得 42 个包的元数据，覆盖每站 43 条直接依赖。采用 jsdom 31.0.1 与 Workers 类型 5.20261113.1，正常 Bun 安装生成锁文件并执行既有安装脚本。主站 Vue / compiler-sfc 继续使用稳定版 3.5.45，Next 保持单独的 3.6.0-rc.15 测试线；TypeScript JavaScript API 6.0.3 与独立 CLI 7.0.2 的兼容安排继续适用。
 
 jsdom 补丁影响 DOM 测试环境，Workers 类型更新影响 Functions 与内部 Worker 的类型检查。两者均须在新提交上重新执行完整静态门禁和正常构建，浏览器与发布结果分别登记。该版本记录不声明性能收益，也不把尚未执行的真实账号或设备检查记为通过。
+
+## 2026-11-24 · Vue 补丁与净化器更新
+
+本次只更新有兼容依据的前端运行时与 HTML 净化器，没有为了追新扩大依赖升级范围：
+
+- 主站 `vue` 与 `@vue/compiler-sfc` 从 `3.5.45` 同步升至 `3.5.46`。截至 2026-11-24，npm `latest` 均为 `3.5.46`；保持同一补丁版本，延续主站稳定通道。
+- Next 的 `vue` 与 `@vue/compiler-sfc` 从 `3.6.0-rc.15` 同步升至 `3.6.0-rc.16`。npm `rc` 标签指向 `3.6.0-rc.16`；它仍是预发布测试通道，不作为稳定版描述。升级过程中曾短暂选到稳定线，最终版本、锁文件与安装包均已恢复并核对为 RC 配对版本。
+- 两站 `dompurify` 从 `3.4.17` 升至 `3.5.0`，与 npm `latest` 一致。保留项目 HTML 净化边界；相关净化回归、完整测试和依赖审计均在最终依赖上重新执行。
+- Node 保持 `26.13.1`，Bun 保持 `1.4.4`，Vite 保持 `8.3.8`。没有将这些未因本轮兼容或功能需求而需变更的工具强行升级。
+- npm tag 快照见[依赖版本记录](../../../hmrchan-frontend-next/output/validation/20261124-theme-depth-final/dependency-tags-final.json)。最终两站完整单测、应用/函数/worker 类型、Vue SFC 严格类型、严格 lint、格式、复杂度、`bun audit` 和生产构建均通过。`bun audit` 分别检查 `621` 与 `623` 个包，没有报告漏洞。
+- 每站生产输出静态预渲染 `10` 个 HTML 页面；`110` 个 SHA-384 SRI 资源覆盖 `11` 个 HTML，生产安全检查通过。预算门禁未放宽：主站 JS `1.73 MiB`、CSS `791.7 KiB`，图片距预算上限仅余 `328` 字节；Next JS `1.70 MiB`、CSS `830.7 KiB`、图片 `1.85 MiB`，首页初始资源均为 `6/8`。详见[完整验证日志](../../../hmrchan-frontend-next/output/validation/20261124-theme-depth-final/)。
+- 本地无头 Chromium 的短时 RAF 采样只用于发现问题，不代表手机实测、生产 Lighthouse 或基准性能承诺。相关边界与用户待验收状态记录在[本轮 UI/UX 验收记录](uiux-acceptance.md)。

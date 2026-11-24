@@ -157,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PublicAuthorAvatar from '@/components/business/PublicAuthorAvatar.vue'
 import { journalPostTimeLabel } from '../localizedPostTime'
@@ -166,6 +166,7 @@ import { platforms, type JournalPost } from '../models'
 import JournalIcon from '../JournalIcon.vue'
 import JournalImage from '../JournalImage.vue'
 import MotionTitle from './MotionTitle.vue'
+import { chapterKey } from './chapterContext'
 import { useCoverPlayback } from './useCoverPlayback'
 
 const props = defineProps<{ posts: JournalPost[] }>()
@@ -189,7 +190,10 @@ const {
   touchStart,
   touchEnd,
   touchCancel,
-} = useCoverPlayback(computed(() => props.posts))
+} = useCoverPlayback(
+  computed(() => props.posts),
+  inject(chapterKey, null)
+)
 const satellite = computed(() =>
   items.value.length > 1 ? items.value[(index.value + 1) % items.value.length] : undefined
 )

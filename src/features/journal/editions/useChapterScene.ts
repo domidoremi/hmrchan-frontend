@@ -20,7 +20,6 @@ export function useChapterScene(
   let resize: ResizeObserver | null = null
   let mutation: MutationObserver | undefined
   let motionTargets: HTMLElement[] = []
-  let masthead: HTMLElement | null = null
   const lifetime = new AbortController()
   const duration = () => Math.max(0, travel.value)
   function property(element: HTMLElement | null | undefined, name: string, value: string) {
@@ -59,12 +58,15 @@ export function useChapterScene(
       '--chapter-run',
       `${enabled.value && duration() > 0 ? duration() + overflow : 0}px`
     )
-    masthead = content.value.querySelector('.journal-masthead')
-    motionTargets = Array.from(
-      content.value.querySelectorAll(
-        '.section-heading, .conversation-heading, .panel-heading, .next-desk-header, .month-poster'
-      )
-    )
+    const surface = content.value.parentElement
+    motionTargets =
+      surface && element.parentElement?.matches('.editorial-home.immersive-home')
+        ? [surface]
+        : Array.from(
+            content.value.querySelectorAll(
+              '.section-heading, .conversation-heading, .panel-heading, .next-desk-header, .month-poster'
+            )
+          )
     readPosition()?.()
   }
   function scheduleMeasure() {
@@ -75,12 +77,13 @@ export function useChapterScene(
     if (!element || document.hidden) return
     const rect = element.getBoundingClientRect()
     const position = chapterPosition(top - rect.top, overflow, duration(), height.value)
+    const threshold = 1 / height.value
     const state =
-      rect.top >= innerHeight || rect.bottom <= top
+      rect.top >= innerHeight - 1 || rect.bottom <= top + 1
         ? 'outside'
-        : position.enter < 1
+        : position.enter < 1 - threshold
           ? 'entering'
-          : position.leave > 0
+          : position.leave > threshold
             ? 'leaving'
             : 'reading'
     return () => {
@@ -89,7 +92,6 @@ export function useChapterScene(
         property(target, '--chapter-enter', String(moving ? position.enter : 1))
         property(target, '--chapter-leave', String(moving ? position.leave : 0))
       }
-      property(masthead, '--chapter-flow', String(moving ? position.flow : 0))
       property(
         content.value,
         '--chapter-shift',

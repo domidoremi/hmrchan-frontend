@@ -29,13 +29,14 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
-function install(stepped = false) {
+function install(stepped = false, wholeRegion = false) {
   const handler = createWheelRegion({
     element: region,
     position: () => position,
     maximum: () => maximum,
     move,
     stepped,
+    wholeRegion,
   })
   region.addEventListener('wheel', handler, { passive: false })
 }
@@ -123,5 +124,38 @@ describe('wheel region intent', () => {
     time += 500
     wheel({ deltaY: -120 })
     expect(position).toBe(1)
+  })
+
+  it('covers the whole chapter and releases a fresh gesture after the boundary', () => {
+    maximum = 1
+    let time = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => time)
+    install(true, true)
+    const edge = { clientX: 101, clientY: 101 }
+    expect(wheel({ ...edge, deltaY: 900 }).defaultPrevented).toBe(true)
+    expect(position).toBe(1)
+    for (const deltaY of [60, 32, 9]) {
+      time += 70
+      expect(wheel({ ...edge, deltaY }).defaultPrevented).toBe(true)
+    }
+    time += 200
+    expect(wheel(edge).defaultPrevented).toBe(false)
+    time += 500
+    expect(wheel({ ...edge, deltaY: -120 }).defaultPrevented).toBe(true)
+    expect(position).toBe(0)
+    expect(wheel({ ...edge, deltaY: -30 }).defaultPrevented).toBe(true)
+    time += 200
+    expect(wheel({ ...edge, deltaY: -120 }).defaultPrevented).toBe(false)
+  })
+
+  it('leaves scrolling within the contents menu and single-item chapters native', () => {
+    install(true, true)
+    const menu = document.createElement('nav')
+    menu.setAttribute('data-wheel-native', '')
+    region.append(menu)
+    expect(wheel({}, menu).defaultPrevented).toBe(false)
+    maximum = 0
+    expect(wheel().defaultPrevented).toBe(false)
+    expect(move).not.toHaveBeenCalled()
   })
 })

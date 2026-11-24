@@ -37,7 +37,6 @@ body.site-body {
 .site-body
   .journal-shell
   :is(
-    .home-reading-grid .post-card:nth-child(n),
     .post-media,
     .cover-sheet,
     .next-stage-photo,
@@ -48,9 +47,7 @@ body.site-body {
   ) {
   border-radius: var(--theme-photo-radius);
 }
-.site-body
-  .journal-shell
-  :is(.home-reading-grid, .archive-bottom-grid, .author-grid, .forum-layout) {
+.site-body .journal-shell :is(.archive-bottom-grid, .author-grid, .forum-layout) {
   gap: var(--theme-gap);
 }
 .site-body
@@ -150,115 +147,6 @@ body.site-body {
   outline-offset: 3px;
 }
 
-/* Paper keeps ruled sections and photographs framed like a printed spread. */
-[data-preset='minimal-editorial'] .journal-shell .home-reading-grid .post-card:nth-child(n) {
-  border: 0;
-  border-block-end: 1px solid var(--line);
-  border-radius: 0;
-  padding: 0 0 1.25rem;
-  background: transparent;
-  box-shadow: none;
-}
-[data-preset='minimal-editorial'] .journal-shell .section-heading {
-  border-block-start: 2px solid var(--ink);
-  padding-block-start: 1rem;
-}
-[data-preset='minimal-editorial'] .journal-shell .archive-panel {
-  box-shadow: none;
-}
-[data-preset='minimal-editorial'] .journal-shell .reader-body {
-  font-family: var(--theme-title-font);
-}
-
-/* Glass uses inset panels and rounded, separated records. */
-[data-preset='fluent-soft']
-  .journal-shell
-  :is(.archive-inspector, .next-stage, .month-poster, .community-welcome) {
-  background-image: var(--theme-wash);
-}
-[data-preset='fluent-soft'] .journal-shell .archive-result-row {
-  margin-block: 0.4rem;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-}
-[data-preset='fluent-soft'] .journal-shell .section-heading {
-  padding: 1rem 1.25rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 1.25rem;
-}
-[data-preset='fluent-soft'] .journal-shell .edition-header {
-  box-shadow: var(--theme-shadow);
-}
-
-/* Nature gives reading more space and uses asymmetric, rectangular photo frames. */
-[data-preset='organic-natural'] .journal-shell .home-reading-grid .post-card:nth-child(n) {
-  padding: 1.25rem;
-  border-radius: var(--theme-radius);
-}
-[data-preset='organic-natural'] .journal-shell .post-title {
-  font-family: var(--theme-title-font);
-}
-[data-preset='organic-natural'] .journal-shell .section-heading {
-  padding-block: 1.25rem;
-  border-block-start: 1px solid var(--accent);
-}
-[data-preset='organic-natural'] .journal-shell .archive-result-row {
-  padding-block: 1.15rem;
-}
-[data-preset='organic-natural'] .journal-shell .archive-inspector {
-  background-image: var(--theme-wash);
-  padding: 1.5rem;
-}
-
-/* Spectrum uses split compositions, luminous edges and quiet surfaces behind text. */
-[data-preset='gradient-narrative']
-  .journal-shell
-  :is(.archive-inspector, .next-stage, .spatial-cover, .community-welcome) {
-  background-image: var(--theme-wash);
-}
-[data-preset='gradient-narrative'] .journal-shell .section-heading {
-  border-inline-start: 3px solid var(--accent);
-  padding-inline-start: 1rem;
-}
-[data-preset='gradient-narrative'] .journal-shell .home-reading-grid .post-card:nth-child(n) {
-  border-block-start: 2px solid var(--accent);
-  border-radius: var(--theme-radius);
-}
-[data-preset='gradient-narrative'] .journal-shell .archive-result-row.selected {
-  box-shadow:
-    inset 3px 0 var(--accent),
-    0 0 1.5rem color-mix(in srgb, var(--accent) 12%, transparent);
-}
-[data-preset='gradient-narrative'] .journal-shell .preview-content {
-  border-inline-start: 2px solid var(--accent);
-}
-
-@media (min-width: 960px) {
-  .site-body .journal-shell .spatial-cover {
-    grid-template-columns: var(--theme-cover-columns);
-  }
-  .site-body .journal-shell .next-collection .next-index-browser {
-    grid-template-columns: var(--theme-index-columns);
-  }
-  [data-preset='fluent-soft'] .journal-shell .editorial-reading-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.38fr);
-  }
-  [data-preset='organic-natural'] .journal-shell .editorial-reading-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.32fr);
-    gap: 3rem;
-  }
-  [data-preset='gradient-narrative'] .journal-shell .home-reading-grid .post-card:first-child {
-    grid-column: 1 / -1;
-  }
-  [data-preset='gradient-narrative']
-    .journal-shell
-    .home-reading-grid
-    .post-card:first-child
-    .post-media {
-    aspect-ratio: 16 / 9;
-  }
-}
 @media (max-width: 600px) {
   .site-body .journal-shell :is(.section-heading, .archive-inspector) {
     padding-inline: 1rem;
@@ -302,10 +190,24 @@ body.site-body {
 }
 .site-body[data-motion='full']
   .journal-shell
-  :is(.spatial-cover, .next-stage).motion-offscreen
+  :is(.spatial-cover, .next-stage):is(.motion-offscreen, [data-paused])
   :is(.cover-deck, .scene-light, .next-stage-planes, .next-orbit) {
   animation-play-state: paused;
 }
+.site-body[data-motion='full']:is(.journal-appearance-open, :has(dialog[open]))
+  .journal-shell
+  :is(.cover-deck, .scene-light) {
+  animation-play-state: paused;
+}
+.site-body[data-motion='full']:is(.journal-suspended, .journal-appearance-open, :has(dialog[open]))
+  .journal-shell
+  .liquid-glass__flow,
+.site-body[data-motion='full']:is(.journal-suspended, .journal-appearance-open, :has(dialog[open]))
+  .journal-shell
+  .status-light:not(.dim)::after {
+  animation-play-state: paused;
+}
+
 @keyframes theme-photo-float {
   from {
     translate: calc(var(--theme-float-x, 0rem) * -1) calc(var(--theme-float-y, 0.25rem) * -1);

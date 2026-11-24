@@ -40,10 +40,12 @@ function normalizePathForReport(filePath, rootDir) {
 }
 
 function findLargestFile(files) {
-  return files.toSorted((left, right) => right.size - left.size)[0] ?? {
-    relativePath: null,
-    size: 0,
-  }
+  return (
+    files.toSorted((left, right) => right.size - left.size)[0] ?? {
+      relativePath: null,
+      size: 0,
+    }
+  )
 }
 
 export function countHomeInitialAssets(indexHtml) {

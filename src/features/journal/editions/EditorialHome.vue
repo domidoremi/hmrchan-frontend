@@ -1,11 +1,21 @@
 <template>
-  <div class="editorial-home editorial-page immersive-home">
+  <div ref="home" class="editorial-home editorial-page immersive-home">
     <HomeAtmosphere />
-    <ImmersiveChapter id="issue-cover" kind="cover">
-      <div class="journal-masthead" data-masthead>
-        <strong><MotionTitle text="MomiChan" /></strong>
+    <ImmersiveChapter id="issue-cover" kind="cover" aria-labelledby="issue-title" data-cover-wheel>
+      <div class="journal-masthead">
+        <h1 id="issue-title" class="journal-name" aria-label="MomiChan">
+          <MotionTitle text="MomiChan" />
+        </h1>
         <div class="masthead-tools">
           <time>{{ date }}</time>
+          <a
+            class="cover-next-chapter cover-next-chapter-compact"
+            href="#issue-latest"
+            :aria-label="t('journal.home.latest')"
+            @click="jumpToSection($event, 'issue-latest')"
+          >
+            <JournalIcon name="down" />
+          </a>
           <HomeContentsMenu :sections="contents" />
         </div>
       </div>
@@ -33,48 +43,74 @@
         empty-message-key="journal.states.noPosts"
         @retry="$emit('retry')"
       />
+      <a
+        class="cover-next-chapter cover-next-chapter-end"
+        href="#issue-latest"
+        :aria-label="t('journal.home.latest')"
+        @click="jumpToSection($event, 'issue-latest')"
+      >
+        <JournalIcon name="down" />
+      </a>
     </ImmersiveChapter>
-    <ImmersiveChapter id="issue-latest" kind="reading" data-reading-section>
+    <ImmersiveChapter
+      id="issue-latest"
+      kind="reading"
+      aria-labelledby="issue-latest-heading"
+      data-reading-section
+    >
       <div class="editorial-reading-layout">
         <section class="editorial-latest" data-reveal>
           <div class="section-heading">
-            <span class="section-number">01</span>
-            <h2>{{ t('journal.home.latest') }}</h2>
+            <h2 id="issue-latest-heading">{{ t('journal.home.latest') }}</h2>
             <RouterLink to="/explore"
               >{{ t('journal.home.allPosts') }} <JournalIcon name="arrow-up-right"
             /></RouterLink>
           </div>
           <div class="editorial-source-bar">
-            <div class="chips" data-indicator>
+            <div
+              class="chips"
+              role="group"
+              :aria-label="t('journal.filters.source')"
+              data-indicator
+            >
               <button
                 class="chip"
+                type="button"
                 :class="{ active: platform === 'all' }"
+                :aria-pressed="platform === 'all'"
                 @click="$emit('platform', 'all')"
               >
-                {{ t('common.all') }}</button><button
+                {{ t('common.all') }}
+              </button>
+              <button
                 v-for="source in sources"
                 :key="source.key"
                 class="chip"
+                type="button"
                 :class="{ active: platform === source.key }"
+                :aria-pressed="platform === source.key"
                 @click="$emit('platform', source.key)"
               >
                 {{ journalSourceLabel(source.key, source.label, t) }}
               </button>
             </div>
-            <label
-              ><span class="sr-only">{{ t('explore.sortBy') }}</span
-              ><select :value="sort" @change="changeSort">
-                <option value="latest">{{ t('explore.newest') }}</option>
-                <option value="popular">{{ t('journal.filters.mostLiked') }}</option>
-              </select></label
+            <select
+              class="editorial-sort"
+              :aria-label="t('explore.sortBy')"
+              :value="sort"
+              @change="changeSort"
             >
+              <option value="latest">{{ t('explore.newest') }}</option>
+              <option value="popular">{{ t('journal.filters.mostLiked') }}</option>
+            </select>
           </div>
           <div ref="readingGrid" class="editorial-grid home-reading-grid">
             <JournalPostCard
-              v-for="post in posts.slice(0, 8)"
+              v-for="post in recentPosts"
               :key="post.id"
               :post="post"
               :saved="savedPosts.has(post.id)"
+              preview
               data-reveal
               @save="(item, event) => $emit('save', item, event)"
             />
@@ -88,21 +124,31 @@
         </section>
         <EditorialReadingAside
           :posts="allPosts"
-          :events="events"
+          :events="events.slice(0, 1)"
           :states="states"
           :month-name="monthName"
           @retry="$emit('retry')"
         />
       </div>
     </ImmersiveChapter>
-    <ImmersiveChapter v-if="pictures.length" id="issue-film" kind="film" data-reading-section>
+    <ImmersiveChapter
+      v-if="pictures.length"
+      id="issue-film"
+      kind="film"
+      aria-labelledby="issue-film-heading"
+      data-reading-section
+    >
       <EditorialFilm :posts="pictures" />
     </ImmersiveChapter>
-    <ImmersiveChapter id="issue-calendar" kind="calendar" data-reading-section>
+    <ImmersiveChapter
+      id="issue-calendar"
+      kind="calendar"
+      aria-labelledby="issue-calendar-heading"
+      data-reading-section
+    >
       <section class="editorial-calendar" data-reveal>
         <div class="section-heading">
-          <span class="section-number">03</span>
-          <h2>{{ t('schedule.title') }}</h2>
+          <h2 id="issue-calendar-heading">{{ t('schedule.title') }}</h2>
           <RouterLink to="/schedule"
             >{{ t('journal.calendar.allEvents') }} <JournalIcon name="arrow-up-right"
           /></RouterLink>
@@ -133,11 +179,15 @@
         </div>
       </section>
     </ImmersiveChapter>
-    <ImmersiveChapter id="issue-conversation" kind="community" data-reading-section>
+    <ImmersiveChapter
+      id="issue-conversation"
+      kind="community"
+      aria-labelledby="issue-conversation-heading"
+      data-reading-section
+    >
       <section class="editorial-conversation" data-reveal>
         <div class="conversation-heading">
-          <span aria-hidden="true">04</span>
-          <h2>{{ t('journal.nav.discussions') }}</h2>
+          <h2 id="issue-conversation-heading">{{ t('journal.nav.discussions') }}</h2>
           <RouterLink to="/community"
             >{{ t('journal.home.visitCommunity') }} <JournalIcon name="arrow-up-right"
           /></RouterLink>
@@ -190,6 +240,8 @@ import HomeAtmosphere from './HomeAtmosphere.vue'
 import MotionTitle from './MotionTitle.vue'
 import ImmersiveChapter from './ImmersiveChapter.vue'
 import HomeContentsMenu from './HomeContentsMenu.vue'
+import { useHomeSectionJump } from './homeAnchor'
+import { useHomeChapterWheel } from './useHomeChapterWheel'
 import { useReadingMasonry } from './useReadingMasonry'
 import JournalIcon from '../JournalIcon.vue'
 import JournalResourceState from '../JournalResourceState.vue'
@@ -204,6 +256,9 @@ import { sourceGroups } from '../presentation'
 import type { JournalPost, JournalEvent, JournalDiscussion } from '../models'
 import { journalKey } from '../context'
 const { locale, t } = useI18n({ useScope: 'global' })
+const jumpToSection = useHomeSectionJump()
+const home = ref<HTMLElement>()
+useHomeChapterWheel(home)
 const props = defineProps<{
   states: JournalResourceStates
   posts: JournalPost[]
@@ -228,11 +283,12 @@ function changeSort(event: Event) {
 }
 const sources = computed(() => sourceGroups(props.allPosts)),
   pictures = computed(() => props.allPosts.filter((post) => post.image).slice(0, 10))
+const recentPosts = computed(() => props.posts.slice(0, 6))
 const runtime = inject(journalKey, shallowRef(null))
 const readingGrid = ref<HTMLElement>()
 const { layout: layoutReadingGrid } = useReadingMasonry(readingGrid)
 watch(
-  () => props.posts,
+  recentPosts,
   async (_posts, _previous, onCleanup) => {
     let current = true
     onCleanup(() => {
@@ -252,34 +308,26 @@ watch(
   { flush: 'pre' }
 )
 const contents = computed(() => [
-  { id: 'issue-cover', number: '00', label: t('home.latest'), count: null },
+  { id: 'issue-cover', label: t('journal.next.featured') },
   {
     id: 'issue-latest',
-    number: '01',
-    label: t('journal.nav.posts'),
-    count: props.states.posts === 'ready' ? props.posts.length : null,
+    label: t('journal.home.latest'),
   },
   ...(pictures.value.length
     ? [
         {
           id: 'issue-film',
-          number: '02',
           label: t('journal.film.title'),
-          count: pictures.value.length,
         },
       ]
     : []),
   {
     id: 'issue-calendar',
-    number: '03',
-    label: t('schedule.title'),
-    count: props.states.events === 'ready' ? props.events.length : null,
+    label: t('journal.home.monthEvents', { month: monthName.value }),
   },
   {
     id: 'issue-conversation',
-    number: '04',
     label: t('journal.nav.discussions'),
-    count: props.states.discussions === 'ready' ? props.discussions.length : null,
   },
 ])
 const today = new Date()

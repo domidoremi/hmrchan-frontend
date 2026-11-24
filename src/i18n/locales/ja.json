@@ -400,10 +400,10 @@
     "preferencesReplaced": "クラウド設定を上書きしました",
     "appearanceRuntimeFailed": "プリセットを読み込めませんでした。現在の設定を維持します。",
     "presets": {
-      "minimal-editorial": "ペーパー",
-      "fluent-soft": "ガラス",
-      "organic-natural": "ナチュラル",
-      "gradient-narrative": "スペクトラム"
+      "apple-native": "ネイティブミニマル",
+      "material-expressive": "Material 3",
+      "fluent-workspace": "Fluent 2",
+      "carbon-index": "Carbon"
     },
     "preferencesLoadFailed": "設定を同期できませんでした",
     "preferencesSaveFailed": "設定を保存できませんでした",
@@ -1837,7 +1837,7 @@
       "latest": "最近の更新",
       "allPosts": "すべての投稿",
       "visitCommunity": "コミュニティへ",
-      "contents": "今号の目次",
+      "contents": "このページの目次",
       "currentPosts": "最近の投稿",
       "sourcesCountUnknown": "情報源の数は未取得です",
       "eventsCountUnknown": "予定の数は未取得です",

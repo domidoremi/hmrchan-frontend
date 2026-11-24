@@ -1,8 +1,7 @@
 <template>
   <section class="editorial-film" data-reveal>
     <div class="film-heading">
-      <span aria-hidden="true">02</span>
-      <h2>{{ t('journal.film.title') }}</h2>
+      <h2 id="issue-film-heading">{{ t('journal.film.title') }}</h2>
       <div>
         <button
           class="icon-button"
@@ -46,14 +45,14 @@
         class="film-frame"
         :class="{ 'is-current': i === index }"
       >
-        <button :data-open="post.id" class="film-photo" :aria-label="post.title">
+        <button :data-open="post.id" class="film-photo" aria-haspopup="dialog">
           <span class="film-photo-label"
             >{{ String(i + 1).padStart(2, '0') }} / {{ post.author }}</span
           >
           <JournalImage
             :src="post.image!"
             :original-src="post.originalImage"
-            :alt="post.title"
+            alt=""
             loading="lazy"
             width="400"
             height="520"

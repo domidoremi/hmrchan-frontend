@@ -1,3 +1,5 @@
+@import './theme-materials.css';
+
 /* Explicit roles also cover components loaded after the main journal stylesheet. */
 html[data-preset]
   .site-body

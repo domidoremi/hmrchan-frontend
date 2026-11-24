@@ -72,25 +72,6 @@
   --post-modal-border: rgba(255, 255, 255, 0.12);
 }
 
-[data-preset='gradient-narrative'][data-color-mode='light'] .post-detail-page {
-  --post-bg-base: #f0f9ff;
-  --post-bg-spot-1: rgba(59, 130, 246, 0.1);
-  --post-bg-spot-2: rgba(99, 102, 241, 0.08);
-  --post-text-primary: #0f172a;
-  --post-text-secondary: #475569;
-  --post-text-tertiary: #64748b;
-  --post-panel-bg: rgba(255, 255, 255, 0.88);
-  --post-panel-border: rgba(59, 130, 246, 0.12);
-  --post-overlay: rgba(15, 23, 42, 0.48);
-  --post-overlay-soft: rgba(15, 23, 42, 0.2);
-  --post-overlay-text: #f8fafc;
-  --post-media-bg: transparent;
-  --post-shadow-sm: 0 1px 3px rgba(59, 130, 246, 0.06), 0 4px 12px rgba(59, 130, 246, 0.04);
-  --post-shadow-md: 0 2px 4px rgba(59, 130, 246, 0.06), 0 8px 20px rgba(59, 130, 246, 0.06);
-  --post-modal-bg: rgba(240, 249, 255, 0.95);
-  --post-modal-border: rgba(59, 130, 246, 0.15);
-}
-
 .post-stage {
   position: relative;
   box-sizing: border-box;
@@ -698,15 +679,13 @@
 }
 
 /* Light theme: darker nav buttons for contrast */
-:root .media-nav,
-[data-preset='gradient-narrative'][data-color-mode='light'] .media-nav {
+:root .media-nav {
   background: rgba(15, 23, 42, 0.56);
   border-color: rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.96);
 }
 
-:root .media-nav:hover:not(:disabled),
-[data-preset='gradient-narrative'][data-color-mode='light'] .media-nav:hover:not(:disabled) {
+:root .media-nav:hover:not(:disabled) {
   background: rgba(15, 23, 42, 0.72);
 }
 

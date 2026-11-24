@@ -1007,108 +1007,81 @@
 
 /* Mobile panel theme overrides — light theme */
 @media (max-width: 768px) {
-  :root .vp__panel,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel {
-    background: rgba(255, 255, 255, 0.97);
-    border-color: rgba(0, 0, 0, 0.06);
+  :root .vp__panel {
+    background: var(--appearance-surface-1, rgb(255 255 255 / 0.97));
+    border-color: var(--appearance-border);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
     color: var(--color-text-primary, #0f172a);
   }
 
-  :root .vp__panel::before,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel::before {
+  :root .vp__panel::before {
     background: rgba(0, 0, 0, 0.15);
   }
 
-  :root .vp__panel-head,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-head {
+  :root .vp__panel-head {
     border-bottom-color: rgba(0, 0, 0, 0.08);
   }
 
-  :root .vp__panel-title,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-title {
+  :root .vp__panel-title {
     color: var(--color-text-secondary, #475569);
   }
 
-  :root .vp__btn--close,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__btn--close {
+  :root .vp__btn--close {
     color: var(--color-text-secondary, #475569);
   }
 
-  :root .vp__panel-label,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-label {
+  :root .vp__panel-label {
     color: var(--color-text-tertiary, #64748b);
   }
 
-  :root .vp__chip,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__chip {
+  :root .vp__chip {
     border-color: rgba(0, 0, 0, 0.1);
     color: var(--color-text-primary, #0f172a);
   }
 
-  :root .vp__chip:hover,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__chip:hover {
+  :root .vp__chip:hover {
     background: rgba(0, 0, 0, 0.04);
     border-color: rgba(0, 0, 0, 0.15);
   }
 
-  :root .vp__sub-item,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__sub-item {
+  :root .vp__sub-item {
     color: var(--color-text-primary, #0f172a);
   }
 
-  :root .vp__sub-item:hover,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__sub-item:hover {
+  :root .vp__sub-item:hover {
     background: rgba(0, 0, 0, 0.04);
   }
 
-  :root .vp__panel-slider-row,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-slider-row {
+  :root .vp__panel-slider-row {
     color: var(--color-text-tertiary, #64748b);
   }
 
-  :root .vp__panel-slider-row .vp__slider--panel,
-  [data-preset='gradient-narrative'][data-color-mode='light']
-    .vp__panel-slider-row
-    .vp__slider--panel {
+  :root .vp__panel-slider-row .vp__slider--panel {
     background: rgba(0, 0, 0, 0.1);
   }
 
-  :root .vp__panel-slider-row .vp__slider--panel::-webkit-slider-thumb,
-  [data-preset='gradient-narrative'][data-color-mode='light']
-    .vp__panel-slider-row
-    .vp__slider--panel::-webkit-slider-thumb {
+  :root .vp__panel-slider-row .vp__slider--panel::-webkit-slider-thumb {
     background: var(--color-primary, #18181b);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
-  :root .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb,
-  [data-preset='gradient-narrative'][data-color-mode='light']
-    .vp__panel-slider-row
-    .vp__slider--panel::-moz-range-thumb {
+  :root .vp__panel-slider-row .vp__slider--panel::-moz-range-thumb {
     background: var(--color-primary, #18181b);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 
-  :root .vp__panel-backdrop,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel-backdrop {
+  :root .vp__panel-backdrop {
     background: rgba(0, 0, 0, 0.2);
   }
 
-  :root .vp__subtitle-preview-wrap,
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__subtitle-preview-wrap {
+  :root .vp__subtitle-preview-wrap {
     background: #1e293b;
   }
 
-  /* Gradient preset accent tint on panel */
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__panel {
-    border-color: rgba(59, 130, 246, 0.1);
-  }
-
-  [data-preset='gradient-narrative'][data-color-mode='light'] .vp__chip.is-active {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: rgba(59, 130, 246, 0.3);
-    color: #2563eb;
+  :root .vp__chip.is-active {
+    background: var(--theme-tone, var(--color-surface-2));
+    border-color: var(--color-primary);
+    color: var(--theme-on-tone, var(--color-primary));
   }
 }
 

@@ -23,7 +23,7 @@ vi.mock('pinia', async () => {
 
 const settingsStoreState = reactive({
   settings: reactive({
-    appearancePreset: 'minimal-editorial',
+    appearancePreset: 'apple-native',
   }),
   setAppearancePreset: vi.fn(),
 })
@@ -39,27 +39,25 @@ vi.mock('@/stores', () => ({
 }))
 
 vi.mock('@/config/appearance', () => ({
-  getAppearancePresetSpecs: () => [{ preset: 'minimal-editorial' }, { preset: 'fluent-soft' }],
+  getAppearancePresetSpecs: () => [{ preset: 'apple-native' }, { preset: 'material-expressive' }],
 }))
 
 describe('AppearancePresetPicker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    settingsStoreState.settings.appearancePreset = 'minimal-editorial'
+    settingsStoreState.settings.appearancePreset = 'apple-native'
   })
 
   it('presents the available themes with selected state', () => {
     const wrapper = mount(AppearancePresetPicker)
     expect(wrapper.findAll('button')).toHaveLength(2)
-    expect(wrapper.find('[data-preset="minimal-editorial"]').attributes('aria-pressed')).toBe(
-      'true'
-    )
+    expect(wrapper.find('[data-preset="apple-native"]').attributes('aria-pressed')).toBe('true')
   })
 
   it('applies a different preset without waiting for another network request', async () => {
     const wrapper = mount(AppearancePresetPicker)
-    await wrapper.find('[data-preset="fluent-soft"]').trigger('click')
+    await wrapper.find('[data-preset="material-expressive"]').trigger('click')
     await flushPromises()
-    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('fluent-soft')
+    expect(settingsStoreState.setAppearancePreset).toHaveBeenCalledWith('material-expressive')
   })
 })

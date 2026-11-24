@@ -56,8 +56,8 @@
   --letterbook-shadow-soft: 0 0.9rem 2.25rem -1.9rem rgb(84 41 64 / 0.24);
 }
 
-:root[data-preset='minimal-editorial'],
-#app[data-preset='minimal-editorial'] {
+:root[data-preset='apple-native'],
+#app[data-preset='apple-native'] {
   --letterbook-canvas-light: #fff8fb;
   --letterbook-paper-light: #fffcfd;
   --letterbook-accent-light: #cc4778;
@@ -71,8 +71,8 @@
   --letterbook-radius: 0.85rem;
 }
 
-:root[data-preset='fluent-soft'],
-#app[data-preset='fluent-soft'] {
+:root[data-preset='fluent-workspace'],
+#app[data-preset='fluent-workspace'] {
   --letterbook-canvas-light: #fff9fc;
   --letterbook-paper-light: #fffefe;
   --letterbook-accent-light: #d55580;
@@ -87,25 +87,8 @@
   --letterbook-photo-radius: 2rem;
 }
 
-:root[data-preset='material-calm'],
-#app[data-preset='material-calm'] {
-  --letterbook-canvas-light: #fffaf7;
-  --letterbook-paper-light: #fffefd;
-  --letterbook-ink-light: #492b38;
-  --letterbook-accent-light: #bd6677;
-  --letterbook-accent-rgb-light: 189, 102, 119;
-  --letterbook-blue-light: #c7e0eb;
-  --letterbook-butter-light: #ecd39b;
-  --letterbook-canvas-dark: #251a1f;
-  --letterbook-paper-dark: #302329;
-  --letterbook-accent-dark: #e68c9a;
-  --letterbook-accent-rgb-dark: 230, 140, 154;
-  --letterbook-radius: 0.65rem;
-  --letterbook-photo-radius: 1rem;
-}
-
-:root[data-preset='organic-natural'],
-#app[data-preset='organic-natural'] {
+:root[data-preset='material-expressive'],
+#app[data-preset='material-expressive'] {
   --letterbook-canvas-light: #fbfaf4;
   --letterbook-paper-light: #fffdf8;
   --letterbook-ink-light: #3f332e;
@@ -123,67 +106,8 @@
   --letterbook-radius: 1.15rem;
 }
 
-:root[data-preset='biophilic-serene'],
-#app[data-preset='biophilic-serene'] {
-  --letterbook-canvas-light: #f8fbf7;
-  --letterbook-paper-light: #fefffc;
-  --letterbook-ink-light: #304139;
-  --letterbook-muted-light: #60766b;
-  --letterbook-accent-light: #749b87;
-  --letterbook-accent-rgb-light: 116, 155, 135;
-  --letterbook-accent-soft-light: #cce0d5;
-  --letterbook-blue-light: #c6e1e8;
-  --letterbook-butter-light: #eee2b7;
-  --letterbook-blob-light: #dfeee2;
-  --letterbook-canvas-dark: #17231e;
-  --letterbook-paper-dark: #213029;
-  --letterbook-accent-dark: #9ac6ad;
-  --letterbook-accent-rgb-dark: 154, 198, 173;
-  --letterbook-blue-dark: #395b61;
-  --letterbook-radius: 1.5rem;
-}
-
-:root[data-preset='clay-playful'],
-#app[data-preset='clay-playful'] {
-  --letterbook-canvas-light: #fff8f3;
-  --letterbook-paper-light: #fffdf9;
-  --letterbook-ink-light: #4d3040;
-  --letterbook-accent-light: #df7198;
-  --letterbook-accent-rgb-light: 223, 113, 152;
-  --letterbook-accent-soft-light: #f6c5d5;
-  --letterbook-blue-light: #bfe0e8;
-  --letterbook-butter-light: #f4cf83;
-  --letterbook-blob-light: #f7dccd;
-  --letterbook-canvas-dark: #2a1b22;
-  --letterbook-paper-dark: #39252e;
-  --letterbook-accent-dark: #f28db0;
-  --letterbook-accent-rgb-dark: 242, 141, 176;
-  --letterbook-radius: 1.75rem;
-  --letterbook-photo-radius: 2.2rem;
-  --letterbook-shadow: 0 1.7rem 3.6rem -2.2rem rgb(91 46 66 / 0.36);
-}
-
-:root[data-preset='sketch-doodle'],
-#app[data-preset='sketch-doodle'] {
-  --letterbook-canvas-light: #fffaf6;
-  --letterbook-paper-light: #fffefd;
-  --letterbook-ink-light: #40373f;
-  --letterbook-muted-light: #73656e;
-  --letterbook-accent-light: #c95f86;
-  --letterbook-accent-rgb-light: 201, 95, 134;
-  --letterbook-blue-light: #c8dbe2;
-  --letterbook-butter-light: #efdca7;
-  --letterbook-blob-light: #ecdfe6;
-  --letterbook-canvas-dark: #211b20;
-  --letterbook-paper-dark: #2c242a;
-  --letterbook-accent-dark: #e986aa;
-  --letterbook-accent-rgb-dark: 233, 134, 170;
-  --letterbook-radius: 0.45rem;
-  --letterbook-photo-radius: 0.7rem;
-}
-
-:root[data-preset='gradient-narrative'],
-#app[data-preset='gradient-narrative'] {
+:root[data-preset='carbon-index'],
+#app[data-preset='carbon-index'] {
   --letterbook-canvas-light: #fbf5fb;
   --letterbook-paper-light: #fffaff;
   --letterbook-ink-light: #402a45;
@@ -327,8 +251,7 @@ body {
 }
 
 body::before,
-[data-color-mode='dark'] body::before,
-[data-preset='gradient-narrative'][data-color-mode='light'] body::before {
+[data-color-mode='dark'] body::before {
   z-index: 0;
   background:
     radial-gradient(
@@ -2315,21 +2238,7 @@ body::before,
   color: var(--letterbook-ink);
 }
 
-/* Preset signatures stay gentle and fan-oriented. */
-#app[data-preset='sketch-doodle'] :where(.page-list-card, .settings-section, .auth-shell) {
-  border-style: dashed;
-}
-
-#app[data-preset='clay-playful'] :where(.btn, .page-control, .appearance-preset-card) {
-  box-shadow: 0 0.5rem 0 color-mix(in srgb, var(--letterbook-line-strong) 52%, transparent);
-}
-
-#app[data-preset='clay-playful'] :where(.btn, .page-control, .appearance-preset-card):active {
-  transform: translateY(0.22rem);
-  box-shadow: 0 0.2rem 0 color-mix(in srgb, var(--letterbook-line-strong) 52%, transparent);
-}
-
-#app[data-preset='gradient-narrative'] {
+#app[data-preset='carbon-index'] {
   background:
     linear-gradient(
       145deg,
@@ -2339,8 +2248,7 @@ body::before,
     transparent;
 }
 
-#app[data-preset='organic-natural'] .hero-letterbook-frame,
-#app[data-preset='biophilic-serene'] .hero-letterbook-frame {
+#app[data-preset='material-expressive'] .hero-letterbook-frame {
   border-color: color-mix(in srgb, var(--letterbook-paper-strong) 88%, var(--letterbook-blue));
 }
 
@@ -2649,8 +2557,7 @@ body::before,
   }
 
   body::before,
-  [data-color-mode='dark'] body::before,
-  [data-preset='gradient-narrative'][data-color-mode='light'] body::before {
+  [data-color-mode='dark'] body::before {
     background:
       radial-gradient(
         ellipse 22rem 18rem at 105% 0%,

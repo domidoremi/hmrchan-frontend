@@ -1,4 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef, toRaw } from 'vue'
 import type { FavoriteResponse } from '@/api/favoriteService'
@@ -14,6 +15,7 @@ import SpatialCover from '../editions/SpatialCover.vue'
 import { createJournalTestI18n, type JournalTestLocale } from './journalTestI18n'
 
 vi.mock('@/utils/modernAPIs', () => ({
+  createResizeObserver: () => ({ observe: vi.fn(), disconnect: vi.fn() }),
   createVisibilityObserver: () => ({ observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }),
 }))
 
@@ -37,7 +39,7 @@ const item = (): JournalPost => ({
 })
 function global(i18n: TestI18n) {
   return {
-    plugins: [i18n],
+    plugins: [createPinia(), i18n],
     provide: { [journalKey as symbol]: shallowRef({ SpatialMotion: { layout: vi.fn() } }) },
     stubs: { JournalIcon: true, JournalImage: true },
   }
@@ -134,7 +136,7 @@ const surfaces: {
   {
     name: 'spatial cover',
     time: '.cover-source time',
-    focus: '.cover-article h1 button',
+    focus: '.cover-article h2 button',
     assertState: assertCurrentSpatialCover,
     mount: (post: JournalPost, i18n: TestI18n) =>
       mount(SpatialCover, {

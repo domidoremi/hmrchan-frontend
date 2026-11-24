@@ -1,0 +1,48 @@
+:is(:root, #app)[data-preset='apple-native'] {
+  --appearance-canvas: #f5f5f7;
+  --appearance-surface-1: #ffffff;
+  --appearance-surface-2: #ededf0;
+  --appearance-text-primary: #1d1d1f;
+  --appearance-text-secondary: #535359;
+  --appearance-border: #c9c9ce;
+  --appearance-accent: #005ab6;
+  --appearance-accent-rgb: 0, 90, 182;
+  --appearance-on-accent: #ffffff;
+  --theme-ui-font:
+    -apple-system, BlinkMacSystemFont, 'Inter', var(--font-family, system-ui), sans-serif;
+  --theme-title-font: var(--theme-ui-font);
+  --theme-heading-weight: 680;
+  --theme-radius: 1rem;
+  --theme-control-radius: 1.5rem;
+  --theme-photo-radius: 0.625rem;
+  --theme-gap: 1.5rem;
+  --theme-duration: 560ms;
+  --theme-ease: cubic-bezier(0.22, 0.65, 0.3, 1);
+  --theme-shadow: 0 1px 3px rgb(18 19 24 / 0.07);
+  --theme-float-x: 0rem;
+  --theme-float-y: 0.25rem;
+  --theme-float-angle: 0deg;
+  --theme-ambient-duration: 14s;
+  --theme-film: #202226;
+  --theme-tone: #e8f2ff;
+  --theme-on-tone: #093f7a;
+  --theme-reveal-distance: 0.85rem;
+  --theme-reveal-from: translateY(var(--theme-reveal-distance));
+  --theme-press-scale: 0.97;
+  --theme-reading-size: 62ch;
+  --theme-backdrop: blur(0.85rem);
+}
+
+:is(:root, #app)[data-preset='apple-native'][data-color-mode='dark'] {
+  --appearance-canvas: #171719;
+  --appearance-surface-1: #232326;
+  --appearance-surface-2: #313135;
+  --appearance-text-primary: #f5f5f7;
+  --appearance-text-secondary: #c4c4cd;
+  --appearance-border: #5c5c64;
+  --appearance-accent: #8dc6ff;
+  --appearance-accent-rgb: 141, 198, 255;
+  --appearance-on-accent: #092745;
+  --theme-tone: #233a56;
+  --theme-on-tone: #c8e3ff;
+}

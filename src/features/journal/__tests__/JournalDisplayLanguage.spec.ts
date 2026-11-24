@@ -11,7 +11,7 @@ vi.mock('@/stores', async () => {
   const { defineStore } = await import('pinia')
   return {
     useSettingsStore: defineStore('journal-language-settings', {
-      state: () => ({ appearancePreset: 'minimal-editorial' }),
+      state: () => ({ appearancePreset: 'apple-native' }),
       actions: {
         setAppearancePreset(value: string) {
           this.appearancePreset = value

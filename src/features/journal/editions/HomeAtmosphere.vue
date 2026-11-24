@@ -16,8 +16,9 @@ import { useHomeScroll } from './useHomeScroll'
 import '../styles/scene-artwork.css'
 
 const host = useTemplateRef<HTMLElement>('host')
+const props = withDefaults(defineProps<{ smoothScroll?: boolean }>(), { smoothScroll: true })
 const settings = useSettingsStore()
 const preset = computed(() => settings.settings.appearancePreset)
-useHomeScroll()
+if (props.smoothScroll) useHomeScroll()
 useAtmosphereScroll(host)
 </script>

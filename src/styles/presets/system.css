@@ -1,6 +1,7 @@
 :is(:root, #app)[data-preset] {
-  --appearance-font-family: var(--locale-font-family, 'Inter', 'Segoe UI', sans-serif);
-  --appearance-reading-max-inline-size: 66ch;
+  --theme-ui-font: var(--font-family, 'Inter', 'Segoe UI', sans-serif);
+  --appearance-font-family: var(--theme-ui-font);
+  --appearance-reading-max-inline-size: var(--theme-reading-size, 66ch);
   --appearance-content-max-inline-size: min(94vw, 84rem);
   --appearance-reading-line-height: 1.8;
   --appearance-ui-line-height: 1.5;
@@ -36,7 +37,7 @@
   --appearance-surface-border-token: 1px solid var(--appearance-border);
   --appearance-surface-border-strong-token: 1px solid var(--appearance-border-strong);
   --appearance-focus-ring-token: 0 0 0 2px var(--appearance-accent);
-  --appearance-backdrop-token: blur(1.25rem);
+  --appearance-backdrop-token: var(--theme-backdrop, none);
   --appearance-success: #24633c;
   --appearance-warning: #895000;
   --appearance-danger: #ac303c;
@@ -44,6 +45,7 @@
   --color-primary-rgb: var(--appearance-accent-rgb);
   --color-primary-light: var(--appearance-accent);
   --color-primary-dark: var(--appearance-accent);
+  --color-on-primary: var(--appearance-on-accent);
   --color-accent: var(--appearance-accent);
   --color-accent-rgb: var(--appearance-accent-rgb);
   --color-background: var(--appearance-canvas);
@@ -94,7 +96,7 @@
   --page-shell-control-bg-hover: var(--appearance-surface-2);
   --page-shell-control-border: var(--appearance-border);
   --page-shell-control-border-strong: var(--appearance-accent);
-  --page-shell-control-active-bg: var(--appearance-surface-2);
+  --page-shell-control-active-bg: var(--theme-tone);
   --page-shell-control-active-border: var(--appearance-accent);
   --page-hero-bg: var(--theme-wash), var(--appearance-surface-1);
   --page-hero-border: var(--appearance-surface-border-token);
@@ -114,13 +116,14 @@
   --page-overlay-bg: var(--appearance-surface-1);
   --page-overlay-border: var(--appearance-surface-border-strong-token);
   --page-overlay-shadow: var(--appearance-shadow-strong);
-  --page-accent-bg: var(--appearance-surface-2);
-  --page-accent-text: var(--appearance-text-primary);
+  --page-accent-bg: var(--theme-tone);
+  --page-accent-text: var(--theme-on-tone);
   --page-density-stack-gap: var(--theme-gap);
   --page-density-section-gap: calc(var(--theme-gap) * 2);
   --page-motion-duration: var(--theme-duration);
   --page-motion-ease: var(--theme-ease);
   --theme-title-font: Georgia, 'Songti SC', SimSun, serif;
+  --theme-meta-font: var(--theme-ui-font);
   --theme-cover-columns: 0.95fr 1.05fr;
   --theme-index-columns: 1.2fr 0.8fr;
   --theme-wash: linear-gradient(transparent, transparent);
@@ -130,8 +133,4 @@
   --appearance-success: #96d9ae;
   --appearance-warning: #f2cc8e;
   --appearance-danger: #ffabb7;
-}
-
-:is(:root, #app)[data-edition='archive'] {
-  --theme-title-font: 'Inter', 'Microsoft YaHei', system-ui, sans-serif;
 }

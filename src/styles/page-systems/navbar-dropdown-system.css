@@ -76,9 +76,3 @@
   );
   --nav-shell-shadow: none;
 }
-
-#app[data-preset='gradient-narrative'][data-color-mode='light'] .navbar,
-[data-preset='gradient-narrative'][data-color-mode='light'] .navbar {
-  --nav-shell-bg: transparent;
-  --nav-shell-border: rgba(96, 165, 250, 0.16);
-}

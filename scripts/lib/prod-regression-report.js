@@ -71,7 +71,7 @@ export function buildRunnerPreflightChecks({
       classification: artifactDirReady ? null : 'dependency',
       detail: artifactDirReady
         ? `Artifacts will be written to ${config.artifactDir}`
-        : artifactDirError ?? `Failed to prepare ${config.artifactDir}`,
+        : (artifactDirError ?? `Failed to prepare ${config.artifactDir}`),
     },
     {
       name: 'shared route contract',
@@ -122,7 +122,8 @@ export function buildRunnerPreflightMarkdownSummary(summary) {
   const failedLines =
     failedChecks.length > 0
       ? failedChecks.map(
-          (check) => `- ${check.name}: ${check.classification ?? 'failed'} · ${check.detail ?? 'n/a'}`
+          (check) =>
+            `- ${check.name}: ${check.classification ?? 'failed'} · ${check.detail ?? 'n/a'}`
         )
       : ['- none']
 

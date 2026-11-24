@@ -86,14 +86,6 @@ body::before {
     var(--color-background);
 }
 
-/* Gradient preset: soft blue ambient glow */
-[data-preset='gradient-narrative'][data-color-mode='light'] body::before {
-  background:
-    radial-gradient(ellipse 80% 60% at 25% 15%, rgba(59, 130, 246, 0.06) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 80% 70%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
-    var(--color-background);
-}
-
 /* Dark mode: subtle noise overlay for depth */
 [data-color-mode='dark'] body::after {
   content: '';

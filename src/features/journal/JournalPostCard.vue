@@ -9,17 +9,17 @@
         :src="post.image"
         :original-src="post.originalImage"
         :alt="post.title"
-        width="400"
-        height="400"
+        :width="preview ? '160' : '400'"
+        :height="preview ? '160' : '400'"
         loading="lazy"
       />
-      <span class="media-type"
+      <span v-if="!preview" class="media-type"
         ><JournalIcon :name="post.type === '节目' ? 'headphones' : 'image'" />{{
           journalContentTypeLabel(post.type, t)
         }}</span
       >
     </button>
-    <button v-else class="text-post" :data-open="post.id">
+    <button v-else-if="!preview" class="text-post" :data-open="post.id">
       <span aria-hidden="true">“</span>
       <p>
         <template v-for="(line, index) in textLines" :key="index"
@@ -48,10 +48,16 @@
         }}</span
       ><time>{{ journalPostTimeLabel(post, t, locale) }}</time>
     </div>
-    <button v-if="post.image || copy.showTextTitle" class="post-title" :data-open="post.id">
+    <button
+      v-if="preview || post.image || copy.showTextTitle"
+      class="post-title"
+      :data-open="post.id"
+    >
       {{ post.title }}
     </button>
-    <p v-if="post.image && copy.showImageExcerpt" class="post-excerpt">{{ post.text }}</p>
+    <p v-if="!preview && post.image && copy.showImageExcerpt" class="post-excerpt">
+      {{ post.text }}
+    </p>
     <div class="post-bottom">
       <button
         v-if="post.author || post.authorId"
@@ -79,7 +85,7 @@ import { journalPostTimeLabel } from './localizedPostTime'
 import { platforms, type JournalPost } from './models'
 import { postCopyPresentation } from './post-copy'
 const { locale, t } = useI18n({ useScope: 'global' })
-const props = defineProps<{ post: JournalPost; saved: boolean }>()
+const props = defineProps<{ post: JournalPost; saved: boolean; preview?: boolean }>()
 const textLines = computed(() => (props.post.text || props.post.title).split('\n'))
 const copy = computed(() => postCopyPresentation(props.post))
 defineEmits<{ save: [post: JournalPost, event: MouseEvent] }>()

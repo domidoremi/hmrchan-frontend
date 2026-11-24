@@ -30,7 +30,7 @@ describe('Settings Store', () => {
   it('applies backend preferences without overwriting local-only settings', () => {
     const store = useSettingsStore()
 
-    store.setAppearancePreset('fluent-soft')
+    store.setAppearancePreset('fluent-workspace')
     store.setAppUpdateStrategy('aggressive-idle-refresh')
 
     store.applyPreferences({
@@ -48,7 +48,7 @@ describe('Settings Store', () => {
     expect(store.settings.cookieConsent).toBe(true)
     expect(store.settings.analyticsEnabled).toBe(true)
     expect(store.settings.performanceCookiesEnabled).toBe(true)
-    expect(store.settings.appearancePreset).toBe('fluent-soft')
+    expect(store.settings.appearancePreset).toBe('fluent-workspace')
     expect(store.settings.appUpdateStrategy).toBe('aggressive-idle-refresh')
   })
 
@@ -188,15 +188,15 @@ describe('Settings Store', () => {
   it('keeps appearance preset as the only runtime appearance state', () => {
     const store = useSettingsStore()
 
-    store.setAppearancePreset('fluent-soft')
-    expect(store.settings.appearancePreset).toBe('fluent-soft')
+    store.setAppearancePreset('fluent-workspace')
+    expect(store.settings.appearancePreset).toBe('fluent-workspace')
 
-    store.setAppearancePreset('gradient-narrative')
-    expect(store.settings.appearancePreset).toBe('gradient-narrative')
+    store.setAppearancePreset('carbon-index')
+    expect(store.settings.appearancePreset).toBe('carbon-index')
     expect('uiStyle' in store.settings).toBe(false)
   })
 
-  it('migrates legacy material uiStyle snapshots to fluent-soft on hydration', async () => {
+  it('migrates legacy material uiStyle snapshots to Material 3 on hydration', async () => {
     const store = useSettingsStore()
     const legacySnapshot = store.settings as typeof store.settings & {
       uiStyle?: 'ios' | 'material'
@@ -207,11 +207,11 @@ describe('Settings Store', () => {
     legacySnapshot.appearancePreset = undefined
     await nextTick()
 
-    expect(store.settings.appearancePreset).toBe('fluent-soft')
+    expect(store.settings.appearancePreset).toBe('material-expressive')
     expect('uiStyle' in store.settings).toBe(false)
   })
 
-  it('migrates legacy ios uiStyle snapshots to the default rounded preset on hydration', async () => {
+  it('migrates legacy ios uiStyle snapshots to Native Minimal on hydration', async () => {
     const store = useSettingsStore()
     const legacySnapshot = store.settings as typeof store.settings & {
       uiStyle?: 'ios' | 'material'
@@ -222,7 +222,7 @@ describe('Settings Store', () => {
     legacySnapshot.appearancePreset = undefined
     await nextTick()
 
-    expect(store.settings.appearancePreset).toBe(DEFAULT_APPEARANCE_PRESET)
+    expect(store.settings.appearancePreset).toBe('apple-native')
     expect('uiStyle' in store.settings).toBe(false)
   })
 

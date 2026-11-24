@@ -13,7 +13,11 @@
       @load="checkResolution"
       @error="handleError"
     />
-    <span v-else class="image-fallback" role="img" :aria-label="alt"
+    <span
+      v-else
+      class="image-fallback"
+      :role="alt ? 'img' : undefined"
+      :aria-label="alt || undefined"
       ><JournalIcon name="image" /><span>{{ t('journal.gallery.imageUnavailable') }}</span></span
     >
   </span>

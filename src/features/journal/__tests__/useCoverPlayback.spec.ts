@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { useCoverPlayback } from '../editions/useCoverPlayback'
 import type { JournalPost } from '../models'
-import { chapterKey, type ChapterContext } from '../editions/chapterContext'
+import type { ChapterContext } from '../editions/chapterContext'
 
 const visibility = vi.hoisted(() => ({
   callbacks: [] as IntersectionObserverCallback[],
@@ -40,14 +40,11 @@ async function render(chapter?: ChapterContext) {
   wrapper = mount(
     defineComponent({
       setup() {
-        playback = useCoverPlayback(ref(posts))
+        playback = useCoverPlayback(ref(posts), chapter)
         return () => h('section', { ref: playback.setRoot })
       },
     }),
-    {
-      attachTo: document.body,
-      global: { provide: chapter ? { [chapterKey as symbol]: chapter } : {} },
-    }
+    { attachTo: document.body }
   )
   visibility.callbacks[0]!(
     [{ isIntersecting: true } as IntersectionObserverEntry],
@@ -80,6 +77,36 @@ afterEach(() => {
 })
 
 describe('recommendation playback', () => {
+  it('releases chapter travel on narrow screens while keeping manual photo selection', async () => {
+    const originalWidth = window.innerWidth
+    vi.stubGlobal('innerWidth', 390)
+    try {
+      const chapter: ChapterContext = {
+        enabled: ref(true),
+        height: ref(700),
+        progress: ref(0),
+        travel: ref(0),
+        seek: vi.fn(),
+      }
+      await render(chapter)
+      expect(playback.scrubbing.value).toBe(false)
+      expect(chapter.travel.value).toBe(0)
+      playback.selectSheet('second')
+      expect(playback.selectedId.value).toBe('second')
+      expect(chapter.seek).not.toHaveBeenCalled()
+      chapter.progress.value = 1
+      await nextTick()
+      expect(playback.selectedId.value).toBe('second')
+      vi.stubGlobal('innerWidth', 1440)
+      window.dispatchEvent(new Event('resize'))
+      await nextTick()
+      expect(playback.scrubbing.value).toBe(true)
+      expect(chapter.travel.value).toBe(420)
+    } finally {
+      vi.stubGlobal('innerWidth', originalWidth)
+    }
+  })
+
   it('uses chapter progress in both directions and maps manual choices to the same timeline', async () => {
     const progress = ref(0)
     const chapter: ChapterContext = {
@@ -91,7 +118,7 @@ describe('recommendation playback', () => {
     }
     await render(chapter)
     expect(playback.playing.value).toBe(false)
-    expect(chapter.travel.value).toBe(840)
+    expect(chapter.travel.value).toBe(420)
     progress.value = 0.1
     await nextTick()
     expect(playback.position(0)).toBeCloseTo(-0.2)

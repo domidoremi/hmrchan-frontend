@@ -15,7 +15,7 @@ describe('useAppearanceColorSync', () => {
   }
 
   function setup() {
-    const preset = ref('minimal-editorial')
+    const preset = ref('apple-native')
     const mode = ref('light')
     scope.run(() => useAppearanceColorSync([preset, mode]))
     return { preset, mode }
@@ -40,7 +40,7 @@ describe('useAppearanceColorSync', () => {
 
   it('leaves initial render and repeated selections unchanged', () => {
     const { preset, mode } = setup()
-    preset.value = 'minimal-editorial'
+    preset.value = 'apple-native'
     mode.value = 'light'
     expect(root.hasAttribute('data-appearance-changing')).toBe(false)
     expect(frames.size).toBe(0)
@@ -61,7 +61,7 @@ describe('useAppearanceColorSync', () => {
     const { preset, mode } = setup()
     mode.value = 'dark'
     paint()
-    preset.value = 'organic-natural'
+    preset.value = 'material-expressive'
     mode.value = 'light'
     expect(frames.size).toBe(1)
     paint()

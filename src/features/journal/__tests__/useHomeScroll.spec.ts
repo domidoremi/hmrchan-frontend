@@ -1,7 +1,11 @@
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { defineComponent } from 'vue'
+import { createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { scrollHomeTo, useHomeScroll } from '../editions/useHomeScroll'
+import HomeAtmosphere from '../editions/HomeAtmosphere.vue'
+
+vi.mock('../editions/useAtmosphereScroll', () => ({ useAtmosphereScroll: vi.fn() }))
 
 const smooth = vi.hoisted(() => ({
   create: vi.fn(),
@@ -50,11 +54,29 @@ async function render() {
   await flushPromises()
 }
 describe('homepage document smoothing', () => {
+  it.each([
+    { props: {}, instances: 1 },
+    { props: { smoothScroll: false }, instances: 0 },
+  ])(
+    'starts $instances engine instances for the atmosphere settings',
+    async ({ props, instances }) => {
+      wrapper = mount(HomeAtmosphere, {
+        props,
+        global: { plugins: [createPinia()], stubs: { ThemeSceneArtwork: true } },
+      })
+      await flushPromises()
+      expect(smooth.create).toHaveBeenCalledTimes(instances)
+    }
+  )
+
   it('smooths vertical wheels while preserving modified gestures, forms and nested dialogs', async () => {
     await render()
     const options = smooth.create.mock.calls[0]![0]
     expect(options.syncTouch).toBe(false)
     expect(options.virtualScroll({ event: {}, deltaX: 0, deltaY: 120 })).toBe(true)
+    expect(
+      options.virtualScroll({ event: { defaultPrevented: true }, deltaX: 0, deltaY: 120 })
+    ).toBe(false)
     expect(options.virtualScroll({ event: { ctrlKey: true }, deltaX: 0, deltaY: 120 })).toBe(false)
     expect(options.virtualScroll({ event: {}, deltaX: 120, deltaY: 0 })).toBe(false)
     document.body.innerHTML = '<dialog><button>Nested</button></dialog><input><div></div>'

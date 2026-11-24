@@ -2,8 +2,8 @@
   <div class="journal-shell" :class="isNext ? 'edition-archive' : 'edition-editorial'">
     <a class="skip-link" href="#main-content" tabindex="0">{{ t('common.skipToContent') }}</a>
     <div class="edition-workspace">
-      <header class="edition-header liquid-surface">
-        <LiquidGlass v-if="settingsStore.settings.appearancePreset === 'fluent-soft'" />
+      <HomeAtmosphere v-if="route.path !== '/'" :smooth-scroll="false" class="reading-atmosphere" />
+      <header class="edition-header">
         <RouterLink
           class="edition-logo"
           to="/"
@@ -130,7 +130,6 @@
     <nav
       v-if="!isAuthRoute"
       class="mobile-navigation"
-      :class="{ 'liquid-surface': settingsStore.settings.appearancePreset === 'fluent-soft' }"
       :aria-label="t('journal.nav.mobileNavigation')"
     >
       <RouterLink
@@ -189,7 +188,7 @@ import { useJournalEvents } from './useJournalEvents'
 import { useJournalDirectory } from './useJournalDirectory'
 import { installDisplayPreferences } from './displayPreferences'
 import JournalIcon from './JournalIcon.vue'
-import LiquidGlass from './LiquidGlass.vue'
+import HomeAtmosphere from './editions/HomeAtmosphere.vue'
 import AccountNavigation from './AccountNavigation.vue'
 const JournalAppearanceDialog = defineAsyncComponent(() => import('./JournalAppearanceDialog.vue'))
 import { useI18n } from 'vue-i18n'

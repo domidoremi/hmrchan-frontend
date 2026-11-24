@@ -50,6 +50,7 @@ export function createJournalRuntime(navigate, options = {}) {
     fullMotion: () => motion === 'full',
     signal: lifetime.signal,
   })
+  const revealTransform = ['var(--theme-reveal-from, translateY(0.75rem))', 'none']
   const preference = createMotionPreference({
     read: runtime.UI.read,
     save: runtime.UI.save,
@@ -140,11 +141,11 @@ export function createJournalRuntime(navigate, options = {}) {
           [
             {
               opacity: 0.15,
-              transform: 'perspective(1200px) translateY(2.8rem) rotateX(4deg)',
+              transform: revealTransform[0],
             },
             {
               opacity: 1,
-              transform: 'perspective(1200px) translateY(0) rotateX(0deg)',
+              transform: revealTransform[1],
             },
           ],
           { delay: Math.min(index * 65, 260) }

@@ -2,21 +2,19 @@
   <details
     ref="menu"
     class="home-contents-menu"
-    @toggle="syncCurrent"
+    @toggle="syncMenu"
     @keydown.esc.prevent.stop="dismiss(true)"
   >
     <summary>{{ t('journal.home.contents') }}<JournalIcon name="down" /></summary>
-    <nav :aria-label="t('journal.home.contents')">
+    <nav :aria-label="t('journal.home.contents')" data-lenis-prevent data-wheel-native>
       <a
         v-for="section in sections"
         :key="section.id"
         :href="`#${section.id}`"
         :aria-current="active === section.id ? 'location' : undefined"
-        @click.prevent="go(section.id)"
+        @click="go($event, section.id)"
       >
-        <span aria-hidden="true">{{ section.number }}</span>
-        <b>{{ section.label }}</b>
-        <small v-if="section.count !== null">{{ section.count }}</small>
+        {{ section.label }}
       </a>
     </nav>
   </details>
@@ -26,16 +24,17 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JournalIcon from '../JournalIcon.vue'
-import { scrollHomeTo } from './useHomeScroll'
+import { useHomeSectionJump } from './homeAnchor'
 import '../styles/home-reading-layout.css'
 
 const props = defineProps<{
-  sections: { id: string; number: string; label: string; count: number | null }[]
+  sections: { id: string; label: string }[]
 }>()
 const { t } = useI18n({ useScope: 'global' })
 const menu = ref<HTMLDetailsElement>()
 const active = ref('')
 const lifetime = new AbortController()
+const jumpToSection = useHomeSectionJump()
 
 function syncCurrent() {
   if (!menu.value?.open) return
@@ -46,29 +45,46 @@ function syncCurrent() {
   }
 }
 
+function syncMenu() {
+  if (!menu.value?.open) return
+  const summary = menu.value.querySelector('summary')?.getBoundingClientRect()
+  const header = menu.value.closest('.journal-shell')?.querySelector('.edition-header')
+  const edge = header?.getBoundingClientRect().bottom ?? 0
+  if (!summary || summary.top < Math.max(0, edge)) {
+    dismiss()
+    return
+  }
+  const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  const dock = menu.value
+    .closest('.journal-shell')
+    ?.querySelector('.mobile-navigation')
+    ?.getBoundingClientRect()
+  const bottom = dock?.height ? Math.min(innerHeight, dock.top) : innerHeight
+  const room = bottom - summary.bottom - rem * 1.5
+  if (room < rem * 2.75) {
+    dismiss()
+    return
+  }
+  menu.value.style.setProperty('--contents-room', `${room}px`)
+  syncCurrent()
+}
+
 function dismiss(restoreFocus = false) {
   if (!menu.value?.open) return
   menu.value.open = false
   if (restoreFocus) menu.value.querySelector('summary')?.focus()
 }
 
-function go(id: string) {
-  const target = document.getElementById(id)
-  if (!target) return
-  const header = menu.value?.closest('.journal-shell')?.querySelector('.edition-header')
-  const offset = header
-    ? header.getBoundingClientRect().height + (Number.parseFloat(getComputedStyle(header).top) || 0)
-    : 0
-  active.value = id
-  dismiss()
-  target.focus({ preventScroll: true })
-  scrollHomeTo(
-    scrollY + target.getBoundingClientRect().top - offset,
-    document.body.dataset['motion'] === 'full'
-  )
+function go(event: MouseEvent, id: string) {
+  jumpToSection(event, id, () => {
+    active.value = id
+    dismiss()
+  })
 }
 
 onMounted(() => {
+  window.addEventListener('scroll', syncMenu, { passive: true, signal: lifetime.signal })
+  window.addEventListener('resize', syncMenu, { passive: true, signal: lifetime.signal })
   document.addEventListener(
     'pointerdown',
     (event) => {
@@ -77,5 +93,7 @@ onMounted(() => {
     { signal: lifetime.signal }
   )
 })
-onBeforeUnmount(() => lifetime.abort())
+onBeforeUnmount(() => {
+  lifetime.abort()
+})
 </script>

@@ -17,6 +17,19 @@ export function useReadingMasonry(grid: Ref<HTMLElement | undefined>) {
   function layout() {
     const element = grid.value
     if (!element || lifetime.signal.aborted) return
+    const style = getComputedStyle(element)
+    const widths = style.gridTemplateColumns
+      .split(/\s+/)
+      .map(Number.parseFloat)
+      .filter((width) => Number.isFinite(width) && width > 0)
+    if (widths.length < 2 || !element.childElementCount) {
+      for (const card of observed) resize?.unobserve(card)
+      observed.clear()
+      delete element.dataset['masonry']
+      element.style.removeProperty('--masonry-height')
+      return
+    }
+
     const cards = Array.from(element.children).filter(
       (child): child is HTMLElement => child instanceof HTMLElement && child.matches('.post-card')
     )
@@ -29,17 +42,6 @@ export function useReadingMasonry(grid: Ref<HTMLElement | undefined>) {
       if (observed.has(card)) continue
       resize?.observe(card)
       observed.add(card)
-    }
-
-    const style = getComputedStyle(element)
-    const widths = style.gridTemplateColumns
-      .split(/\s+/)
-      .map(Number.parseFloat)
-      .filter((width) => Number.isFinite(width) && width > 0)
-    if (widths.length < 2 || !cards.length) {
-      delete element.dataset['masonry']
-      element.style.removeProperty('--masonry-height')
-      return
     }
 
     const columnGap = Number.parseFloat(style.columnGap) || 0

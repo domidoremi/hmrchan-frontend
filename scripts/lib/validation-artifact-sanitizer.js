@@ -1,7 +1,13 @@
 export const ARTIFACT_REDACTED_VALUE = '[redacted]'
 export const ARTIFACT_PRESENT_VALUE = '[present]'
 
-const ENV_CONTAINER_KEYS = new Set(['env', 'baseEnv', 'processEnv', 'environment', 'environmentVariables'])
+const ENV_CONTAINER_KEYS = new Set([
+  'env',
+  'baseEnv',
+  'processEnv',
+  'environment',
+  'environmentVariables',
+])
 const SENSITIVE_KEY_PATTERN =
   /(^|[_.-])(access|api[-_]?key|api[-_]?token|auth|authorization|bearer|cert|cookie|credential|jwt|key|pass|password|private|refresh|secret|session|token)([_.-]|$)/i
 
