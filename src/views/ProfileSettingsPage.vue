@@ -146,7 +146,6 @@
                         </p>
                         <SketchDropUploader
                           ref="avatarUploaderRef"
-                          v-model="avatarUploadItems"
                           mode="avatar"
                           class="avatar-uploader"
                           :title="$t('profile.uploadAvatar')"
@@ -584,7 +583,6 @@ const privacySettingsCategories: Array<'privacy'> = ['privacy']
 
 const showCropper = ref(false)
 const cropImageSrc = ref('')
-const avatarUploadItems = ref<UploadQueueItem[]>([])
 const avatarUploaderRef = useTemplateRef<{ clear: () => void }>('avatarUploaderRef')
 let profileFetchController: AbortController | null = null
 let profileFetchToken = 0

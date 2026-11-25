@@ -214,12 +214,12 @@ export interface WebAuthnAuthenticationOptionsResponse {
 }
 
 export interface PasskeyRecoveryStartRequest {
-  email: string
+  identifier: string
   turnstile_token?: string
 }
 
 export interface PasskeyRecoveryVerifyRequest {
-  email: string
+  identifier: string
   verification_code: string
   password?: string
 }

@@ -30,6 +30,7 @@ const SENSITIVE_SIGNATURE_READ_EXACT_PATHS = new Set([
   '/api/v1/preferences',
 ])
 const SENSITIVE_SIGNATURE_READ_PREFIXES = [
+  '/api/v1/auth/passkeys/recovery/',
   '/api/v1/account/',
   '/api/v1/users/me/',
   '/api/v1/devices',

@@ -1,10 +1,10 @@
-import { apiClient, type CursorCollectionResponse } from './client'
+import { apiClient } from './client'
 
 export interface MemberProfile {
   id: string
   name_ja: string
   name_en: string
-  blood_type?: string | null
+  blood_type: string | null
   zodiac: string
   height_cm: number
   birthday: string
@@ -17,28 +17,13 @@ export interface MemberProfile {
 }
 
 export const memberService = {
-  async list(
-    options: { limit?: number; cursor?: string | null } = {}
-  ): Promise<CursorCollectionResponse<MemberProfile>> {
-    const params = new URLSearchParams()
-    if (options.limit) params.set('limit', String(options.limit))
-    if (options.cursor) params.set('cursor', options.cursor)
-    const query = params.toString()
-
-    const response = await apiClient.get<CursorCollectionResponse<MemberProfile>>(
-      `/members${query ? `?${query}` : ''}`,
-      { skipAuth: true }
-    )
-
-    return {
-      ...response,
-      items: response.items ?? [],
-      next_cursor: response.next_cursor ?? null,
-      has_more: Boolean(response.has_more),
-    }
+  list(): Promise<MemberProfile[]> {
+    return apiClient.get<MemberProfile[]>('/members', { skipAuth: true })
   },
 
-  async getById(memberId: string): Promise<MemberProfile> {
-    return apiClient.get<MemberProfile>(`/members/${memberId}`, { skipAuth: true })
+  getById(memberId: string): Promise<MemberProfile> {
+    return apiClient.get<MemberProfile>(`/members/${encodeURIComponent(memberId)}`, {
+      skipAuth: true,
+    })
   },
 }

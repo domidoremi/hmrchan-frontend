@@ -178,7 +178,7 @@ vi.mock('@/components/ui/SketchDropUploader.vue', () => ({
       'title',
       'description',
     ],
-    emits: ['update:modelValue', 'error'],
+    emits: ['queue-change', 'error'],
     methods: {
       openPicker: state.uploaderOpenPicker,
       clear: state.uploaderClear,
@@ -189,14 +189,14 @@ vi.mock('@/components/ui/SketchDropUploader.vue', () => ({
         <button
           type="button"
           class="uploader-uploading-btn"
-          @click="$emit('update:modelValue', [{ id: 'local-1', file: { name: 'uploading.png' }, status: 'uploading' }])"
+          @click="$emit('queue-change', [{ id: 'local-1', file: { name: 'uploading.png' }, status: 'uploading' }])"
         >
           uploading
         </button>
         <button
           type="button"
           class="uploader-success-btn"
-          @click="$emit('update:modelValue', [{ id: 'local-2', file: { name: 'done.png' }, status: 'success', remoteId: 'image-2' }])"
+          @click="$emit('queue-change', [{ id: 'local-2', file: { name: 'done.png' }, status: 'success', remoteId: 'image-2' }])"
         >
           success
         </button>

@@ -124,12 +124,24 @@ export const userService = {
 
   async exportData(): Promise<void> {
     const verificationToken = await ensureVerificationToken('export_data')
-    await apiClient.post('/account/export-data', null, {
+    const exportedFile = await apiClient.post<Blob>('/account/export-data', null, {
       headers: {
         'X-Verification-Token': verificationToken,
       },
       verificationAction: 'export_data',
+      responseType: 'blob',
     })
+    const downloadUrl = URL.createObjectURL(exportedFile)
+    const downloadLink = document.createElement('a')
+    downloadLink.href = downloadUrl
+    downloadLink.download = 'user_data.json'
+    try {
+      document.body.append(downloadLink)
+      downloadLink.click()
+    } finally {
+      downloadLink.remove()
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
+    }
   },
 
   async uploadAvatar(file: File): Promise<AvatarUploadResponse> {

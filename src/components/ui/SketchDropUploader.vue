@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, useTemplateRef } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   AlertTriangle,
@@ -162,13 +162,14 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  queueChange: [items: UploadQueueItem[]]
   error: [message: string]
   uploaded: [item: UploadQueueItem]
   removed: [itemId: string]
   selected: [items: UploadQueueItem[]]
 }>()
 
-const items = defineModel<UploadQueueItem[]>({ default: () => [] })
+const items = shallowRef<UploadQueueItem[]>([])
 const inputRef = useTemplateRef<HTMLInputElement>('inputRef')
 const isDragActive = ref(false)
 const controllers = new Map<string, AbortController>()
@@ -232,8 +233,13 @@ function setProgressPulse(itemId: string) {
   progressTimers.set(itemId, timer)
 }
 
+function updateQueue(next: UploadQueueItem[]) {
+  items.value = next
+  emit('queueChange', next)
+}
+
 function patchItem(itemId: string, patch: Partial<UploadQueueItem>) {
-  items.value = items.value.map((item) => (item.id === itemId ? { ...item, ...patch } : item))
+  updateQueue(items.value.map((item) => (item.id === itemId ? { ...item, ...patch } : item)))
 }
 
 function formatFileSize(size: number): string {
@@ -290,7 +296,7 @@ async function queueFiles(fileList: FileList | File[]) {
   if (validFiles.length === 0) return
 
   const nextItems = validFiles.map(createItem)
-  items.value = [...items.value, ...nextItems]
+  updateQueue([...items.value, ...nextItems])
   emit('selected', nextItems)
 
   if (!canUpload.value) return
@@ -315,7 +321,7 @@ function handleInputChange(event: Event) {
 async function startUpload(itemId: string) {
   if (!props.uploadFn) return
   const item = items.value.find((entry) => entry.id === itemId)
-  if (!item) return
+  if (!item || controllers.has(itemId)) return
 
   const controller = new AbortController()
   controllers.set(itemId, controller)
@@ -324,8 +330,7 @@ async function startUpload(itemId: string) {
 
   try {
     const response = await props.uploadFn(item.file, controller.signal)
-    clearProgressTimer(itemId)
-    controllers.delete(itemId)
+    if (controllers.get(itemId) !== controller) return
     patchItem(itemId, {
       status: 'success',
       progress: 100,
@@ -338,8 +343,7 @@ async function startUpload(itemId: string) {
       emit('uploaded', uploadedItem)
     }
   } catch (error) {
-    clearProgressTimer(itemId)
-    controllers.delete(itemId)
+    if (controllers.get(itemId) !== controller) return
     const message =
       error instanceof Error && error.message ? error.message : t('uploader.errors.uploadFailed')
     patchItem(itemId, {
@@ -348,6 +352,11 @@ async function startUpload(itemId: string) {
       error: message,
     })
     emit('error', message)
+  } finally {
+    if (controllers.get(itemId) === controller) {
+      clearProgressTimer(itemId)
+      controllers.delete(itemId)
+    }
   }
 }
 
@@ -386,7 +395,7 @@ async function removeItem(itemId: string) {
   }
 
   cleanupPreview(item)
-  items.value = items.value.filter((entry) => entry.id !== itemId)
+  updateQueue(items.value.filter((entry) => entry.id !== itemId))
   emit('removed', itemId)
 }
 
@@ -398,7 +407,7 @@ function clear() {
   }
   controllers.clear()
   progressTimers.clear()
-  items.value = []
+  updateQueue([])
 }
 
 defineExpose({ openPicker, clear })

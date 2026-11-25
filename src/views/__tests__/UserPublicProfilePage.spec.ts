@@ -152,6 +152,26 @@ describe('UserPublicProfilePage', () => {
     expect(wrapper.text()).toContain('alice')
   })
 
+  it('shows a reverse block and prevents following that user', async () => {
+    state.userRelationsService.getRelation.mockResolvedValueOnce({
+      is_following: false,
+      is_followed_by: false,
+      is_blocking: false,
+      is_blocked_by: true,
+    })
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('profile.relationBlockedYou')
+    const followButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('profile.followAction'))
+    expect(followButton?.attributes('disabled')).toBeDefined()
+    await followButton!.trigger('click')
+    expect(state.userRelationsService.followUser).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it('does not request another route id as a public user while cached', async () => {
     state.route = reactive(state.route)
     const wrapper = mountPage()
