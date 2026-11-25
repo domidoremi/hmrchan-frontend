@@ -60,7 +60,6 @@
         <SketchDropUploader
           v-if="showUploader || attachmentItems.length > 0"
           ref="uploaderRef"
-          v-model="attachmentItems"
           mode="comment-images"
           class="comment-uploader"
           :title="t('comment.toolbar.media')"
@@ -73,6 +72,7 @@
           :upload-fn="uploadCommentImage"
           :delete-fn="deleteCommentImage"
           :validate-fn="validateCommentImage"
+          @queue-change="attachmentItems = $event"
           @error="handleUploadError"
         />
       </template>

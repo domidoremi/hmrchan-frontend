@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, apiClient } from '../client'
-import { clearAuthRuntimeSession, establishAuthRuntimeSession } from '../client/auth-runtime'
+import { userService } from '../userService'
+import {
+  clearAuthRuntimeSession,
+  establishAuthRuntimeSession,
+  getAuthRuntimeSession,
+} from '../client/auth-runtime'
 import * as clientSecurityModule from '../client/client-security'
 
 const mockGetDeviceFingerprint = vi.hoisted(() => vi.fn(async () => 'fingerprint-123'))
@@ -591,6 +596,75 @@ describe('apiClient', () => {
         })
       )
       expect(deleted).toBeUndefined()
+    })
+  })
+
+  describe('avatar upload contract', () => {
+    const busyBody = {
+      success: false,
+      error: {
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Avatar upload is temporarily busy. Please try again.',
+      },
+      meta: {
+        api_version: '1.0.0',
+        request_id: 'arch72-avatar-capture',
+        timestamp: '2026-11-23T05:21:44Z',
+      },
+    }
+
+    function busyAvatarResponse(): Response {
+      return jsonResponse(busyBody, { status: 503, headers: { 'Retry-After': '1' } })
+    }
+
+    it('surfaces a busy avatar upload without retrying or logging out', async () => {
+      establishRuntimeSession()
+      const session = getAuthRuntimeSession()
+      const logoutHandler = vi.fn()
+      window.addEventListener('auth:logout', logoutHandler)
+      mockFetch.mockResolvedValueOnce(busyAvatarResponse())
+      try {
+        await expect(
+          userService.uploadAvatar(
+            new File(['avatar-fixture'], 'avatar.png', { type: 'image/png' })
+          )
+        ).rejects.toMatchObject({
+          status: 503,
+          code: 'SERVICE_UNAVAILABLE',
+        })
+        expect(mockFetch).toHaveBeenCalledTimes(1)
+        expect(logoutHandler).not.toHaveBeenCalled()
+        expect(getAuthRuntimeSession()).toBe(session)
+        const request = getLastRequestInit()
+        expect(mockFetch.mock.calls[0]?.[0]).toBe('/api/v1/upload/avatar')
+        expect(request.headers['Content-Type']).toMatch(/^multipart\/form-data; boundary=/)
+        expect(new TextDecoder().decode(request.body as Uint8Array)).toContain(
+          'name="file"; filename="avatar.png"'
+        )
+      } finally {
+        window.removeEventListener('auth:logout', logoutHandler)
+      }
+    })
+
+    it('allows a fresh avatar request after a busy result with a new request ID', async () => {
+      establishRuntimeSession()
+      const file = new File(['avatar-fixture'], 'avatar.png', { type: 'image/png' })
+      const uploaded = { url: '/api/v1/media/avatar/fixture.jpg', content_type: 'image/jpeg' }
+      mockFetch
+        .mockResolvedValueOnce(busyAvatarResponse())
+        .mockResolvedValueOnce(jsonResponse({ success: true, data: uploaded }, { status: 200 }))
+
+      await expect(userService.uploadAvatar(file)).rejects.toMatchObject({
+        status: 503,
+        code: 'SERVICE_UNAVAILABLE',
+      })
+      const firstHeaders = getLastRequestInit().headers
+      await expect(userService.uploadAvatar(file)).resolves.toEqual(uploaded)
+      const nextHeaders = getLastRequestInit().headers
+
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(firstHeaders['X-Request-Id']).toEqual(expect.any(String))
+      expect(nextHeaders['X-Request-Id']).not.toBe(firstHeaders['X-Request-Id'])
     })
   })
 

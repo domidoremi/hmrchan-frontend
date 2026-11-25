@@ -152,7 +152,7 @@ async function handleSubmit() {
   try {
     if (step.value === 'start') {
       await authService.startPasskeyRecovery({
-        email: email.value.trim(),
+        identifier: email.value.trim(),
       })
       step.value = 'verify'
       successMessage.value = t('auth.passkeyRecovery.codeSent')
@@ -165,7 +165,7 @@ async function handleSubmit() {
     }
 
     const result = await authService.verifyPasskeyRecovery({
-      email: email.value.trim(),
+      identifier: email.value.trim(),
       verification_code: verificationCode.value.trim(),
       ...(password.value ? { password: password.value } : {}),
     })

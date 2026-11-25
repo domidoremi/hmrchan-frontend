@@ -100,14 +100,12 @@ export const commentService = {
   },
 
   async uploadImage(file: File): Promise<CommentImageUploadResponse> {
-    const formData = new FormData()
-    formData.append('files', file)
-
-    return apiClient.post<CommentImageUploadResponse>('/comment-images', formData, {
-      headers: {
-        // Let browser set Content-Type with boundary for FormData
-      },
-    })
+    const images = await commentService.uploadImages([file])
+    const image = images[0]
+    if (images.length !== 1 || !image) {
+      throw new Error('Expected one uploaded image')
+    }
+    return image
   },
 
   async uploadImages(files: File[]): Promise<CommentImageUploadResponse[]> {

@@ -150,7 +150,7 @@ describe('Passkey recovery pages', () => {
     await flushPromises()
 
     expect(state.api.startPasskeyRecovery).toHaveBeenCalledWith({
-      email: 'tester@example.com',
+      identifier: 'tester@example.com',
     })
     expect(wrapper.text()).toContain('auth.passkeyRecovery.codeSent')
 
@@ -160,7 +160,7 @@ describe('Passkey recovery pages', () => {
     await flushPromises()
 
     expect(state.api.verifyPasskeyRecovery).toHaveBeenCalledWith({
-      email: 'tester@example.com',
+      identifier: 'tester@example.com',
       verification_code: '123456',
       password: 'password123',
     })
