@@ -197,6 +197,8 @@ describe('Next photograph composition', () => {
     const stage = render([])
     expect(stage.find('.idol-feature-author').exists()).toBe(false)
     expect(stage.find('.idol-feature-controls').exists()).toBe(false)
+    expect(stage.find('.idol-photo-field').exists()).toBe(false)
+    expect(stage.find('.idol-text-subject').exists()).toBe(false)
     expect(stage.get('.idol-story-open').element.tagName).toBe('A')
     expect(stage.get('.idol-story-open').text()).toBe('作者')
   })

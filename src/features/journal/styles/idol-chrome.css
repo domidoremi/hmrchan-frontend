@@ -52,6 +52,49 @@
   box-shadow: none;
 }
 
+#app .edition-archive .next-edition-logo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 0.65rem;
+  min-block-size: 2.75rem;
+  padding-inline: 0.35rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+#app .edition-archive .next-edition-logo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+#app .edition-archive .next-edition-mark {
+  display: grid;
+  place-items: center;
+  inline-size: 2.35rem;
+  block-size: 2.35rem;
+  border: 1px solid var(--idol-border);
+  border-radius: var(--idol-control-radius);
+  color: var(--accent);
+  font: 650 1rem/1 var(--idol-meta);
+}
+
+#app .edition-archive .next-edition-wordmark {
+  display: grid;
+  gap: 0.05rem;
+  line-height: 1;
+}
+
+#app .edition-archive .next-edition-wordmark b {
+  font: 650 calc(0.82rem * var(--journal-reading-scale)) / 1.1 var(--idol-display);
+}
+
+#app .edition-archive .next-edition-wordmark small {
+  font: 600 0.58rem/1 var(--idol-meta);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 #app .edition-archive :is(.desktop-navigation, .mobile-navigation) > :is(a, button) {
   position: relative;
   min-block-size: 2.75rem;

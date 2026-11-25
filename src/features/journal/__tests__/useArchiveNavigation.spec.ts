@@ -2,12 +2,23 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useArchiveNavigation } from '../editions/useArchiveNavigation'
+import NextCollection from '../editions/NextCollection.vue'
 import type { JournalPost } from '../models'
+import { createJournalTestI18n } from './journalTestI18n'
 
-vi.mock('@/utils/modernAPIs', () => ({
-  createVisibilityObserver: () => ({ observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }),
+const visibility = vi.hoisted(() => ({
+  notify: undefined as ((entries: Partial<IntersectionObserverEntry>[]) => void) | undefined,
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
 }))
-vi.mock('../models', () => ({ platforms: {} }))
+vi.mock('@/utils/modernAPIs', async () => ({
+  ...(await vi.importActual<typeof import('@/utils/modernAPIs')>('@/utils/modernAPIs')),
+  createVisibilityObserver: (notify: typeof visibility.notify) => {
+    visibility.notify = notify
+    return visibility
+  },
+}))
 const post = (id: string): JournalPost => ({
   id,
   title: id,
@@ -27,6 +38,47 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 describe('archive keyboard navigation', () => {
+  it('shows list controls only while their collection is on screen and its preview is not', async () => {
+    const posts = [post('one')]
+    const wrapper = mount(NextCollection, {
+      attachTo: document.body,
+      props: {
+        posts,
+        allPosts: posts,
+        savedPosts: new Set(),
+        platform: 'all',
+        sort: 'latest',
+        layout: 'list',
+      },
+      global: {
+        plugins: [createJournalTestI18n('en')],
+        stubs: { JournalIcon: true, JournalImage: true, ArchivePreview: true },
+      },
+    })
+    const root = wrapper.element
+    const preview = wrapper.get('aside').element
+    visibility.notify?.([
+      { target: root, isIntersecting: false },
+      { target: preview, isIntersecting: false },
+    ])
+    await nextTick()
+    expect(wrapper.find('.archive-selection-dock').exists()).toBe(false)
+    visibility.notify?.([{ target: root, isIntersecting: true }])
+    await nextTick()
+    expect(wrapper.get('.archive-selection-dock').text()).toContain('one')
+    visibility.notify?.([{ target: preview, isIntersecting: true }])
+    await nextTick()
+    expect(wrapper.find('.archive-selection-dock').exists()).toBe(false)
+    visibility.notify?.([
+      { target: root, isIntersecting: false },
+      { target: preview, isIntersecting: false },
+    ])
+    await nextTick()
+    expect(wrapper.find('.archive-selection-dock').exists()).toBe(false)
+    wrapper.unmount()
+    expect(visibility.disconnect).toHaveBeenCalled()
+  })
+
   it('moves focus with selection, opens the focused record, and returns from preview', async () => {
     const opened = vi.fn()
     const posts = ref([post('one'), post('two'), post('three')])

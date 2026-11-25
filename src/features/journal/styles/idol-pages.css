@@ -3,6 +3,10 @@
   min-block-size: 0;
 }
 
+#app .edition-archive .archive-forum.is-empty {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 #app .edition-archive .archive-browse .archive-page-title {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);

@@ -14,8 +14,9 @@
     @pointerleave="hovered = false"
   >
     <img
+      v-if="selected?.image"
       class="idol-photo-field"
-      :src="selected?.image || fallbackPhoto"
+      :src="selected.image"
       alt=""
       aria-hidden="true"
       decoding="async"
@@ -46,15 +47,9 @@
               fetchpriority="high"
               fit="contain"
             />
-            <img
-              v-else
-              class="idol-photo-subject"
-              :src="fallbackPhoto"
-              :alt="t('journal.next.portrait')"
-              width="640"
-              height="800"
-              fetchpriority="high"
-            />
+            <span v-else-if="selected" class="idol-text-subject" aria-hidden="true">
+              {{ selected.title }}
+            </span>
           </div>
         </Transition>
         <button
@@ -200,7 +195,6 @@ import '../styles/idol-stage.css'
 const props = defineProps<{ posts: JournalPost[] }>()
 const { locale, t } = useI18n({ useScope: 'global' })
 const playbackInterval = 8500
-const fallbackPhoto = '/journal/himeri-portrait.webp'
 const {
   setRoot: bindRoot,
   items,

@@ -8,7 +8,7 @@
         <JournalIcon name="plus" />{{ t('community.newDiscussion') }}
       </button>
     </header>
-    <div class="archive-forum">
+    <div class="archive-forum" :class="{ 'is-empty': !discussions.length }">
       <div class="forum-categories" role="group" :aria-label="t('journal.community.categories')">
         <button
           v-for="(label, i) in categories"
@@ -75,9 +75,9 @@
           </button>
         </div>
       </section>
-      <aside class="forum-preview" :aria-label="t('journal.community.preview')">
+      <aside v-if="selected" class="forum-preview" :aria-label="t('journal.community.preview')">
         <Transition name="archive-preview" mode="out-in"
-          ><article v-if="selected" :key="selected.id">
+          ><article :key="selected.id">
             <div class="meta-line">
               <span>{{ journalCategoryLabel(selected.category, t) }}</span><time>{{
                 journalDateLabel(selected.time, locale)
@@ -95,10 +95,8 @@
             <p>{{ selected.text }}</p>
             <button class="button button-dark" :data-discussion="selected.id">
               {{ t('journal.community.readAndReply') }} <JournalIcon name="arrow-up-right" />
-            </button>
-          </article>
-          <div v-else class="empty-state">{{ t('journal.states.noDiscussions') }}</div></Transition
-        >
+            </button></article
+        ></Transition>
       </aside>
     </div>
   </div>

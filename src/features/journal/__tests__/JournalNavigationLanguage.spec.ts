@@ -150,6 +150,12 @@ describe.each(['editorial', 'archive'] as const)('%s public navigation language'
         edition === 'editorial' ? 'MomiChan' : undefined
       )
       expect(wrapper.find('.edition-brand-name small').exists()).toBe(false)
+      const nextLogo = wrapper.find('.next-edition-logo')
+      const wordmark = nextLogo.exists()
+        ? nextLogo.get('.next-edition-wordmark').text().replace(/\s+/g, ' ')
+        : undefined
+      expect(wordmark).toBe(edition === 'archive' ? 'MomiChan Next' : undefined)
+      expect(wrapper.element.querySelector('.next-edition-logo[aria-label]')).toBeNull()
       expect(router.currentRoute.value.path).toBe('/schedule')
       expect(mocks.refresh).toHaveBeenCalledOnce()
       const translate = mocks.createRuntime.mock.calls[0]![1].translate as (key: string) => string

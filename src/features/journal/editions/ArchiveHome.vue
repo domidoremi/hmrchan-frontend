@@ -5,14 +5,14 @@
       <h1 v-if="!showFeature" class="idol-search-title">{{ t('journal.nav.posts') }}</h1>
       <NextCollection
         id="next-index"
-        :posts="posts"
+        :posts="homePosts"
         :all-posts="allPosts"
         :saved-posts="savedPosts"
         :platform="platform"
         :sort="sort"
         :query="query"
         :layout="layout"
-        :has-more="hasMore"
+        :has-more="!showFeature && hasMore"
         :state="states.posts"
         :heading="t('journal.home.latest')"
         v-bind="retry ? { retry } : {}"
@@ -181,6 +181,7 @@ const emit = defineEmits<{
 const { locale, t } = useI18n({ useScope: 'global' })
 const featuredPosts = shallowRef<JournalPost[]>([])
 const showFeature = computed(() => !props.query.trim())
+const homePosts = computed(() => (showFeature.value ? props.posts.slice(0, 6) : props.posts))
 watch(
   () => props.allPosts,
   (values) => {

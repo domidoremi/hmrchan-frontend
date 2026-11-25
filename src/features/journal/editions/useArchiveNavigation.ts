@@ -11,6 +11,7 @@ export function useArchiveNavigation(
   const selection = usePostSelection(posts)
   const root = ref<HTMLElement>(),
     preview = ref<HTMLElement>(),
+    rootVisible = ref(false),
     previewVisible = ref(true)
   let observer: IntersectionObserver | undefined
   function select(id: string) {
@@ -83,13 +84,21 @@ export function useArchiveNavigation(
     if (previous) observer?.unobserve(previous)
     if (element) observer?.observe(element)
   })
+  watch(root, (element, previous) => {
+    if (previous) observer?.unobserve(previous)
+    if (element) observer?.observe(element)
+  })
   onMounted(() => {
     observer = createVisibilityObserver(
-      ([entry]) => {
-        previewVisible.value = Boolean(entry?.isIntersecting)
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.target === root.value) rootVisible.value = entry.isIntersecting
+          if (entry.target === preview.value) previewVisible.value = entry.isIntersecting
+        }
       },
       { rootMargin: '-72px 0px -88px 0px' }
     )
+    if (root.value) observer.observe(root.value)
     if (preview.value) observer.observe(preview.value)
   })
   onBeforeUnmount(() => observer?.disconnect())
@@ -104,6 +113,7 @@ export function useArchiveNavigation(
     previewId,
     setRoot,
     setPreview,
+    rootVisible,
     previewVisible,
     select,
     keydown,

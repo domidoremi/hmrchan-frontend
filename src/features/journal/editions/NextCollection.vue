@@ -304,7 +304,7 @@
       :post="selected"
       :index="index"
       :total="posts.length"
-      :visible="!previewVisible"
+      :visible="rootVisible && !previewVisible"
       @step="step"
       @preview="showPreview"
     />
@@ -449,6 +449,7 @@ const {
   step,
   setRoot,
   setPreview,
+  rootVisible,
   previewVisible,
   select,
   keydown,

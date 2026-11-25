@@ -7,6 +7,10 @@
           <img :src="'/journal/mascot.webp'" alt="" width="40" height="40" />
           <span class="edition-brand-name">MomiChan</span>
         </RouterLink>
+        <RouterLink v-if="isNext" class="next-edition-logo" to="/">
+          <span class="next-edition-mark" aria-hidden="true">n↗</span>
+          <span class="next-edition-wordmark"><b>MomiChan</b> <small>Next</small></span>
+        </RouterLink>
         <nav
           v-if="isNext || !isAuthRoute"
           class="desktop-navigation"

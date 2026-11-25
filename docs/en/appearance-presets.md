@@ -9,7 +9,7 @@ Display settings offer four design systems. Both sites share the color, typograp
 | Fluent 2       | Grouped commands and an author and schedule pane beside the feed    | Photography and controls side by side with list and preview as the default view | Panel boundaries, edge indicators and directional motion         |
 | Carbon         | A square-edged index with alternating rows                          | A contact sheet followed by a list and preview                                  | Monospaced metadata, selected-row rules and directional exposure |
 
-Native Minimal takes cues on content hierarchy and feedback from the [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/). The other presets draw from [Material 3](https://m3.material.io/), [Fluent 2](https://fluent2.microsoft.design/) and the [Carbon Design System](https://carbondesignsystem.com/).
+Native Minimal is this site's preset name. Its content hierarchy and feedback take cues from the [Apple Human Interface Guidelines (HIG)](https://developer.apple.com/design/human-interface-guidelines/). HIG names the interface guidelines; [Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass) describes Apple's glass material design and is not the name of this preset. The other presets draw from [Material 3](https://m3.material.io/), [Fluent 2](https://fluent2.microsoft.design/) and the [Carbon Design System](https://carbondesignsystem.com/).
 
 ## Defaults and migration
 
