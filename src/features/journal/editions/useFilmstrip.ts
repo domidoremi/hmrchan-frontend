@@ -213,6 +213,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
       visibility.observe(track.value)
     }
     document.addEventListener('journalmotionchange', schedule)
+    document.addEventListener('journalchromechange', resizeFilm)
     window.addEventListener('resize', resizeFilm)
     schedule()
   })
@@ -223,6 +224,7 @@ export function useFilmstrip(posts: Readonly<Ref<JournalPost[]>>) {
     resize?.disconnect()
     visibility?.disconnect()
     document.removeEventListener('journalmotionchange', schedule)
+    document.removeEventListener('journalchromechange', resizeFilm)
     window.removeEventListener('resize', resizeFilm)
   })
   function setTrack(element: unknown) {

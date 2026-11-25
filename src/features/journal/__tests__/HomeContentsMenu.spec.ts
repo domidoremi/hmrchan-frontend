@@ -26,8 +26,8 @@ function setup() {
     global: { plugins: [createJournalTestI18n('en')], stubs: { JournalIcon: true } },
   })
   vi.spyOn(wrapper.get('summary').element, 'getBoundingClientRect').mockReturnValue({
-    top: 160,
-    bottom: 204,
+    top: 680,
+    bottom: 736,
   } as DOMRect)
   return { wrapper, target }
 }
@@ -80,7 +80,7 @@ describe('Home contents menu', () => {
     }
   })
 
-  it('dismisses when its trigger scrolls behind the header', async () => {
+  it('keeps the floating menu open while scrolling and updates the current chapter', async () => {
     const { wrapper } = setup()
     try {
       ;(wrapper.element as HTMLDetailsElement).open = true
@@ -88,11 +88,41 @@ describe('Home contents menu', () => {
       expect((wrapper.element as HTMLElement).style.getPropertyValue('--contents-room')).not.toBe(
         ''
       )
-      vi.mocked(wrapper.get('summary').element.getBoundingClientRect).mockReturnValue({
-        top: 60,
-        bottom: 104,
-      } as DOMRect)
       window.dispatchEvent(new Event('scroll'))
+      expect((wrapper.element as HTMLDetailsElement).open).toBe(true)
+      expect(wrapper.get('a').attributes('aria-current')).toBe('location')
+      expect(wrapper.get('.contents-trigger-copy strong').text()).toBe('Images')
+      expect((wrapper.element as HTMLElement).style.getPropertyValue('--contents-room')).toBe(
+        '592px'
+      )
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('places the trigger above mobile navigation and limits the panel above it', async () => {
+    const { wrapper } = setup()
+    try {
+      const dock = document.createElement('nav')
+      dock.className = 'mobile-navigation'
+      wrapper.element.parentElement!.append(dock)
+      vi.spyOn(dock, 'getBoundingClientRect').mockReturnValue({ top: 684, height: 72 } as DOMRect)
+      ;(wrapper.element as HTMLDetailsElement).open = true
+      window.dispatchEvent(new Event('resize'))
+      expect((wrapper.element as HTMLElement).style.getPropertyValue('--contents-bottom')).toBe(
+        '100px'
+      )
+      expect((wrapper.element as HTMLDetailsElement).open).toBe(true)
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('dismisses when focus leaves the directory', async () => {
+    const { wrapper, target } = setup()
+    try {
+      ;(wrapper.element as HTMLDetailsElement).open = true
+      await wrapper.trigger('focusout', { relatedTarget: target })
       expect((wrapper.element as HTMLDetailsElement).open).toBe(false)
     } finally {
       wrapper.unmount()

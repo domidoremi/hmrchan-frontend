@@ -1,22 +1,12 @@
 <template>
   <div ref="home" class="editorial-home editorial-page immersive-home">
     <HomeAtmosphere />
+    <HomeContentsMenu :sections="contents" />
     <ImmersiveChapter id="issue-cover" kind="cover" aria-labelledby="issue-title" data-cover-wheel>
       <div class="journal-masthead">
-        <h1 id="issue-title" class="journal-name" aria-label="MomiChan">
-          <MotionTitle text="MomiChan" />
-        </h1>
+        <h1 id="issue-title" class="sr-only">MomiChan</h1>
         <div class="masthead-tools">
           <time>{{ date }}</time>
-          <a
-            class="cover-next-chapter cover-next-chapter-compact"
-            href="#issue-latest"
-            :aria-label="t('journal.home.latest')"
-            @click="jumpToSection($event, 'issue-latest')"
-          >
-            <JournalIcon name="down" />
-          </a>
-          <HomeContentsMenu :sections="contents" />
         </div>
       </div>
       <div
@@ -237,7 +227,6 @@ import { journalDateLabel } from '../localizedDate'
 import { RouterLink } from 'vue-router'
 import SpatialCover from './SpatialCover.vue'
 import HomeAtmosphere from './HomeAtmosphere.vue'
-import MotionTitle from './MotionTitle.vue'
 import ImmersiveChapter from './ImmersiveChapter.vue'
 import HomeContentsMenu from './HomeContentsMenu.vue'
 import { useHomeSectionJump } from './homeAnchor'

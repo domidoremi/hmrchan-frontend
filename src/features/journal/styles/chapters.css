@@ -32,6 +32,7 @@
 }
 .site-body .journal-shell .immersive-home section.immersive-chapter {
   --chapter-height: calc(100svh - 4.5rem);
+  --chapter-viewport: var(--chapter-height);
   position: relative;
   margin: 0;
   scroll-margin-block-start: var(--chapter-top, 4.5rem);
@@ -55,25 +56,25 @@
   .journal-shell
   .immersive-chapter:not([data-chapter='cover'])
   :is(.chapter-surface, .chapter-content) {
-  min-block-size: var(--chapter-height);
+  min-block-size: var(--chapter-viewport);
 }
 .site-body .journal-shell .immersive-chapter[data-chapter='cover'] .chapter-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(min-content, 1fr);
-  min-block-size: calc(var(--chapter-height) + var(--chapter-bottom, 0rem));
+  min-block-size: calc(var(--chapter-viewport) + var(--chapter-bottom, 0rem));
   padding-block-end: 1rem;
 }
 .site-body .journal-shell .immersive-chapter[data-chapter='cover'] .spatial-cover {
   align-self: center;
 }
 .site-body .journal-shell .immersive-chapter[data-scene-pinned='true'] {
-  block-size: calc(var(--chapter-height) + var(--chapter-run, 0rem));
+  block-size: calc(var(--chapter-viewport) + var(--chapter-run, 0rem));
 }
 .site-body .journal-shell [data-scene-pinned='true'] > .chapter-stage {
   position: sticky;
   inset-block-start: var(--chapter-top);
-  block-size: var(--chapter-height);
+  block-size: var(--chapter-viewport);
   overflow: visible;
   perspective: 100rem;
 }
@@ -83,6 +84,9 @@
 }
 .site-body .journal-shell [data-scene-pinned='true'] .chapter-content {
   transform: translateY(var(--chapter-shift));
+}
+.site-body .journal-shell [data-scene-pinned='true'][data-chapter='cover'] .chapter-content {
+  transform: none;
 }
 .site-body
   .journal-shell
@@ -203,6 +207,9 @@
   .site-body .journal-shell .next-home.immersive-home {
     --chapter-inset: 1rem;
   }
+  .site-body .journal-shell .immersive-home [data-chapter='cover'] .cover-scene {
+    min-block-size: clamp(11rem, 24svh, 16rem);
+  }
   .site-body .journal-shell .immersive-chapter .next-stage {
     gap: 1rem;
   }
@@ -218,7 +225,7 @@
     font-size: clamp(2.8rem, 12vw, 4rem);
   }
   .site-body .journal-shell .immersive-home .cover-scene {
-    min-block-size: clamp(12rem, 30svh, 18rem);
+    min-block-size: clamp(12rem, 25svh, 18rem);
   }
   .site-body .journal-shell .immersive-home .cover-deck {
     inset: 0.5rem 22% 0.75rem;

@@ -3,7 +3,7 @@
     <a class="skip-link" href="#main-content" tabindex="0">{{ t('common.skipToContent') }}</a>
     <div class="edition-workspace">
       <HomeAtmosphere v-if="route.path !== '/'" :smooth-scroll="false" class="reading-atmosphere" />
-      <header class="edition-header">
+      <header ref="header" class="edition-header" :class="{ 'collapsing-header': collapsible }">
         <RouterLink
           class="edition-logo"
           to="/"
@@ -186,6 +186,7 @@ import { journalKey } from './context'
 import { useJournalDialogs } from './useJournalDialogs'
 import { useJournalEvents } from './useJournalEvents'
 import { useJournalDirectory } from './useJournalDirectory'
+import { useCollapsingHeader } from './useCollapsingHeader'
 import { installDisplayPreferences } from './displayPreferences'
 import JournalIcon from './JournalIcon.vue'
 import HomeAtmosphere from './editions/HomeAtmosphere.vue'
@@ -220,6 +221,13 @@ const runtime = shallowRef<JournalRuntime | null>(null)
 const appearanceOpen = ref(false)
 const displayLifetime = new AbortController()
 const { menuOpen, menuButton, directory } = useJournalDirectory()
+const header = ref<HTMLElement>()
+const collapsible = computed(() => !isNext && route.path === '/')
+useCollapsingHeader(
+  header,
+  collapsible,
+  computed(() => menuOpen.value || appearanceOpen.value)
+)
 provide(journalKey, runtime)
 useJournalDialogs(runtime)
 useJournalEvents(runtime)
@@ -325,6 +333,15 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.collapsing-header {
+  transition: transform var(--journal-duration-control) var(--journal-ease);
+}
+.collapsing-header[data-collapsed='true'] {
+  transform: translateY(-100%);
+}
+:global(.site-body[data-motion='reduced']) .collapsing-header {
+  transition: none;
+}
 .desktop-navigation a {
   min-inline-size: 0;
   white-space: normal;

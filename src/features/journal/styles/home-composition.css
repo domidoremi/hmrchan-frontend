@@ -99,13 +99,6 @@
 .site-body
   .journal-shell
   .editorial-home.immersive-home
-  .chapter-stage:has(.home-contents-menu[open]) {
-  overflow: visible;
-}
-
-.site-body
-  .journal-shell
-  .editorial-home.immersive-home
   [data-scene-enhanced='true']
   .chapter-surface {
   translate: 0

@@ -59,6 +59,70 @@ function wheel(index: number, deltaY: number, selector = 'button') {
 }
 
 describe('home chapter wheel handoffs', () => {
+  it('uses the expanded reading viewport when the header is collapsed', () => {
+    starts = [0, 966, 1932, 2898]
+    wrapper.findAll<HTMLElement>('section').forEach(({ element }) => {
+      element.style.setProperty('--chapter-top', '0px')
+      element.style.setProperty('--chapter-viewport', '966px')
+    })
+    expect(wheel(0, 40)).toBe(true)
+    expect(scrollHomeTo).toHaveBeenLastCalledWith(966, true)
+  })
+
+  it('does not turn a tap without scrolling or a selected passage into a chapter jump', () => {
+    window.dispatchEvent(new Event('touchstart'))
+    offset = 700
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('touchcancel'))
+    window.dispatchEvent(new Event('touchstart'))
+    window.dispatchEvent(new Event('touchend'))
+    window.dispatchEvent(new Event('scrollend'))
+    expect(scrollHomeTo).not.toHaveBeenCalled()
+    vi.spyOn(window, 'getSelection').mockReturnValue({ isCollapsed: false } as Selection)
+    expect(wheel(1, 120)).toBe(false)
+    expect(scrollHomeTo).not.toHaveBeenCalled()
+  })
+
+  it('finishes entering a partially visible chapter instead of requiring repeated small wheels', () => {
+    offset = 760
+    expect(wheel(1, 120)).toBe(true)
+    expect(scrollHomeTo).toHaveBeenLastCalledWith(894, true)
+  })
+
+  it('settles native scrolling into the next chapter and does not snap the interior of long content', () => {
+    starts[1] = 1600
+    offset = 300
+    expect(wheel(0, 120)).toBe(false)
+    offset = 450
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scrollend'))
+    expect(scrollHomeTo).not.toHaveBeenCalled()
+    expect(wheel(0, 120)).toBe(false)
+    offset = 1250
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scrollend'))
+    expect(scrollHomeTo).toHaveBeenLastCalledWith(1528, true)
+  })
+
+  it('settles a vertical touch only after release and leaves text selection alone', () => {
+    window.dispatchEvent(new Event('touchstart'))
+    offset = 700
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scrollend'))
+    expect(scrollHomeTo).not.toHaveBeenCalled()
+    window.dispatchEvent(new Event('touchend'))
+    window.dispatchEvent(new Event('scrollend'))
+    expect(scrollHomeTo).toHaveBeenLastCalledWith(894, true)
+    vi.mocked(scrollHomeTo).mockClear()
+    vi.spyOn(window, 'getSelection').mockReturnValue({ isCollapsed: false } as Selection)
+    window.dispatchEvent(new Event('touchstart'))
+    offset = 1450
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('touchend'))
+    window.dispatchEvent(new Event('scrollend'))
+    expect(scrollHomeTo).not.toHaveBeenCalled()
+  })
+
   it('steps to the next chapter on a small detent and holds the same gesture through settling', () => {
     expect(wheel(0, 120)).toBe(true)
     expect(scrollHomeTo).toHaveBeenLastCalledWith(894, true)
@@ -75,14 +139,14 @@ describe('home chapter wheel handoffs', () => {
     expect(scrollHomeTo).toHaveBeenLastCalledWith(894, true)
   })
 
-  it('leaves the interior of long content native and returns to its bottom from the following chapter', () => {
+  it('leaves long content native, crosses its last detent, and returns to its bottom when reversing', () => {
     starts[2] = 2100
     offset = 894
     expect(wheel(1, 120)).toBe(false)
     expect(scrollHomeTo).not.toHaveBeenCalled()
     offset = 1100
     expect(wheel(1, 120)).toBe(true)
-    expect(scrollHomeTo).toHaveBeenLastCalledWith(1134, true)
+    expect(scrollHomeTo).toHaveBeenLastCalledWith(2028, true)
     offset = 2028
     time += 500
     expect(wheel(2, -120)).toBe(true)

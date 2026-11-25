@@ -1,8 +1,8 @@
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   HomeAggregateResponse,
   HomeAuthorBrief,
@@ -636,6 +636,12 @@ async function settleHomeMotion(ms = 96) {
   await vi.advanceTimersByTimeAsync(ms)
   await flushPromises()
 }
+
+enableAutoUnmount(afterEach)
+
+beforeAll(async () => {
+  await import('../HomePage.vue')
+}, 30000)
 
 describe('HomePage', () => {
   beforeEach(() => {

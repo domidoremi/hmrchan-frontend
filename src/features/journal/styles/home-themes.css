@@ -95,14 +95,12 @@
 }
 
 :root[data-preset='apple-native'] .site-body .journal-shell .immersive-home .spatial-cover {
-  inline-size: min(100%, 52rem);
-  margin-inline: auto;
-  gap: 0.65rem;
+  inline-size: 100%;
+  gap: clamp(1.25rem, 4vw, 4rem);
 }
 
 :root[data-preset='apple-native'] .site-body .journal-shell .immersive-home .cover-copy {
-  inline-size: min(100%, 44rem);
-  margin-inline: auto;
+  min-inline-size: 0;
 }
 
 :root[data-preset='apple-native'] .site-body .journal-shell .immersive-home .journal-masthead {
@@ -193,16 +191,17 @@
 }
 
 @media (min-width: 960px) {
-  :root:not([data-preset='apple-native']) .site-body .journal-shell .immersive-home {
+  :root[data-preset] .site-body .journal-shell .immersive-home {
     --cover-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   }
 
-  :root:not([data-preset='apple-native'])
-    .site-body
-    .journal-shell
-    .immersive-home
-    [data-chapter='cover'] {
+  :root[data-preset] .site-body .journal-shell .immersive-home [data-chapter='cover'] {
     --cover-height: clamp(17rem, calc(var(--chapter-height) - 17rem), 39rem);
+  }
+
+  :root[data-preset='apple-native'] .site-body .journal-shell .immersive-home {
+    --cover-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    --deck-inline: 4%;
   }
 
   :root[data-preset='fluent-workspace'] .site-body .journal-shell .immersive-home {

@@ -9,7 +9,7 @@
 | Fluent 2   | 顶部命令分区，阅读流旁保留作者和日程工作区           | 写真和操作并排，动态默认打开列表和预览   | 面板分隔、边缘标记及定向位移             |
 | Carbon     | 紧凑的方角索引，行间分隔与交替底色                   | 并列照片接续记录列表，默认打开列表和预览 | 等宽元信息、边线标记、方向扫描           |
 
-原生简约参考 [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/) 的内容层级与交互反馈。其他主题的设计参考见 [Material 3](https://m3.material.io/)、[Fluent 2](https://fluent2.microsoft.design/) 和 [Carbon Design System](https://carbondesignsystem.com/)。
+「原生简约 / Native Minimal」是本站主题名，参考 [Apple Human Interface Guidelines（HIG）](https://developer.apple.com/design/human-interface-guidelines/) 的内容层级与交互反馈。HIG 是界面设计规范；[Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass) 是 Apple 的玻璃材质设计，本站不以该名称描述当前主题。其他主题的设计参考见 [Material 3](https://m3.material.io/)、[Fluent 2](https://fluent2.microsoft.design/) 和 [Carbon Design System](https://carbondesignsystem.com/)。
 
 ## 默认值与保存
 

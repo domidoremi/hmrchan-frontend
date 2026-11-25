@@ -79,6 +79,24 @@ async function scrollTo(value: number) {
 }
 
 describe('immersive document chapters', () => {
+  it('updates the pin offset without resizing media when navigation collapses or returns', async () => {
+    const chapter = await render()
+    wrapper!.get('.editorial-contents').element.remove()
+    document.dispatchEvent(new Event('journalchromechange'))
+    expect(context.height.value).toBe(828)
+    expect(chapter.style.getPropertyValue('--chapter-viewport')).toBe('828px')
+    const header = wrapper!.get<HTMLElement>('.edition-header').element
+    header.dataset['collapsed'] = 'true'
+    document.dispatchEvent(new Event('journalchromechange'))
+    expect(chapter.style.getPropertyValue('--chapter-top')).toBe('0px')
+    expect(chapter.style.getPropertyValue('--chapter-viewport')).toBe('900px')
+    expect(context.height.value).toBe(828)
+    header.dataset['collapsed'] = 'false'
+    document.dispatchEvent(new Event('journalchromechange'))
+    expect(context.height.value).toBe(828)
+    expect(chapter.style.getPropertyValue('--chapter-viewport')).toBe('828px')
+  })
+
   it('reserves navigation, reveals all long content, then advances the sequence and reverses', async () => {
     const chapter = await render()
     const content = chapter.querySelector<HTMLElement>('.chapter-content')!

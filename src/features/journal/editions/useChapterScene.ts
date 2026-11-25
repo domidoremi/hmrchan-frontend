@@ -4,6 +4,7 @@ import { chapterKey } from './chapterContext'
 import { chapterPosition } from './chapterScene'
 import { cancelHomeFrame, queueHomeFrame } from './homeFrame'
 import { scrollHomeTo } from './useHomeScroll'
+import { headerInset } from './homeChrome'
 
 export function useChapterScene(
   root: Ref<HTMLElement | undefined>,
@@ -35,22 +36,24 @@ export function useChapterScene(
     const header = shell?.querySelector<HTMLElement>('.edition-header')
     const directory = shell?.querySelector<HTMLElement>('.editorial-contents')
     const mobile = shell?.querySelector('.mobile-navigation')?.getBoundingClientRect()
-    const headerStyle = header && getComputedStyle(header)
-    top = (header?.offsetHeight ?? 0) + (Number.parseFloat(headerStyle?.top ?? '') || 0)
+    top = headerInset(header)
     if (directory)
       top = Math.max(
         top,
         (Number.parseFloat(getComputedStyle(directory).top) || 0) + directory.offsetHeight
       )
     const bottom = mobile?.height ? Math.max(0, innerHeight - mobile.top) : 0
-    height.value = Math.max(1, innerHeight - top - bottom)
+    const viewport = Math.max(1, innerHeight - top - bottom)
+    // Keep media geometry stable while the header slides away or returns.
+    height.value = Math.max(1, innerHeight - Math.max(top, headerInset(header, true)) - bottom)
     property(element, '--chapter-top', `${top}px`)
     property(element, '--chapter-height', `${height.value}px`)
+    property(element, '--chapter-viewport', `${viewport}px`)
     property(element, '--chapter-bottom', `${bottom}px`)
     enabled.value = height.value >= 360 && document.body.dataset['motion'] === 'full'
     element.dataset['sceneEnhanced'] = String(enabled.value)
     element.dataset['scenePinned'] = String(enabled.value && duration() > 0)
-    overflow = Math.max(0, content.value.offsetHeight - height.value)
+    overflow = Math.max(0, content.value.offsetHeight - viewport)
     const inspector = content.value.querySelector<HTMLElement>('.archive-inspector')
     if (inspector) inspector.dataset['canPin'] = String(inspector.offsetHeight < height.value - 32)
     property(
@@ -170,6 +173,7 @@ export function useChapterScene(
     window.addEventListener('scroll', schedule, options)
     window.addEventListener('resize', measure, options)
     document.addEventListener('journalmotionchange', measure, options)
+    document.addEventListener('journalchromechange', measure, options)
     document.addEventListener('visibilitychange', visibility, options)
     root.value.addEventListener('focusin', focus, { signal: lifetime.signal })
     root.value.addEventListener('load', scheduleMeasure, { capture: true, signal: lifetime.signal })

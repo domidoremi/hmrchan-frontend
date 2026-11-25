@@ -4,16 +4,27 @@
     class="home-contents-menu"
     @toggle="syncMenu"
     @keydown.esc.prevent.stop="dismiss(true)"
+    @focusout="leaveMenu"
   >
-    <summary>{{ t('journal.home.contents') }}<JournalIcon name="down" /></summary>
+    <summary :aria-label="t('journal.home.contents')">
+      <JournalIcon name="menu" />
+      <span class="contents-trigger-copy">
+        <span>{{ t('journal.home.contents') }}</span>
+        <strong>{{ currentLabel }}</strong>
+      </span>
+      <JournalIcon name="down" class="contents-chevron" />
+    </summary>
     <nav :aria-label="t('journal.home.contents')" data-lenis-prevent data-wheel-native>
       <a
-        v-for="section in sections"
+        v-for="(section, index) in sections"
         :key="section.id"
         :href="`#${section.id}`"
         :aria-current="active === section.id ? 'location' : undefined"
         @click="go($event, section.id)"
       >
+        <span class="contents-index" aria-hidden="true">{{
+          String(index + 1).padStart(2, '0')
+        }}</span>
         {{ section.label }}
       </a>
     </nav>
@@ -21,8 +32,9 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { createResizeObserver } from '@/utils/modernAPIs'
 import JournalIcon from '../JournalIcon.vue'
 import { useHomeSectionJump } from './homeAnchor'
 import '../styles/home-reading-layout.css'
@@ -35,9 +47,12 @@ const menu = ref<HTMLDetailsElement>()
 const active = ref('')
 const lifetime = new AbortController()
 const jumpToSection = useHomeSectionJump()
+const currentLabel = computed(
+  () => props.sections.find(({ id }) => id === active.value)?.label ?? props.sections[0]?.label
+)
+let resize: ResizeObserver | null = null
 
 function syncCurrent() {
-  if (!menu.value?.open) return
   active.value = props.sections[0]?.id ?? ''
   for (const { id } of props.sections) {
     const target = document.getElementById(id)
@@ -46,27 +61,26 @@ function syncCurrent() {
 }
 
 function syncMenu() {
-  if (!menu.value?.open) return
-  const summary = menu.value.querySelector('summary')?.getBoundingClientRect()
-  const header = menu.value.closest('.journal-shell')?.querySelector('.edition-header')
-  const edge = header?.getBoundingClientRect().bottom ?? 0
-  if (!summary || summary.top < Math.max(0, edge)) {
-    dismiss()
-    return
-  }
+  if (!menu.value) return
+  syncCurrent()
   const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-  const dock = menu.value
-    .closest('.journal-shell')
-    ?.querySelector('.mobile-navigation')
-    ?.getBoundingClientRect()
-  const bottom = dock?.height ? Math.min(innerHeight, dock.top) : innerHeight
-  const room = bottom - summary.bottom - rem * 1.5
+  const shell = menu.value.closest('.journal-shell')
+  const dock = shell?.querySelector('.mobile-navigation')?.getBoundingClientRect()
+  const bottom = dock?.height ? Math.max(0, innerHeight - dock.top) : 0
+  menu.value.style.setProperty('--contents-bottom', `${bottom + rem}px`)
+  if (!menu.value.open) return
+  const summary = menu.value.querySelector('summary')?.getBoundingClientRect()
+  const edge = shell?.querySelector('.edition-header')?.getBoundingClientRect().bottom ?? 0
+  const room = (summary?.top ?? 0) - Math.max(0, edge) - rem
   if (room < rem * 2.75) {
     dismiss()
     return
   }
   menu.value.style.setProperty('--contents-room', `${room}px`)
-  syncCurrent()
+}
+
+function leaveMenu(event: FocusEvent) {
+  if (event.relatedTarget instanceof Node && !menu.value?.contains(event.relatedTarget)) dismiss()
 }
 
 function dismiss(restoreFocus = false) {
@@ -83,8 +97,15 @@ function go(event: MouseEvent, id: string) {
 }
 
 onMounted(() => {
+  syncMenu()
+  resize = createResizeObserver(syncMenu)
+  menu.value
+    ?.closest('.journal-shell')
+    ?.querySelectorAll('.edition-header, .mobile-navigation')
+    .forEach((element) => resize?.observe(element))
   window.addEventListener('scroll', syncMenu, { passive: true, signal: lifetime.signal })
   window.addEventListener('resize', syncMenu, { passive: true, signal: lifetime.signal })
+  document.addEventListener('journalchromechange', syncMenu, { signal: lifetime.signal })
   document.addEventListener(
     'pointerdown',
     (event) => {
@@ -93,7 +114,9 @@ onMounted(() => {
     { signal: lifetime.signal }
   )
 })
+watch(() => props.sections, syncMenu, { flush: 'post' })
 onBeforeUnmount(() => {
   lifetime.abort()
+  resize?.disconnect()
 })
 </script>

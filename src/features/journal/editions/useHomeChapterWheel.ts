@@ -1,31 +1,34 @@
 import { onBeforeUnmount, onMounted, type Ref } from 'vue'
-import { scrollHomeTo } from './useHomeScroll'
+import { followHomeChapter } from './homeAnchor'
 import { verticalWheelDelta } from './wheelRegion'
+import { useHomeChapterSettle } from './useHomeChapterSettle'
 
 function chapterDestination(chapter: HTMLElement, delta: number) {
   const bounds = chapter.getBoundingClientRect()
   const top = Number.parseFloat(chapter.style.getPropertyValue('--chapter-top'))
-  const height = Number.parseFloat(chapter.style.getPropertyValue('--chapter-height'))
+  const height = Number.parseFloat(
+    chapter.style.getPropertyValue('--chapter-viewport') ||
+      chapter.style.getPropertyValue('--chapter-height')
+  )
   if (height < 360 || !Number.isFinite(top + height)) return
   const forward = delta > 0
   const bottom = top + height
   const inset = Number.parseFloat(chapter.style.getPropertyValue('--chapter-bottom')) || 0
   const visibleBottom = (section: Element) =>
     section.getAttribute('data-chapter') === 'cover' ? bottom + inset : bottom
+  if (forward && bounds.top > top + 2 && bounds.top < top + height * 0.6)
+    return { target: chapter, end: false }
   const remaining = forward ? bounds.bottom - visibleBottom(chapter) : top - bounds.top
   if (remaining > Math.abs(delta)) return
   const sibling = forward ? chapter.nextElementSibling : chapter.previousElementSibling
   if (!sibling?.classList.contains('immersive-chapter')) return
-  if (remaining > 2) return scrollY + Math.sign(delta) * remaining
-  const next = sibling.getBoundingClientRect()
-  const offset = forward
-    ? next.top - top
-    : Math.max(next.top - top, next.bottom - visibleBottom(sibling))
-  return Math.max(0, scrollY + offset)
+  return { target: sibling as HTMLElement, end: !forward }
 }
 
 export function useHomeChapterWheel(home: Ref<HTMLElement | undefined>) {
   const lifetime = new AbortController()
+  const nativeInput = useHomeChapterSettle(home)
+  let stopFollowing: (() => void) | undefined
   let lastAt = -Infinity
   let lastDirection = 0
   let accumulated = 0
@@ -34,7 +37,12 @@ export function useHomeChapterWheel(home: Ref<HTMLElement | undefined>) {
 
   function wheel(event: WheelEvent) {
     const delta = verticalWheelDelta(event)
-    if (!delta || !(event.target instanceof Element) || document.querySelector('dialog[open]'))
+    if (
+      !delta ||
+      !(event.target instanceof Element) ||
+      document.querySelector('dialog[open]') ||
+      window.getSelection()?.isCollapsed === false
+    )
       return
     const chapter = event.target.closest<HTMLElement>('.immersive-chapter')
     if (!chapter || chapter.parentElement !== home.value) return
@@ -53,6 +61,7 @@ export function useHomeChapterWheel(home: Ref<HTMLElement | undefined>) {
     const destination = chapterDestination(chapter, delta)
     if (destination === undefined) {
       accumulated = 0
+      nativeInput()
       return
     }
     event.preventDefault()
@@ -61,11 +70,15 @@ export function useHomeChapterWheel(home: Ref<HTMLElement | undefined>) {
     handedOff = true
     const smooth = document.body.dataset['motion'] === 'full'
     busyUntil = now + (smooth ? 420 : 0)
-    scrollHomeTo(destination, smooth)
+    stopFollowing?.()
+    stopFollowing = followHomeChapter(destination.target, destination.end, event)
   }
 
   onMounted(() =>
     home.value?.addEventListener('wheel', wheel, { passive: false, signal: lifetime.signal })
   )
-  onBeforeUnmount(() => lifetime.abort())
+  onBeforeUnmount(() => {
+    lifetime.abort()
+    stopFollowing?.()
+  })
 }
