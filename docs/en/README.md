@@ -1,142 +1,178 @@
-# HmrChan Frontend
+# MomiChan
 
-<p align="center">
-  <a href="https://vuejs.org/guide/"><img alt="Vue 3" src="https://img.shields.io/badge/Vue-3-42B883?logo=vuedotjs&logoColor=white"></a>
-  <a href="https://www.typescriptlang.org/docs/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white"></a>
-  <a href="https://vite.dev/guide/"><img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white"></a>
-  <a href="../../public/manifest.json"><img alt="PWA" src="https://img.shields.io/badge/PWA-5A0FC8?logo=pwa&logoColor=white"></a>
-  <a href="https://developers.cloudflare.com/pages/"><img alt="Cloudflare Pages" src="https://img.shields.io/badge/Deploy-Cloudflare_Pages-F38020?logo=cloudflare&logoColor=white"></a>
-</p>
+**Posts, photographs, events, and community.**
 
-<p align="center">
-  <a href="../../README.md">简体中文</a> · <strong>English</strong>
-</p>
+[简体中文](../../README.md) · [English](README.md)
 
-This repository is the web frontend for the MomiChan content community. It provides posts and photos, author pages, event calendars, discussions, and personal collections, with desktop and mobile layouts, multiple languages, appearance presets, and PWA installation.
+MomiChan is a content community for fans of Momiyama Himeri. Its home page connects a featured cover, recent posts, photography, events, and discussions through five reading chapters, with access to author pages and personal collections.
 
-[Live site](https://momichan.com/) · [Quick start](#quick-start) · [Frontend architecture](architecture.md) · [Release validation](validation.md)
+This is an independently maintained fan project, unaffiliated with the artist or her agency.
 
-## Preview
+[Live site](https://momichan.com/) · [Local development](#local-development) · [Four themes](#four-themes) · [Architecture](#architecture-and-layout) · [Validation and deployment](#validation-and-deployment)
 
-Screenshots show the desktop home and mobile post browsing in the current development version, using reference data bundled with the project.
+## Two editions
 
-<table>
-  <tr>
-    <th>Desktop home</th>
-    <th>Mobile posts</th>
-  </tr>
-  <tr>
-    <td><img src="../images/home-desktop.webp" alt="MomiChan desktop home with posts, photos, and calendar navigation" width="960"></td>
-    <td><img src="../images/explore-mobile.webp" alt="MomiChan mobile post browsing and filters" width="280"></td>
-  </tr>
-</table>
+The two sites live on separate branches of the same repository. Each has its own build, deployment, and page composition.
 
-## Features
+| Edition       | Branch                                                             | Main experience                                  | First-visit appearance |
+| ------------- | ------------------------------------------------------------------ | ------------------------------------------------ | ---------------------- |
+| MomiChan      | [`main`](https://github.com/domidoremi/hmrchan-frontend/tree/main) | Reading chapters, posts, photography, and events | Native Minimal, light  |
+| MomiChan Next | [`next`](https://github.com/domidoremi/hmrchan-frontend/tree/next) | Photo selection, galleries, lists, and previews  | Material 3, dark       |
 
-| Feature                 | Experience                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| Content browsing        | Posts and photos, source filters, sorting, search, and author pages                  |
-| Events                  | Calendar and event lists, date selection, and saved events                           |
-| Community               | Discussion lists and details, publishing, and local draft recovery                   |
-| Personal space          | Sign-in, account settings, collections, notifications, and security                  |
-| Appearance and language | Responsive layouts, presets, light and dark themes, translations, and reduced motion |
-| PWA                     | Installation, service worker, and an offline fallback page                           |
+**This branch contains the main site (`main`).** Both editions use Vue. The main branch uses a stable release; Next retains the Vue 3.6 RC evaluation track. [`package.json`](../../package.json) and [`bun.lock`](../../bun.lock) define the actual dependencies for this branch.
 
-## Quick Start
+The main home page header collapses or returns with the reading direction. A floating contents menu provides access to every chapter. Chapter transitions help align the next section while long content remains scrollable. The menu supports keyboard navigation, Escape to close, and focus restoration.
 
-### Requirements
+## Pages and features
 
-| Tool                                                 | Version requirement            |
-| ---------------------------------------------------- | ------------------------------ |
-| [Bun](https://bun.sh/docs)                           | Use `1.4.4`; minimum `>=1.4.4` |
-| [Node.js](https://nodejs.org/docs/latest-v26.x/api/) | `>=26.13.1 <27`                |
+| Entry                                   | Content                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| Home `/`                                | Featured content, photography, and links to posts, events, and community |
+| Explore `/explore` and search `/search` | Source and content filters, sorting, search, and post details            |
+| Authors `/authors`                      | Author profiles, platform sources, and related posts                     |
+| Schedule `/schedule`                    | Calendar, event lists, date selection, and saved events                  |
+| Community `/community`                  | Discussions, replies, publishing, and local draft recovery               |
+| Profile `/profile`                      | Collections, notifications, personal details, devices, and security      |
+| About `/about` and contact `/contact`   | Official and social channels, project information, and a contact form    |
 
-[`package.json`](../../package.json) defines runtime requirements in `engines` and the package manager version in `packageManager`. [`bun.lock`](../../bun.lock) is the authoritative dependency lockfile. Do not mix npm, pnpm, or Yarn with this repository.
+Account flows include password sign-in, passkeys, and account recovery. Availability depends on backend services and authentication configuration.
 
-### Start the Frontend
+The site can be installed as a PWA. The service worker provides resource caching and an offline fallback; sign-in, submissions, and fresh data still require a network connection and working APIs.
+
+## Four themes
+
+Themes affect page composition, information density, controls, surfaces, and motion. Both editions share preference rules and adapt each theme to their own content layouts.
+
+| Theme          | Main site                                                      | Next                                                                                |
+| -------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Native Minimal | Titles and text first, with a single-column recent feed        | Wide photography, aligned galleries, and simple photo controls                      |
+| Material 3     | Tonal sections, a modular feed, and grouped events             | Grouped photography, a gallery default, and proportional images in multiple columns |
+| Fluent 2       | Grouped commands with authors and events beside the feed       | Photography beside controls, with a list and preview by default                     |
+| Carbon         | Compact square-edged indexes, borders, and monospaced metadata | A contact sheet followed by records and previews                                    |
+
+Display settings save light or dark mode, standard or large text, and full or reduced motion. Interface languages are Simplified Chinese, Traditional Chinese, English, and Japanese. An explicitly selected browse view stays in the URL when the theme changes.
+
+See [appearance presets](appearance-presets.md) for defaults, saved-preference migration, and design references. Native Minimal retains the stored ID `apple-native`.
+
+## Local development
+
+### Runtime requirements
+
+| Tool    | Current contract                                     |
+| ------- | ---------------------------------------------------- |
+| Node.js | `>=26.13.1 <27`; pinned to `26.13.1` in `mise.toml`  |
+| Bun     | Package manager pinned to `1.4.4`; minimum `>=1.4.4` |
+
+If you use mise, run `mise install` in the repository to install the versions in [`mise.toml`](../../mise.toml). Use Bun for installation; `bun.lock` is the only dependency lockfile.
+
+### Clone and run
 
 ```bash
-git clone https://github.com/domidoremi/hmrchan-frontend.git
+git clone --branch main https://github.com/domidoremi/hmrchan-frontend.git
 cd hmrchan-frontend
 bun install --frozen-lockfile
-cp .env.example .env.development
+```
+
+For initial configuration, copy [`.env.example`](../../.env.example) to a local `.env.development`:
+
+```powershell
+Copy-Item -LiteralPath .env.example -Destination .env.development
+```
+
+In Bash or Zsh, use `cp .env.example .env.development`. Then start the application:
+
+```bash
 bun run dev
 ```
 
-In PowerShell, use `Copy-Item .env.example .env.development` to copy the configuration.
+The server starts at `http://127.0.0.1:5173` and chooses the next available port when necessary. Use the address printed in the terminal. To require a fixed port, run `bun run dev -- --port 5180`; an explicitly requested port must be free. Use different ports when running both editions.
 
-The development server starts at `http://127.0.0.1:5173` and uses the next available port if it is occupied. To require a fixed port, run `bun run dev -- --port 5180`; that port must be available.
+### Connect the backend
 
-### Connect the Backend
+The browser uses same-origin `/api` and `/ws` paths. The development proxy targets `http://127.0.0.1:8000` by default. Set `VITE_API_BASE_URL` in your local development configuration to use another development upstream.
 
-Browser requests use the same-origin `/api` path. The local proxy targets `http://127.0.0.1:8000` by default; set `VITE_API_BASE_URL` in `.env.development` for another local upstream.
+Full integration requires a separately started [companion backend](https://github.com/domidoremi/hmrchan-backend) and access to its repository and services. When the default local upstream is unreachable, the development script attempts to connect to running Docker backend containers. The bridge does not start the backend services for you.
 
-The companion [hmrchan-backend](https://github.com/domidoremi/hmrchan-backend) repository is currently private, so full integration requires access. Follow its [local setup guide](https://github.com/domidoremi/hmrchan-backend#english) to configure and start the Docker Compose stack, then start the frontend. If the default local upstream is unreachable, `bun run dev` attempts to connect to running backend containers through a local API bridge. Start the backend services beforehand.
+For layout work, set `LOCAL_API_AUTO_BRIDGE=false` in your local `.env.development.local` to skip the bridge. Public snapshots cover only some fallback paths and cannot provide full sign-in, collection, or publishing flows. Other pages may show empty or error states.
 
-To inspect layouts, set `LOCAL_API_AUTO_BRIDGE=false` in your local `.env.development.local` to skip the Docker bridge. Full data, authentication, collections, and publishing require working backend APIs. Public snapshots cover some fallback paths; other pages display loading errors or empty states.
+Use `.env.example` as the configuration entry point. Keep credentials and machine-specific settings out of the repository.
 
-## Commands
+## Architecture and layout
 
-| Command                          | Purpose                                           |
-| -------------------------------- | ------------------------------------------------- |
-| `bun run dev`                    | Start the local development server                |
-| `bun run type-check`             | Check application, Functions, and Worker types    |
-| `bun run lint:strict`            | Run strict lint and comment-language checks       |
-| `bun run test:unit`              | Run unit tests serially                           |
-| `bun run build`                  | Create the production build                       |
-| `bun run build:security-check`   | Inspect generated build output                    |
-| `bun run audit:docs`             | Check Markdown for restricted addresses and paths |
-| `bun run audit:deps`             | Audit dependency vulnerabilities                  |
-| `bun run validate:release:local` | Run the local release workflow                    |
-
-Release modes, evidence requirements, and production checks are defined in the [release validation guide](validation.md).
-
-## Technology and Engineering
-
-| Layer             | Technology                                 |
-| ----------------- | ------------------------------------------ |
-| Application       | Vue 3, TypeScript, Vite                    |
-| State and routing | Pinia, Vue Router, Vue I18n                |
-| Edge deployment   | Cloudflare Pages, Pages Functions, Workers |
-| Quality tooling   | Vitest, ESLint, Prettier, Knip             |
-
-Dependency declarations and locked versions live in [`package.json`](../../package.json) and [`bun.lock`](../../bun.lock). Upgrade history and compatibility decisions are documented in the [stack guide (Chinese)](../zh-CN/stack-policy.md).
-
-- **Layered caching:** HTTP, memory, IndexedDB, and the service worker handle content and resource caching, with shared public-content cache boundaries and snapshot fallback. See [`src/utils/cache/`](../../src/utils/cache/).
-- **Service worker build:** A custom [Vite plugin](../../build/vite/plugins/serviceWorkerBuild.ts) generates the service worker alongside client update coordination and the offline page.
-- **Same-origin API:** Browser requests use `/api` and `/ws`; Pages Functions and an internal Worker handle upstream forwarding. See [frontend architecture](architecture.md) for responsibilities and backend contracts.
-
-## Repository Map
+| Layer                | Implementation                                            |
+| -------------------- | --------------------------------------------------------- |
+| Pages and components | Vue 3, TypeScript, Vue Router                             |
+| State and language   | Pinia, Vue I18n                                           |
+| Build and assets     | Vite and a custom service worker build plugin             |
+| Motion and scrolling | GSAP, Motion for Vue, Lenis, and page interaction logic   |
+| Edge runtime         | Cloudflare Pages, Pages Functions, and an internal Worker |
+| Quality checks       | Vitest, ESLint, Prettier, Knip, and project audit scripts |
 
 ```text
-src/                 Vue application, stores, API boundaries, and unit tests
-functions/           Same-origin Cloudflare Pages Functions
-workers/             Internal Cloudflare Worker
-build/               Vite build plugins
-scripts/             Build, audit, maintenance, and release gates
-public/              Static assets and PWA resources
-docs/images/         README screenshots
-docs/zh-CN/          Simplified Chinese documentation
-docs/en/             English documentation
+src/features/journal/    Site shell, page composition, data adaptation, and interactions
+  editions/             Reading chapters, photo collections, calendar, and related views
+  runtime/              Motion, scrolling, and browser lifecycle
+  styles/               Site layouts and theme presentation
+src/views/              Account, contact, and other routed views and business logic
+src/components/         Reusable components
+src/composables/        Reusable state and interactions
+src/api/                API types, requests, and service adapters
+src/stores/             Cross-page state
+src/config/             Edition, appearance, language, and navigation settings
+src/styles/             Style entry, base rules, and theme tokens
+functions/              Same-origin Pages Functions
+workers/                Internal API Worker
+build/                  Vite configuration and build plugins
+scripts/                Development, validation, build, and release tools
+public/                 Static assets, PWA files, and public snapshots
+docs/                   Chinese and English development and acceptance documentation
 ```
 
-`src/features/` owns feature views and interactions; `src/views/` contains other routed pages. Reusable UI and interactions live in `src/components/` and `src/composables/`; browser integration boundaries stay in `src/api/` and `src/services/`; cross-page Pinia state belongs in `src/stores/`.
+[`src/config/designEdition.ts`](../../src/config/designEdition.ts) selects the `editorial` or `archive` edition. [`src/config/appearance.ts`](../../src/config/appearance.ts) owns themes and browse defaults. API and state layers supply data; page components handle presentation and interaction.
 
-## Configuration
+[`src/styles/index.css`](../../src/styles/index.css) is the application style entry. Cross-component layouts and theme rules belong in their corresponding style layers. The development proxy or edge layer connects browser requests to the backend. HTTP, memory, IndexedDB, and the service worker share caching responsibilities. See [frontend architecture](architecture.md) for the boundaries.
 
-- Use [`.env.example`](../../.env.example) as the environment-variable contract
-- Browser requests use the same-origin `/api` facade by default
-- Edge deployment settings are maintained in [`wrangler.toml`](../../wrangler.toml)
-- Never commit local secrets or machine-specific paths
+## Validation and deployment
 
-## Documentation
+### Common checks
 
+| Command                        | Purpose                                                      |
+| ------------------------------ | ------------------------------------------------------------ |
+| `bun run type-check`           | Check application, Pages Functions, and Worker types         |
+| `bun run lint:strict`          | Run strict lint and comment-language checks                  |
+| `bun run format:check`         | Check formatting in `src/`                                   |
+| `bun run test:unit`            | Run unit tests serially                                      |
+| `bun run build`                | Generate the `dist/` build output                            |
+| `bun run build:security-check` | Check production build security constraints                  |
+| `bun run check:bundle-budget`  | Check asset size budgets                                     |
+| `bun run audit:docs`           | Check documentation for restricted addresses and local paths |
+| `bun run audit:deps`           | Audit dependency vulnerabilities                             |
+
+Use `bun run preview` to preview built assets locally. Integration with Pages Functions, Workers, and the backend requires the environment described in [release validation](validation.md).
+
+### Release workflow
+
+Each edition uses its own Cloudflare Pages Git integration: the main site follows `main`, and Next follows `next`. The build entry is `bun run build`, the output directory is `dist/`, and edge configuration is maintained in this branch's [`wrangler.toml`](../../wrangler.toml).
+
+| Command                                 | Validation scope                                                  |
+| --------------------------------------- | ----------------------------------------------------------------- |
+| `bun run validate:release:prepush:full` | Full static gates, unit tests, build, security, and asset budgets |
+| `bun run validate:release:local`        | Static gates and local browser checks                             |
+| `bun run validate:release:candidate`    | Local checks, controlled-site checks, and production preflight    |
+| `bun run validate:release:production`   | Candidate-stage checks and deployed production regression         |
+
+The `local` and `candidate` modes do not replace deployed-site validation. Results remain `incomplete` while required production evidence is missing. Complete release acceptance requires a `passed` production report. A successful build, automatic deployment, or public-page spot check alone does not establish that result.
+
+Browser gates require Docker, the local backend, and a Pages-compatible preview. Controlled-site and production checks also require explicit targets, dedicated accounts, and the relevant assisted email steps. Evidence is written to the untracked `output/validation/` directory. See [release validation](validation.md) for inputs, stage contracts, and failure handling.
+
+## Further documentation
+
+- [Appearance and saved-preference migration](appearance-presets.md)
+- [Frontend architecture and API boundaries](architecture.md)
 - [Stack versions and upgrade policy (Chinese)](../zh-CN/stack-policy.md)
 - [Release validation](validation.md)
-- [Frontend architecture](architecture.md)
-- [Appearance presets](appearance-presets.md)
-- [简体中文文档](../../README.md)
+- [UI/UX acceptance records (Chinese)](../zh-CN/uiux-acceptance.md)
 
-## License
+## License and content
 
-No public distribution license is declared. Repository content is maintained for this project only.
+No public distribution license is declared for this repository. Photographs, original posts, and other media remain the property of their respective rights holders.
